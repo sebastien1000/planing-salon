@@ -45,6 +45,7 @@
       '    <span class="badge room">' + utils.escapeHtml(reservation.room) + "</span>",
       '    <span class="badge">' + utils.escapeHtml(reservation.time) + "</span>",
       '    <span class="badge">' + utils.escapeHtml(String(reservation.duration)) + " min</span>",
+      (reservation.supplement ? '    <span class="badge">+' + reservation.supplement + " EUR</span>" : ""),
       "  </div>",
       '  <div class="row rsv-actions">' + actions + "</div>",
       "</div>"
@@ -66,7 +67,7 @@
 
     root.querySelectorAll("[data-action='done-reservation']").forEach(function (button) {
       button.addEventListener("click", function () {
-        setReservationStatus(button.dataset.id, "done");
+        openSupplementSheet(button.dataset.id);
       });
     });
 
@@ -335,7 +336,7 @@
     formState.saveAndRefresh();
   }
 
-  function setReservationStatus(reservationId, status) {
+  function setReservationStatus(reservationId, status, supplement) {
     var state = formState.state;
     var reservation = state.db.reservations.find(function (item) {
       return item.id === reservationId;
@@ -346,12 +347,49 @@
     }
 
     reservation.status = status;
+
+    if (status === "done") {
+      reservation.supplement = Number(supplement) || 0;
+    }
+
     data.saveDb(state.db);
     state.refresh();
 
     if (status === "done") {
       openProposal(reservation);
     }
+  }
+
+  function openSupplementSheet(reservationId) {
+    var state = formState.state;
+    var reservation = state.db.reservations.find(function (item) {
+      return item.id === reservationId;
+    });
+
+    if (!reservation) {
+      return;
+    }
+
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>Terminer le RDV</h3>",
+      '  <button id="closeSupplementButton" class="x" type="button">x</button>',
+      "</div>",
+      '<p class="tiny">Ajoute un supplement si besoin, il sera compte dans la recette.</p>',
+      '<label for="fSupplement">Supplement (EUR)</label>',
+      '<input id="fSupplement" class="field" type="number" min="0" step="0.5" placeholder="0" value="' +
+        (reservation.supplement || "") + '">',
+      '<div class="row" style="margin-top:14px">',
+      '  <button id="validateSupplementButton" class="primary grow" type="button">Valider</button>',
+      "</div>"
+    ].join(""));
+
+    ui.byId("closeSupplementButton").addEventListener("click", ui.closeSheet);
+    ui.byId("validateSupplementButton").addEventListener("click", function () {
+      var supplement = Number(ui.byId("fSupplement").value) || 0;
+      ui.closeSheet();
+      setReservationStatus(reservationId, "done", supplement);
+    });
   }
 
   function openProposal(reservation) {

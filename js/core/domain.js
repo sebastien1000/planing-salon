@@ -191,7 +191,7 @@
     return utils.monthDates(selectedDate);
   }
 
-  function revenueFor(db, collab, range, selectedDate) {
+  function doneReservationsFor(db, collab, range, selectedDate) {
     var dates = datesForRange(selectedDate, range);
 
     return db.reservations
@@ -200,12 +200,29 @@
           reservation.status === "done" &&
           dates.includes(reservation.date);
       })
-      .reduce(function (sum, reservation) {
+      .map(function (reservation) {
         var prestation = db.prestations.find(function (item) {
           return item.name === reservation.prestation;
         });
-        return sum + (prestation ? prestation.price : 0);
-      }, 0);
+        return {
+          id: reservation.id,
+          client: reservation.client,
+          prestation: reservation.prestation,
+          date: reservation.date,
+          time: reservation.time,
+          supplement: reservation.supplement || 0,
+          price: (prestation ? prestation.price : 0) + (reservation.supplement || 0)
+        };
+      })
+      .sort(function (a, b) {
+        return a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date);
+      });
+  }
+
+  function revenueFor(db, collab, range, selectedDate) {
+    return doneReservationsFor(db, collab, range, selectedDate).reduce(function (sum, item) {
+      return sum + item.price;
+    }, 0);
   }
 
   function countFor(db, collab, status, range, selectedDate) {
@@ -244,6 +261,7 @@
     conflictDetails: conflictDetails,
     countFor: countFor,
     datesForRange: datesForRange,
+    doneReservationsFor: doneReservationsFor,
     fullDateLabel: fullDateLabel,
     getStatusLabel: getStatusLabel,
     isCancelled: isCancelled,

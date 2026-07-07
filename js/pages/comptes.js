@@ -26,6 +26,51 @@
     user: user
   });
 
+  var RANGE_LABELS = { day: "Aujourd'hui", week: "Semaine", month: "Mois" };
+
+  function renderStatButton(collab, range) {
+    return '<button class="stat" type="button" data-history-collab="' + utils.escapeHtml(collab) +
+      '" data-history-range="' + range + '">' +
+      "<b>" + domain.revenueFor(db, collab, range, selectedDate) + "EUR</b>" +
+      "<span>" + RANGE_LABELS[range] + "</span>" +
+      "</button>";
+  }
+
+  function openHistorySheet(collab, range) {
+    var items = domain.doneReservationsFor(db, collab, range, selectedDate);
+    var total = items.reduce(function (sum, item) { return sum + item.price; }, 0);
+
+    var rows = items.length
+      ? items.map(function (item) {
+          return [
+            '<div class="row" style="justify-content:space-between">',
+            '  <div class="grow">',
+            "    <b>" + utils.escapeHtml(item.client || "Client") + "</b>",
+            '    <div class="tiny">' + utils.escapeHtml(item.prestation) + " · " +
+              utils.escapeHtml(domain.fullDateLabel(item.date)) + " " + utils.escapeHtml(item.time) + "</div>",
+            "  </div>",
+            '  <span class="badge">' + item.price + " EUR</span>",
+            "</div>"
+          ].join("");
+        }).join("")
+      : '<p class="tiny">Aucun RDV termine sur cette periode.</p>';
+
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>Historique - " + RANGE_LABELS[range] + "</h3>",
+      '  <button id="closeHistoryButton" class="x" type="button">x</button>',
+      "</div>",
+      '<p class="tiny">' + utils.escapeHtml(collab) + "</p>",
+      '<div class="stack">' + rows + "</div>",
+      '<div class="row" style="justify-content:space-between;margin-top:14px">',
+      "  <b>Total</b>",
+      '  <span class="badge">' + total + " EUR</span>",
+      "</div>"
+    ].join(""));
+
+    ui.byId("closeHistoryButton").addEventListener("click", ui.closeSheet);
+  }
+
   function renderUserCard(account) {
     var totalDone = db.reservations.filter(function (reservation) {
       return reservation.collab === account.name && reservation.status === "done";
@@ -34,7 +79,7 @@
       var prestation = db.prestations.find(function (item) {
         return item.name === reservation.prestation;
       });
-      return sum + (prestation ? prestation.price : 0);
+      return sum + (prestation ? prestation.price : 0) + (reservation.supplement || 0);
     }, 0);
     var upcoming = db.reservations.filter(function (reservation) {
       return reservation.collab === account.name && reservation.status === "pre";
@@ -50,9 +95,9 @@
       }),
       "  </div>",
       '  <div class="statgrid">',
-      '    <div class="stat"><b>' + domain.revenueFor(db, account.name, "day", selectedDate) + 'EUR</b><span>Aujourd\'hui</span></div>',
-      '    <div class="stat"><b>' + domain.revenueFor(db, account.name, "week", selectedDate) + 'EUR</b><span>Semaine</span></div>',
-      '    <div class="stat"><b>' + domain.revenueFor(db, account.name, "month", selectedDate) + 'EUR</b><span>Mois</span></div>',
+      renderStatButton(account.name, "day"),
+      renderStatButton(account.name, "week"),
+      renderStatButton(account.name, "month"),
       "  </div>",
       '  <div class="meta">',
       '    <span class="badge">Recette totale ' + totalRevenue + ' EUR</span>',
@@ -80,9 +125,9 @@
       }),
       '  <div class="tiny">Tu vois uniquement ton propre compte.</div>',
       '  <div class="statgrid">',
-      '    <div class="stat"><b>' + domain.revenueFor(db, user.name, "day", selectedDate) + 'EUR</b><span>Aujourd\'hui</span></div>',
-      '    <div class="stat"><b>' + domain.revenueFor(db, user.name, "week", selectedDate) + 'EUR</b><span>Semaine</span></div>',
-      '    <div class="stat"><b>' + domain.revenueFor(db, user.name, "month", selectedDate) + 'EUR</b><span>Mois</span></div>',
+      renderStatButton(user.name, "day"),
+      renderStatButton(user.name, "week"),
+      renderStatButton(user.name, "month"),
       "  </div>",
       '  <button id="editOwnProfile" class="primary" type="button">Modifier mon profil / mot de passe</button>',
       "</div>"
@@ -112,6 +157,12 @@
     document.querySelectorAll("[data-reset-link]").forEach(function (button) {
       button.addEventListener("click", function () {
         forms.resetLink(button.dataset.resetLink);
+      });
+    });
+
+    document.querySelectorAll("[data-history-collab]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        openHistorySheet(button.dataset.historyCollab, button.dataset.historyRange);
       });
     });
   }

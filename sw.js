@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v17-branding-assets";
+const CACHE_NAME = "salon-mvp-v18-supplement";
 
 const APP_ASSETS = [
   "./",
