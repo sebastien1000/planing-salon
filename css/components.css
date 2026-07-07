@@ -260,14 +260,122 @@ label {
   justify-self: end;
 }
 
-.header-logo,
-.app-logo {
-  display: block;
-  width: 38px;
-  height: 38px;
+.header-user-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.profile-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.profile-user-inline {
+  gap: 8px;
+}
+
+.profile-user-card {
+  margin-bottom: 10px;
+}
+
+.profile-user-card-self {
+  margin-top: 10px;
+}
+
+.profile-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.profile-avatar {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #efd3db;
+  box-shadow: 0 8px 18px rgba(80, 40, 55, 0.08);
+}
+
+.profile-avatar-sm {
+  width: 42px;
+  height: 42px;
+  flex-basis: 42px;
+  border-radius: 14px;
+}
+
+.profile-avatar-md {
+  width: 60px;
+  height: 60px;
+  flex-basis: 60px;
+  border-radius: 18px;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
-  flex: 0 0 auto;
-  margin: 0;
+  object-position: center;
+  display: block;
+}
+
+.profile-name {
+  min-width: 0;
+  color: #4a3540;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-name-tiny {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.profile-name-card {
+  font-size: 18px;
+  color: #3d2430;
+}
+
+.profile-fallback-text {
+  display: none;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #7c5b66;
+  text-align: center;
+}
+
+.profile-user[data-avatar-missing="true"] .profile-fallback-text {
+  display: block;
+}
+
+@media (max-width: 560px) {
+  .profile-user-card {
+    gap: 8px;
+  }
+
+  .profile-avatar-md {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+  }
+
+  .profile-name-card {
+    font-size: 16px;
+  }
 }
 
 .title-copy {

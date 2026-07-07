@@ -9,6 +9,10 @@
     { href: "comptes.html", key: "comptes", label: "Comptes" },
     { href: "plus.html", key: "plus", label: "Plus" }
   ];
+  var PROFILE_IMAGES = {
+    Julie: "assets/img/profiles/logojuliie.png",
+    Marion: "assets/img/profiles/logomarion.png"
+  };
 
   function byId(id) {
     return document.getElementById(id);
@@ -18,6 +22,50 @@
     return '<' + tag + (className ? ' class="' + className + '"' : "") + ">" +
       (content || "") +
       "</" + tag + ">";
+  }
+
+  function profileImageSrc(name) {
+    return PROFILE_IMAGES[String(name || "").trim()] || "";
+  }
+
+  function renderUserProfile(name, options) {
+    var safeName = utils.escapeHtml(name || "");
+    var config = options || {};
+    var imageSrc = profileImageSrc(name);
+    var rootClassName = "profile-user" + (config.className ? " " + config.className : "");
+    var avatarClassName = "profile-avatar" + (config.avatarClassName ? " " + config.avatarClassName : "");
+    var nameClassName = "profile-name" + (config.nameClassName ? " " + config.nameClassName : "");
+    var imageHtml = imageSrc
+      ? '<img src="' + imageSrc + '" alt="Profil de ' + safeName + '" loading="lazy">'
+      : "";
+
+    return [
+      '<div class="' + rootClassName + '"' + (imageSrc ? "" : ' data-avatar-missing="true"') + '>',
+      '  <div class="' + avatarClassName + '">',
+      imageHtml,
+      '    <span class="profile-fallback-text">' + safeName + "</span>",
+      "  </div>",
+      '  <div class="' + nameClassName + '">' + safeName + "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function bindProfileAvatars(root) {
+    (root || document).querySelectorAll(".profile-user img").forEach(function (image) {
+      if (image.dataset.profileBound === "true") {
+        return;
+      }
+
+      image.dataset.profileBound = "true";
+
+      image.addEventListener("error", function () {
+        var profileRoot = image.closest(".profile-user");
+        if (profileRoot) {
+          profileRoot.setAttribute("data-avatar-missing", "true");
+        }
+        image.remove();
+      });
+    });
   }
 
   function buildShell(options) {
@@ -32,10 +80,15 @@
       '      <button id="goPlanning" class="home" type="button">⌂</button>',
       '    </div>',
       '    <div class="header-center app-header-center header-brand">',
-      '      <img class="header-logo app-logo" src="logo.png" alt="Planning Salon">',
       '      <div class="title-copy">',
       '          <div class="title">' + pageTitle + "</div>",
-      '          <div class="tiny">' + utils.escapeHtml(user.name) + "</div>",
+      '          <div class="header-user-row">' +
+        renderUserProfile(user.name, {
+          className: "profile-user-inline",
+          avatarClassName: "profile-avatar-sm",
+          nameClassName: "profile-name-tiny"
+        }) +
+        "</div>",
       "      </div>",
       "    </div>",
       '    <div class="header-right app-header-right">',
@@ -56,6 +109,7 @@
     });
 
     byId("logoutButton").addEventListener("click", auth.logout);
+    bindProfileAvatars(container);
   }
 
   function renderActions(actions) {
@@ -96,6 +150,7 @@
   function showModal(content) {
     byId("modalBox").innerHTML = content;
     byId("modal").classList.remove("hidden");
+    bindProfileAvatars(byId("modalBox"));
   }
 
   function closeModal() {
@@ -107,6 +162,7 @@
     sheetBox.className = boxClassName ? "modal-box " + boxClassName : "modal-box";
     sheetBox.innerHTML = content;
     byId("sheet").classList.remove("hidden");
+    bindProfileAvatars(sheetBox);
   }
 
   function closeSheet() {
@@ -116,6 +172,7 @@
 
   function setMain(content) {
     byId("pageMain").innerHTML = content;
+    bindProfileAvatars(byId("pageMain"));
   }
 
   function bindActionButton(id, handler) {
@@ -159,6 +216,8 @@
     closeSheet: closeSheet,
     html: html,
     initAppPage: initAppPage,
+    bindProfileAvatars: bindProfileAvatars,
+    renderUserProfile: renderUserProfile,
     registerServiceWorker: registerServiceWorker,
     setMain: setMain,
     showModal: showModal,

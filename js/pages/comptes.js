@@ -42,7 +42,13 @@
 
     return [
       '<div class="card">',
-      "  <h3>" + utils.escapeHtml(account.name) + "</h3>",
+      '  <div class="profile-card-head">',
+      ui.renderUserProfile(account.name, {
+        className: "profile-user-card",
+        avatarClassName: "profile-avatar-md",
+        nameClassName: "profile-name-card"
+      }),
+      "  </div>",
       '  <div class="statgrid">',
       '    <div class="stat"><b>' + domain.revenueFor(db, account.name, "day", selectedDate) + 'EUR</b><span>Aujourd\'hui</span></div>',
       '    <div class="stat"><b>' + domain.revenueFor(db, account.name, "week", selectedDate) + 'EUR</b><span>Semaine</span></div>',
@@ -67,6 +73,11 @@
     return [
       '<div class="card">',
       "  <h3>Mon profil</h3>",
+      ui.renderUserProfile(user.name, {
+        className: "profile-user-card profile-user-card-self",
+        avatarClassName: "profile-avatar-md",
+        nameClassName: "profile-name-card"
+      }),
       '  <div class="tiny">Tu vois uniquement ton propre compte.</div>',
       '  <div class="statgrid">',
       '    <div class="stat"><b>' + domain.revenueFor(db, user.name, "day", selectedDate) + 'EUR</b><span>Aujourd\'hui</span></div>',

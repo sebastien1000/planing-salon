@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v12-storage-recovery";
+const CACHE_NAME = "salon-mvp-v14-remove-header-logo";
 
 const APP_ASSETS = [
   "./",
@@ -11,6 +11,8 @@ const APP_ASSETS = [
   "./manifest.json",
   "./logo.png",
   "./favicon.png",
+  "./assets/img/profiles/logojuliie.png",
+  "./assets/img/profiles/logomarion.png",
   "./css/base.css",
   "./css/layout.css",
   "./css/components.css",
