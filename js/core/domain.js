@@ -64,7 +64,23 @@
     return "A definir";
   }
 
-  function conflict(db, reservation, ignoreId) {
+  function buildConflictPayload(type, reservation, item, message) {
+    return {
+      type: type,
+      message: message,
+      reservation: item ? {
+        id: item.id || "",
+        client: item.client || "",
+        collab: item.collab || "",
+        room: item.room || "",
+        date: item.date || reservation.date,
+        time: item.time || reservation.time,
+        duration: Number(item.duration || 0)
+      } : null
+    };
+  }
+
+  function conflictDetails(db, reservation, ignoreId) {
     var roomConflict;
     var collabConflict;
     var absenceConflict;
@@ -78,7 +94,12 @@
     });
 
     if (roomConflict && reservation.room !== "Exterieur") {
-      return "Conflit : " + reservation.room + " est deja reservee a " + roomConflict.time + ".";
+      return buildConflictPayload(
+        "room",
+        reservation,
+        roomConflict,
+        "Conflit : " + reservation.room + " est deja reservee a " + roomConflict.time + "."
+      );
     }
 
     collabConflict = db.reservations.find(function (item) {
@@ -90,7 +111,12 @@
     });
 
     if (collabConflict) {
-      return "Conflit : " + reservation.collab + " a deja un rendez-vous a " + collabConflict.time + ".";
+      return buildConflictPayload(
+        "collab",
+        reservation,
+        collabConflict,
+        "Conflit : " + reservation.collab + " a deja un rendez-vous a " + collabConflict.time + "."
+      );
     }
 
     absenceConflict = db.absences.find(function (item) {
@@ -100,10 +126,20 @@
     });
 
     if (absenceConflict) {
-      return "Conflit : " + reservation.collab + " est indisponible sur ce creneau.";
+      return buildConflictPayload(
+        "absence",
+        reservation,
+        absenceConflict,
+        "Conflit : " + reservation.collab + " est indisponible sur ce creneau."
+      );
     }
 
     return null;
+  }
+
+  function conflict(db, reservation, ignoreId) {
+    var details = conflictDetails(db, reservation, ignoreId);
+    return details ? details.message : null;
   }
 
   function isActiveReservation(reservation) {
@@ -205,6 +241,7 @@
   window.SalonDomain = {
     catLabel: catLabel,
     conflict: conflict,
+    conflictDetails: conflictDetails,
     countFor: countFor,
     datesForRange: datesForRange,
     fullDateLabel: fullDateLabel,

@@ -102,12 +102,15 @@
     byId("modal").classList.add("hidden");
   }
 
-  function showSheet(content) {
-    byId("sheetBox").innerHTML = content;
+  function showSheet(content, boxClassName) {
+    var sheetBox = byId("sheetBox");
+    sheetBox.className = boxClassName ? "modal-box " + boxClassName : "modal-box";
+    sheetBox.innerHTML = content;
     byId("sheet").classList.remove("hidden");
   }
 
   function closeSheet() {
+    byId("sheetBox").className = "modal-box";
     byId("sheet").classList.add("hidden");
   }
 

@@ -99,6 +99,12 @@ main {
   box-shadow: 0 -20px 45px rgba(46, 18, 30, 0.25);
 }
 
+.conflict-sheet-box {
+  max-width: 520px;
+  min-height: 70dvh;
+  padding: 22px;
+}
+
 .modal-head {
   display: flex;
   justify-content: space-between;
@@ -132,5 +138,9 @@ main {
   .modal-box {
     border-radius: 28px;
     margin-bottom: 20px;
+  }
+
+  .conflict-sheet-box {
+    min-height: 620px;
   }
 }

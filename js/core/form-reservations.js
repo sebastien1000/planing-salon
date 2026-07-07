@@ -5,6 +5,7 @@
   var formState = window.SalonFormState;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
+  var ENABLE_CONFLICT_ASSISTANT = false;
 
   function reservationCard(reservation) {
     var state = formState.state;
@@ -136,7 +137,6 @@
       "  <h3>" + (reservationId ? "Modifier" : "Ajouter") + " un RDV</h3>",
       '  <button id="closeModalButton" class="x" type="button">x</button>',
       "</div>",
-      '<div id="reservationMsg"></div>',
       '<label for="fClient">Cliente</label>',
       '<select id="fClient" class="field">',
       '  <option value="">Nouvelle / libre</option>',
@@ -166,9 +166,12 @@
       }).join("") + "</select>",
       '<label for="fNotes">Notes privees</label>',
       '<textarea id="fNotes" class="field">' + utils.escapeHtml(reservation.notes || "") + "</textarea>",
-      '<div class="row" style="margin-top:14px">',
-      '  <button id="saveReservationButton" class="primary grow" type="button">Enregistrer</button>',
-      reservationId ? '  <button id="modalCancelReservationButton" class="secondary danger" type="button">Annuler</button>' : "",
+      '<div class="reservation-submit-zone">',
+      '  <div id="reservationMsg" class="reservation-msg-inline"></div>',
+      '  <div class="row reservation-submit-row">',
+      '    <button id="saveReservationButton" class="primary grow" type="button">Enregistrer</button>',
+      reservationId ? '    <button id="modalCancelReservationButton" class="secondary danger" type="button">Annuler</button>' : "",
+      "  </div>",
       "</div>"
     ].join("");
   }
@@ -281,13 +284,18 @@
     };
 
     if (currentReservation && !canManageReservation(currentReservation)) {
-      ui.byId("reservationMsg").innerHTML = '<div class="alert">Modification refusee pour cette collaboratrice.</div>';
+      ui.byId("reservationMsg").innerHTML = '<div class="alert reservation-alert-box">Modification refusee pour cette collaboratrice.</div>';
       return;
     }
 
-    var error = domain.conflict(state.db, reservation, reservationId || null);
-    if (error) {
-      ui.byId("reservationMsg").innerHTML = '<div class="alert">' + utils.escapeHtml(error) + "</div>";
+    var conflict = domain.conflictDetails(state.db, reservation, reservationId || null);
+    if (conflict) {
+      ui.byId("reservationMsg").innerHTML = ENABLE_CONFLICT_ASSISTANT
+        ? '<div class="alert reservation-alert-box">Creneau deja pris. Choisissez un autre horaire.</div>'
+        : '<div class="alert">' + utils.escapeHtml(conflict.message) + "</div>";
+      if (ENABLE_CONFLICT_ASSISTANT) {
+        showConflictPopup(reservation, conflict, reservationId || null);
+      }
       return;
     }
 
@@ -480,6 +488,90 @@
     ui.byId("proposalMsg").querySelectorAll("[data-slot]").forEach(function (button) {
       button.addEventListener("click", function () {
         ui.byId("pTime").value = button.dataset.slot;
+      });
+    });
+  }
+
+  function showConflictPopup(reservation, conflict, ignoreId) {
+    var conflictReservation = conflict.reservation;
+    var title = "Ce creneau est deja pris";
+    var slotLabel = reservation.date + " a " + reservation.time;
+    var existingLabel = "";
+    var meta = [];
+
+    if (conflictReservation && conflictReservation.time) {
+      existingLabel = conflictReservation.time + " - " +
+        domain.addMinutes(conflictReservation.time, conflictReservation.duration);
+    }
+
+    if (conflictReservation && conflictReservation.client) {
+      meta.push("Cliente : " + conflictReservation.client);
+    }
+
+    if (conflictReservation && conflictReservation.collab) {
+      meta.push("Collaboratrice : " + conflictReservation.collab);
+    }
+
+    if (conflictReservation && conflictReservation.room) {
+      meta.push("Salle : " + conflictReservation.room);
+    }
+
+    ui.showSheet([
+      '<div class="modal-head conflict-sheet-head">',
+      "  <h3>Creneau deja pris</h3>",
+      '  <button id="closeConflictSheetButton" class="x" type="button">x</button>',
+      "</div>",
+      '<div class="card conflict-card">',
+      '  <div class="conflict-badge">Reservation impossible</div>',
+      '  <h4 class="conflict-title">' + utils.escapeHtml(title) + "</h4>",
+      '  <p class="conflict-text">Le rendez-vous que vous essayez d enregistrer pour ' + utils.escapeHtml(slotLabel) + ' ne peut pas etre ajoute.</p>',
+      (existingLabel ? '<div class="conflict-slot">Deja reserve : ' + utils.escapeHtml(existingLabel) + "</div>" : ""),
+      (meta.length ? '<div class="tiny conflict-meta">' + utils.escapeHtml(meta.join(" • ")) + "</div>" : ""),
+      '  <p class="tiny conflict-help">Cliquez ci-dessous pour choisir un autre creneau disponible.</p>',
+      "</div>",
+      '<div class="row" style="margin-top:14px">',
+      '  <button id="changeConflictSlotButton" class="primary grow" type="button">Choisir un autre creneau</button>',
+      '  <button id="dismissConflictSheetButton" class="secondary grow" type="button">Fermer</button>',
+      "</div>",
+      '<div id="conflictSlotSuggestions" style="margin-top:12px"></div>'
+    ].join(""), "conflict-sheet-box");
+
+    ui.byId("closeConflictSheetButton").addEventListener("click", ui.closeSheet);
+    ui.byId("dismissConflictSheetButton").addEventListener("click", ui.closeSheet);
+    ui.byId("changeConflictSlotButton").addEventListener("click", function () {
+      renderConflictSuggestions(reservation, ignoreId);
+    });
+  }
+
+  function renderConflictSuggestions(reservation, ignoreId) {
+    var state = formState.state;
+    var root = ui.byId("conflictSlotSuggestions");
+    var times = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
+    var available = [];
+
+    times.forEach(function (time) {
+      var testReservation = Object.assign({}, reservation, { time: time });
+      if (!domain.conflict(state.db, testReservation, ignoreId)) {
+        available.push(time);
+      }
+    });
+
+    if (!available.length) {
+      root.innerHTML = '<div class="alert">Aucun autre creneau rapide disponible ce jour.</div>';
+      return;
+    }
+
+    root.innerHTML = [
+      '<div class="success">Creneaux disponibles :</div>',
+      '<div class="chips">' + available.map(function (time) {
+        return '<button class="chip" type="button" data-conflict-slot="' + time + '">' + time + "</button>";
+      }).join("") + "</div>"
+    ].join("");
+
+    root.querySelectorAll("[data-conflict-slot]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        ui.byId("fTime").value = button.dataset.conflictSlot;
+        ui.closeSheet();
       });
     });
   }

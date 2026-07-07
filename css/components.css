@@ -390,6 +390,93 @@ label {
   border: 1px solid #cbe8d2;
 }
 
+.conflict-card {
+  padding: 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fff7f8 0%, #ffffff 100%);
+  border: 1px solid #f2c8d2;
+}
+
+.conflict-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 11px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: #fff0f3;
+  color: var(--danger);
+  border: 1px solid #f0bdc7;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.conflict-title {
+  margin: 0 0 10px;
+  font-size: 24px;
+  line-height: 1.1;
+  color: #4a2430;
+}
+
+.conflict-text {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: #6f4c57;
+}
+
+.conflict-slot {
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #efd3db;
+  color: #4a2430;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.conflict-meta,
+.conflict-help {
+  display: block;
+  margin-top: 8px;
+}
+
+.reservation-submit-zone {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.reservation-submit-row {
+  align-items: stretch;
+}
+
+.reservation-msg-inline:empty {
+  display: none;
+}
+
+.reservation-alert-box {
+  padding: 16px 18px;
+  border-radius: 18px;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.4;
+  box-shadow: 0 10px 24px rgba(188, 74, 104, 0.12);
+}
+
+@media (min-width: 700px) {
+  .reservation-submit-zone {
+    grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+    align-items: stretch;
+  }
+
+  .reservation-submit-row {
+    margin-top: 0;
+  }
+}
+
 .empty {
   padding: 22px;
   text-align: center;
