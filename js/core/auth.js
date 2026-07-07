@@ -1,5 +1,6 @@
 (function () {
   var data = window.SalonData;
+  var utils = window.SalonUtils;
   var AUTH_KEY = "salonCurrentUserId";
 
   function getDb() {
@@ -21,9 +22,7 @@
       return null;
     }
 
-    return getDb().users.find(function (user) {
-      return user.id === userId;
-    }) || null;
+    return utils.findById(getDb().users, userId) || null;
   }
 
   function login(loginName, password) {

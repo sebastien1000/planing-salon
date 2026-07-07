@@ -34,7 +34,7 @@
   function openPrestationForm(prestationId) {
     var state = formState.state;
     var prestation = prestationId
-      ? state.db.prestations.find(function (item) { return item.id === prestationId; })
+      ? utils.findById(state.db.prestations, prestationId)
       : { id: "", name: "", cat: "ongles", duration: 60, price: 0 };
 
     ui.showModal([
@@ -108,7 +108,7 @@
 
     if (prestationId) {
       Object.assign(
-        state.db.prestations.find(function (item) { return item.id === prestationId; }),
+        utils.findById(state.db.prestations, prestationId),
         prestation
       );
     } else {
@@ -121,9 +121,7 @@
 
   function deletePrestation(prestationId) {
     var state = formState.state;
-    var prestation = state.db.prestations.find(function (item) {
-      return item.id === prestationId;
-    });
+    var prestation = utils.findById(state.db.prestations, prestationId);
     var used = state.db.reservations.some(function (reservation) {
       return reservation.prestation === prestation.name;
     }) || state.db.clients.some(function (client) {

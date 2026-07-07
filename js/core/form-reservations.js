@@ -81,7 +81,7 @@
   function openReservation(reservationId) {
     var state = formState.state;
     var reservation = reservationId
-      ? state.db.reservations.find(function (item) { return item.id === reservationId; })
+      ? utils.findById(state.db.reservations, reservationId)
       : {
           id: "",
           client: "",
@@ -237,9 +237,7 @@
   function fillClientHabit() {
     var state = formState.state;
     var clientId = ui.byId("fClient").value;
-    var client = state.db.clients.find(function (item) {
-      return item.id === clientId;
-    });
+    var client = utils.findById(state.db.clients, clientId);
 
     if (!client) {
       return;
@@ -275,7 +273,7 @@
   function saveReservation(reservationId) {
     var state = formState.state;
     var currentReservation = reservationId
-      ? state.db.reservations.find(function (item) { return item.id === reservationId; })
+      ? utils.findById(state.db.reservations, reservationId)
       : null;
     var chosenCollab = auth.isAdmin(state.user) ? ui.byId("fCollab").value : state.user.name;
     var reservation = {
@@ -310,7 +308,7 @@
 
     if (reservationId) {
       Object.assign(
-        state.db.reservations.find(function (item) { return item.id === reservationId; }),
+        utils.findById(state.db.reservations, reservationId),
         reservation
       );
     } else {
@@ -324,11 +322,18 @@
 
   function cancelReservation(reservationId) {
     var state = formState.state;
-    var reservation = state.db.reservations.find(function (item) {
-      return item.id === reservationId;
-    });
+    var reservation = utils.findById(state.db.reservations, reservationId);
 
-    if (!reservation || !window.confirm("Annuler ce rendez-vous ?")) {
+    if (!reservation) {
+      return;
+    }
+
+    if (!canManageReservation(reservation)) {
+      window.alert("Vous ne pouvez pas modifier un rendez-vous d'une autre collaboratrice.");
+      return;
+    }
+
+    if (!window.confirm("Annuler ce rendez-vous ?")) {
       return;
     }
 
@@ -338,11 +343,14 @@
 
   function setReservationStatus(reservationId, status, supplement) {
     var state = formState.state;
-    var reservation = state.db.reservations.find(function (item) {
-      return item.id === reservationId;
-    });
+    var reservation = utils.findById(state.db.reservations, reservationId);
 
     if (!reservation) {
+      return;
+    }
+
+    if (!canManageReservation(reservation)) {
+      window.alert("Vous ne pouvez pas modifier un rendez-vous d'une autre collaboratrice.");
       return;
     }
 
@@ -362,11 +370,14 @@
 
   function openSupplementSheet(reservationId) {
     var state = formState.state;
-    var reservation = state.db.reservations.find(function (item) {
-      return item.id === reservationId;
-    });
+    var reservation = utils.findById(state.db.reservations, reservationId);
 
     if (!reservation) {
+      return;
+    }
+
+    if (!canManageReservation(reservation)) {
+      window.alert("Vous ne pouvez pas modifier un rendez-vous d'une autre collaboratrice.");
       return;
     }
 
@@ -473,9 +484,7 @@
 
   function saveProposal(clientId) {
     var state = formState.state;
-    var client = state.db.clients.find(function (item) {
-      return item.id === clientId;
-    });
+    var client = utils.findById(state.db.clients, clientId);
     var chosenCollab = auth.isAdmin(state.user) ? ui.byId("pCollab").value : state.user.name;
     var reservation = {
       id: utils.uid("r"),

@@ -70,6 +70,12 @@
     return mins(aStart) < bEnd && aEnd > mins(bStart);
   }
 
+  function findById(list, id) {
+    return list.find(function (item) {
+      return item.id === id;
+    });
+  }
+
   function escapeHtml(value) {
     return String(value || "")
       .replace(/&/g, "&amp;")
@@ -96,6 +102,7 @@
     collaboratorClassName: collaboratorClassName,
     dateObj: dateObj,
     escapeHtml: escapeHtml,
+    findById: findById,
     fmtDate: fmtDate,
     iso: iso,
     mins: mins,

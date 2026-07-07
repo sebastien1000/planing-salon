@@ -1,15 +1,24 @@
 (function () {
+  var auth = window.SalonAuth;
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var formState = window.SalonFormState;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
+  function canManageAccount(userId) {
+    var state = formState.state;
+    return auth.isAdmin(state.user) || userId === state.user.id;
+  }
+
   function openProfileForm(userId) {
     var state = formState.state;
-    var user = state.db.users.find(function (item) {
-      return item.id === userId;
-    });
+    var user = utils.findById(state.db.users, userId);
+
+    if (!canManageAccount(userId)) {
+      window.alert("Vous ne pouvez pas modifier ce compte.");
+      return;
+    }
 
     ui.showModal([
       '<div class="modal-head">',
@@ -29,9 +38,13 @@
 
   function saveProfile(userId) {
     var state = formState.state;
-    var user = state.db.users.find(function (item) {
-      return item.id === userId;
-    });
+    var user = utils.findById(state.db.users, userId);
+
+    if (!canManageAccount(userId)) {
+      window.alert("Vous ne pouvez pas modifier ce compte.");
+      return;
+    }
+
     var oldName = user.name;
     var newName = ui.byId("uName").value.trim() || user.name;
     var password = ui.byId("uPass").value;
@@ -51,9 +64,12 @@
 
   function resetPassword(userId) {
     var state = formState.state;
-    var user = state.db.users.find(function (item) {
-      return item.id === userId;
-    });
+    var user = utils.findById(state.db.users, userId);
+
+    if (!auth.isAdmin(state.user)) {
+      window.alert("Seul l'administrateur peut reinitialiser un mot de passe.");
+      return;
+    }
 
     if (!window.confirm("Reinitialiser le mot de passe ?")) {
       return;
@@ -66,9 +82,13 @@
 
   function resetLink(userId) {
     var state = formState.state;
-    var user = state.db.users.find(function (item) {
-      return item.id === userId;
-    });
+
+    if (!auth.isAdmin(state.user)) {
+      window.alert("Seul l'administrateur peut generer un lien de reinitialisation.");
+      return;
+    }
+
+    var user = utils.findById(state.db.users, userId);
     window.alert("Lien de reinitialisation : salon-reset://" + user.login + "-" + utils.uid());
   }
 

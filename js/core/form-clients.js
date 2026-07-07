@@ -7,7 +7,7 @@
   function openClientForm(clientId) {
     var state = formState.state;
     var client = clientId
-      ? state.db.clients.find(function (item) { return item.id === clientId; })
+      ? utils.findById(state.db.clients, clientId)
       : {
           id: "",
           name: "",
@@ -75,7 +75,7 @@
 
     if (clientId) {
       Object.assign(
-        state.db.clients.find(function (item) { return item.id === clientId; }),
+        utils.findById(state.db.clients, clientId),
         client
       );
     } else {
