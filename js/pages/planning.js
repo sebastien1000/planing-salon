@@ -89,18 +89,6 @@
   }
 
   function renderHeader(visibleReservations) {
-    var revenue = visibleReservations
-      .filter(function (reservation) {
-        return reservation.status === "done" &&
-          (auth.isAdmin(user) || reservation.collab === user.name);
-      })
-      .reduce(function (sum, reservation) {
-        var prestation = db.prestations.find(function (item) {
-          return item.name === reservation.prestation;
-        });
-        return sum + (prestation ? prestation.price : 0);
-      }, 0);
-
     return [
       '<div class="card page-header-card">',
       '  <div class="row">',
@@ -117,10 +105,9 @@
         var className = item === view ? "chip active" : "chip";
         return '<button class="' + className + '" type="button" data-view="' + item + '">' + label + "</button>";
       }).join("") + "</div>",
-      '  <div class="statgrid">',
+      '  <div class="statgrid statgrid-2">',
       '    <div class="stat"><b>' + visibleReservations.length + '</b><span>RDV affiches</span></div>',
       '    <div class="stat"><b>' + visibleReservations.filter(function (item) { return item.status === "done"; }).length + '</b><span>Termines</span></div>',
-      '    <div class="stat"><b>' + revenue + 'EUR</b><span>Recette</span></div>',
       "  </div>",
       '  <button id="headerAddReservation" class="primary" type="button" style="width:100%">Ajouter un RDV</button>',
       "</div>",

@@ -640,6 +640,10 @@ label {
   margin: 10px 0;
 }
 
+.statgrid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .stat {
   background: #fff7fa;
   border: 1px solid var(--line);
