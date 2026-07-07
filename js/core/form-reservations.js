@@ -5,7 +5,7 @@
   var formState = window.SalonFormState;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
-  var ENABLE_CONFLICT_ASSISTANT = false;
+  var ENABLE_CONFLICT_ASSISTANT = true;
 
   function reservationCard(reservation) {
     var state = formState.state;
