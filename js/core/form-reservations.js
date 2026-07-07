@@ -7,14 +7,28 @@
   var utils = window.SalonUtils;
   var ENABLE_CONFLICT_ASSISTANT = true;
 
+  function collaboratorClassName(name) {
+    return "collab-" + String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+  }
+
   function reservationCard(reservation) {
     var state = formState.state;
-    var own = auth.canSeeReservation(state.user, reservation);
-    var title = own ? reservation.client : "Reserve - " + reservation.collab;
-    var subtitle = own ? reservation.prestation : "Detail prive";
+    var isMine = reservation.collab === state.user.name;
+    var canSee = auth.canSeeReservation(state.user, reservation);
+    var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
+    var subtitle = canSee ? reservation.prestation : "Detail prive";
+    var cardClassName = [
+      "card",
+      "appointment",
+      "rsv",
+      isMine ? "appointment--mine" : "appointment--other"
+    ].join(" ");
     var actions = "";
 
-    if (own) {
+    if (canSee) {
       actions = [
         '<button class="secondary grow" type="button" data-action="view-reservation" data-id="' + reservation.id + '">Voir</button>',
         '<button class="secondary grow" type="button" data-action="reschedule-reservation" data-id="' + reservation.id + '">Decaler</button>',
@@ -24,7 +38,7 @@
     }
 
     return [
-      '<div class="card rsv">',
+      '<div class="' + cardClassName + '">',
       "  <div class=\"row\">",
       '    <div class="grow">',
       "      <b>" + utils.escapeHtml(title) + "</b>",
@@ -34,6 +48,7 @@
         utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</span>",
       "  </div>",
       '  <div class="meta">',
+      '    <span class="badge">' + utils.escapeHtml(reservation.collab) + "</span>",
       '    <span class="badge room">' + utils.escapeHtml(reservation.room) + "</span>",
       '    <span class="badge">' + utils.escapeHtml(reservation.time) + "</span>",
       '    <span class="badge">' + utils.escapeHtml(String(reservation.duration)) + " min</span>",

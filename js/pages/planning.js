@@ -21,6 +21,13 @@
   var roomFilter = sessionStorage.getItem("planning:room") || "Toutes";
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
 
+  function collaboratorClassName(name) {
+    return "collab-" + String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+  }
+
   ui.bindActionButton("fabButton", function () {
     forms.openReservation();
   });
@@ -153,10 +160,16 @@
             (date === utils.today() ? " today" : "") + '" type="button" data-open-day="' + date + '">',
           '  <span class="day-num">' + utils.dateObj(date).getDate() + "</span>",
           reservations.slice(0, 2).map(function (reservation) {
+            var isMine = reservation.collab === user.name;
+            var dotClassName = [
+              "dot",
+              "planning-dot-" + collaboratorClassName(reservation.collab),
+              isMine ? "planning-dot-own" : "planning-dot-other"
+            ].join(" ");
             var label = auth.canSeeReservation(user, reservation)
               ? reservation.client
               : "Reserve - " + reservation.collab;
-            return '<span class="dot">' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
+            return '<span class="' + dotClassName + '">' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
           }).join(""),
           absences.length ? '<span class="dot">Blocage ' + absences.length + "</span>" : "",
           reservations.length > 2 ? '<span class="dot">+' + (reservations.length - 2) + " autre</span>" : "",

@@ -731,11 +731,50 @@ label {
   text-overflow: ellipsis;
 }
 
+.planning-dot-collab-julie {
+  background: #f4b5c5;
+  color: #6f1f39;
+  border: 1px solid #d97b93;
+}
+
+.planning-dot-collab-marion {
+  background: #b7dbef;
+  color: #1f587b;
+  border: 1px solid #6ba6c9;
+}
+
+.planning-dot-other {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.32),
+    rgba(255, 255, 255, 0.32) 6px,
+    rgba(0, 0, 0, 0.06) 6px,
+    rgba(0, 0, 0, 0.06) 12px
+  );
+}
+
 .rsv {
   position: relative;
   overflow: hidden;
   min-width: 0;
   border-left: 7px solid var(--pink);
+}
+
+.appointment--mine,
+.appointment--other,
+.rsv-own-collab,
+.rsv-other-collab {
+  isolation: isolate;
+}
+
+.appointment--other {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.92) 0px,
+    rgba(255, 255, 255, 0.92) 8px,
+    rgba(232, 167, 182, 0.28) 8px,
+    rgba(232, 167, 182, 0.28) 16px
+  ) !important;
 }
 
 .blocked-slot,

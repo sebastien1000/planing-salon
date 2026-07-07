@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v14-remove-header-logo";
+const CACHE_NAME = "salon-mvp-v15-appointments-hatched";
 
 const APP_ASSETS = [
   "./",
