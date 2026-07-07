@@ -7,13 +7,6 @@
   var utils = window.SalonUtils;
   var ENABLE_CONFLICT_ASSISTANT = true;
 
-  function collaboratorClassName(name) {
-    return "collab-" + String(name || "")
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-");
-  }
-
   function reservationCard(reservation) {
     var state = formState.state;
     var isMine = reservation.collab === state.user.name;

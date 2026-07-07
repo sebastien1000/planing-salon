@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v16-hide-planning-revenue";
+const CACHE_NAME = "salon-mvp-v17-branding-assets";
 
 const APP_ASSETS = [
   "./",
@@ -9,8 +9,8 @@ const APP_ASSETS = [
   "./comptes.html",
   "./plus.html",
   "./manifest.json",
-  "./logo.png",
-  "./favicon.png",
+  "./assets/img/branding/logo.png",
+  "./assets/img/branding/favicon.png",
   "./assets/img/profiles/logojuliie.png",
   "./assets/img/profiles/logomarion.png",
   "./css/base.css",

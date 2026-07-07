@@ -21,13 +21,6 @@
   var roomFilter = sessionStorage.getItem("planning:room") || "Toutes";
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
 
-  function collaboratorClassName(name) {
-    return "collab-" + String(name || "")
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-");
-  }
-
   ui.bindActionButton("fabButton", function () {
     forms.openReservation();
   });
@@ -150,7 +143,7 @@
             var isMine = reservation.collab === user.name;
             var dotClassName = [
               "dot",
-              "planning-dot-" + collaboratorClassName(reservation.collab),
+              "planning-dot-" + utils.collaboratorClassName(reservation.collab),
               isMine ? "planning-dot-own" : "planning-dot-other"
             ].join(" ");
             var label = auth.canSeeReservation(user, reservation)

@@ -83,9 +83,17 @@
     return condition ? " " + name : "";
   }
 
+  function collaboratorClassName(name) {
+    return "collab-" + String(name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+  }
+
   window.SalonUtils = {
     addDays: addDays,
     boolAttr: boolAttr,
+    collaboratorClassName: collaboratorClassName,
     dateObj: dateObj,
     escapeHtml: escapeHtml,
     fmtDate: fmtDate,
