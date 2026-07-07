@@ -85,7 +85,7 @@
       '  <div class="tiny">Statut : ' + utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</div>",
       (reservation.notes ? '<div class="tiny">Notes : ' + utils.escapeHtml(reservation.notes) + "</div>" : ""),
       (client && client.phone ? '<div class="tiny">Tel : ' + utils.escapeHtml(client.phone) + "</div>" : ""),
-      '  <div class="row" style="margin-top:10px">',
+      '  <div class="row rsv-actions" style="margin-top:10px">',
       '    <button class="secondary grow" type="button" data-action="view-reservation" data-id="' + reservation.id + '">Voir</button>',
       '    <button class="secondary grow" type="button" data-action="reschedule-reservation" data-id="' + reservation.id + '">Decaler</button>',
       '    <button class="secondary danger" type="button" data-action="cancel-reservation" data-id="' + reservation.id + '">Annuler</button>',

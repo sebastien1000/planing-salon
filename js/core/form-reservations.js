@@ -46,7 +46,7 @@
       '    <span class="badge">' + utils.escapeHtml(reservation.time) + "</span>",
       '    <span class="badge">' + utils.escapeHtml(String(reservation.duration)) + " min</span>",
       "  </div>",
-      '  <div class="row">' + actions + "</div>",
+      '  <div class="row rsv-actions">' + actions + "</div>",
       "</div>"
     ].join("");
   }

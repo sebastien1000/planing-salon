@@ -376,6 +376,16 @@ label {
   .profile-name-card {
     font-size: 16px;
   }
+
+  .rsv-actions {
+    flex-wrap: wrap;
+  }
+
+  .rsv-actions > button {
+    flex: 1 1 calc(50% - 5px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 .title-copy {
@@ -448,6 +458,10 @@ label {
   padding: 6px 8px;
   background: #f8eef1;
   color: var(--muted);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta {
