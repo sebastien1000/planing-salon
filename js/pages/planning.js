@@ -19,7 +19,32 @@
   var db = data.loadDb();
   var view = sessionStorage.getItem("planning:view") || "day";
   var roomFilter = sessionStorage.getItem("planning:room") || "Toutes";
+  var collabFilter = sessionStorage.getItem("planning:collab") || "Toutes";
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
+  var showTypes = loadShowTypes();
+  var roomOccupancyFilter = loadRoomOccupancyFilter();
+
+  function loadShowTypes() {
+    try {
+      var parsed = JSON.parse(sessionStorage.getItem("planning:showTypes"));
+      return {
+        reservations: parsed ? parsed.reservations !== false : true,
+        absences: parsed ? parsed.absences !== false : true,
+        holidays: parsed ? parsed.holidays !== false : true
+      };
+    } catch (error) {
+      return { reservations: true, absences: true, holidays: true };
+    }
+  }
+
+  function loadRoomOccupancyFilter() {
+    try {
+      var parsed = JSON.parse(sessionStorage.getItem("planning:roomOccupancy"));
+      return { occupee: !!(parsed && parsed.occupee), libre: !!(parsed && parsed.libre) };
+    } catch (error) {
+      return { occupee: false, libre: false };
+    }
+  }
 
   ui.bindActionButton("fabButton", function () {
     forms.openReservation();
@@ -36,7 +61,10 @@
   function persistState() {
     sessionStorage.setItem("planning:view", view);
     sessionStorage.setItem("planning:room", roomFilter);
+    sessionStorage.setItem("planning:collab", collabFilter);
     sessionStorage.setItem("planning:date", selectedDate);
+    sessionStorage.setItem("planning:showTypes", JSON.stringify(showTypes));
+    sessionStorage.setItem("planning:roomOccupancy", JSON.stringify(roomOccupancyFilter));
   }
 
   function movePlanning(direction) {
@@ -79,25 +107,68 @@
     return type === "holiday" || auth.isAdmin(user) || collab === user.name;
   }
 
+  function matchesCollabFilter(collab) {
+    return collabFilter === "Toutes" || collab === collabFilter;
+  }
+
   function blockedPeriodsOnDate(date) {
-    var absences = db.absences
-      .filter(function (item) { return domain.periodCoversDate(item, date); })
-      .map(function (item) { return Object.assign({ type: "absence" }, item); });
-    var holidays = db.holidays
-      .filter(function (item) { return domain.periodCoversDate(item, date); })
-      .map(function (item) { return Object.assign({ type: "holiday" }, item); });
+    var absences = showTypes.absences
+      ? db.absences
+        .filter(function (item) { return domain.periodCoversDate(item, date) && matchesCollabFilter(item.collab); })
+        .map(function (item) { return Object.assign({ type: "absence" }, item); })
+      : [];
+    var holidays = showTypes.holidays
+      ? db.holidays
+        .filter(function (item) { return domain.periodCoversDate(item, date) && matchesCollabFilter(item.collab); })
+        .map(function (item) { return Object.assign({ type: "holiday" }, item); })
+      : [];
     return absences.concat(holidays);
+  }
+
+  function filteredReservationsForDate(date) {
+    if (!showTypes.reservations) {
+      return [];
+    }
+
+    return db.reservations.filter(function (reservation) {
+      return reservation.date === date &&
+        (roomFilter === "Toutes" || reservation.room === roomFilter) &&
+        matchesCollabFilter(reservation.collab);
+    });
+  }
+
+  function filteredReservations(dates) {
+    return dates.reduce(function (acc, date) {
+      return acc.concat(filteredReservationsForDate(date));
+    }, []);
   }
 
   var ROOM_STATUS_LABELS = { libre: "Libre", reservee: "Reservee", occupee: "Occupee" };
   var ROOM_STATUS_BADGE_CLASS = { libre: "status-done", reservee: "status-pre", occupee: "status-run" };
 
-  function openRoomStatusSheet() {
+  function roomStatusListHtml() {
     var isToday = selectedDate === utils.today();
     var nowTime = new Date().toTimeString().slice(0, 5);
+    var occupancyFilterActive = roomOccupancyFilter.occupee || roomOccupancyFilter.libre;
 
-    var roomsHtml = data.ROOMS.map(function (room) {
+    var rooms = data.ROOMS.filter(function (room) {
+      if (!occupancyFilterActive) {
+        return true;
+      }
+
       var reservations = domain.roomReservationsForDate(db, room, selectedDate);
+      var status = domain.roomStatus(reservations, isToday, nowTime);
+      var isFree = status === "libre";
+      return (roomOccupancyFilter.libre && isFree) || (roomOccupancyFilter.occupee && !isFree);
+    });
+
+    if (!rooms.length) {
+      return '<p class="tiny">Aucune salle ne correspond a ce filtre.</p>';
+    }
+
+    return rooms.map(function (room) {
+      var reservations = domain.roomReservationsForDate(db, room, selectedDate)
+        .filter(function (item) { return matchesCollabFilter(item.collab); });
       var status = domain.roomStatus(reservations, isToday, nowTime);
 
       var slotsHtml = reservations.map(function (reservation) {
@@ -126,16 +197,170 @@
         "</div>"
       ].join("");
     }).join("");
+  }
 
+  function activeFilterSummary() {
+    var parts = [];
+
+    if (collabFilter !== "Toutes") {
+      parts.push(collabFilter);
+    }
+
+    if (roomFilter !== "Toutes") {
+      parts.push(roomFilter);
+    }
+
+    if (!showTypes.reservations) {
+      parts.push("RDV masques");
+    }
+
+    if (!showTypes.absences) {
+      parts.push("Absences masquees");
+    }
+
+    if (!showTypes.holidays) {
+      parts.push("Conges masques");
+    }
+
+    return parts.join(" · ");
+  }
+
+  function collabFilterOptions() {
+    return ["Toutes"].concat(
+      db.users.filter(function (item) { return item.role === "collab"; }).map(function (item) { return item.name; })
+    );
+  }
+
+  function buildTypeCheckboxHtml(key, label) {
+    return [
+      '<label class="checkbox-line">',
+      '  <input type="checkbox" data-filter-type="' + key + '"' + (showTypes[key] ? " checked" : "") + '>',
+      "  " + label,
+      "</label>"
+    ].join("");
+  }
+
+  function buildOccupancyCheckboxHtml(key, label) {
+    return [
+      '<label class="checkbox-line">',
+      '  <input type="checkbox" data-filter-occupancy="' + key + '"' + (roomOccupancyFilter[key] ? " checked" : "") + '>',
+      "  " + label,
+      "</label>"
+    ].join("");
+  }
+
+  function openFilterMenu() {
     ui.showSheet([
       '<div class="modal-head">',
-      "  <h3>Salles - " + utils.escapeHtml(utils.fmtDate(selectedDate)) + "</h3>",
-      '  <button id="closeRoomStatusButton" class="x" type="button">x</button>',
+      "  <h3>Filtres du planning</h3>",
+      '  <button id="closeFilterMenuButton" class="x" type="button">x</button>',
       "</div>",
-      '<div class="stack">' + roomsHtml + "</div>"
+
+      '<div class="section-title">Collaborateur</div>',
+      '<div class="chips">' + collabFilterOptions().map(function (name) {
+        var className = name === collabFilter ? "chip active" : "chip";
+        return '<button class="' + className + '" type="button" data-filter-collab="' + utils.escapeHtml(name) + '">' +
+          utils.escapeHtml(name) + "</button>";
+      }).join("") + "</div>",
+
+      '<div class="section-title" style="margin-top:14px">Salle</div>',
+      '<div class="chips">' + ["Toutes"].concat(data.ROOMS).map(function (room) {
+        var className = room === roomFilter ? "chip active" : "chip";
+        return '<button class="' + className + '" type="button" data-filter-room="' + utils.escapeHtml(room) + '">' +
+          utils.escapeHtml(room) + "</button>";
+      }).join("") + "</div>",
+
+      '<div class="section-title" style="margin-top:14px">Afficher</div>',
+      '<div class="checkbox-group">',
+      buildTypeCheckboxHtml("reservations", "Rendez-vous"),
+      buildTypeCheckboxHtml("absences", "Absences"),
+      buildTypeCheckboxHtml("holidays", "Conges / vacances"),
+      "</div>",
+
+      '<div class="section-title" style="margin-top:14px">Filtrer les salles par etat</div>',
+      '<div class="checkbox-group">',
+      buildOccupancyCheckboxHtml("occupee", "Salles occupees"),
+      buildOccupancyCheckboxHtml("libre", "Salles libres"),
+      "</div>",
+
+      '<div class="row" style="margin-top:16px">',
+      '  <button id="showAllFilterButton" class="secondary grow" type="button">Tout afficher</button>',
+      '  <button id="resetFilterButton" class="secondary danger grow" type="button">Reinitialiser les filtres</button>',
+      "</div>",
+
+      '<div class="section-title" style="margin-top:18px">Salles - ' + utils.escapeHtml(utils.fmtDate(selectedDate)) + "</div>",
+      '<div id="roomStatusList" class="stack">' + roomStatusListHtml() + "</div>"
     ].join(""));
 
-    ui.byId("closeRoomStatusButton").addEventListener("click", ui.closeSheet);
+    bindFilterMenuEvents();
+  }
+
+  function bindFilterMenuEvents() {
+    ui.byId("closeFilterMenuButton").addEventListener("click", ui.closeSheet);
+
+    document.querySelectorAll("[data-filter-collab]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        collabFilter = button.dataset.filterCollab;
+        persistState();
+        document.querySelectorAll("[data-filter-collab]").forEach(function (btn) {
+          btn.classList.toggle("active", btn === button);
+        });
+        render();
+        var list = ui.byId("roomStatusList");
+        if (list) {
+          list.innerHTML = roomStatusListHtml();
+        }
+      });
+    });
+
+    document.querySelectorAll("[data-filter-room]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        roomFilter = button.dataset.filterRoom;
+        persistState();
+        document.querySelectorAll("[data-filter-room]").forEach(function (btn) {
+          btn.classList.toggle("active", btn === button);
+        });
+        render();
+      });
+    });
+
+    document.querySelectorAll("[data-filter-type]").forEach(function (checkbox) {
+      checkbox.addEventListener("change", function () {
+        showTypes[checkbox.dataset.filterType] = checkbox.checked;
+        persistState();
+        render();
+      });
+    });
+
+    document.querySelectorAll("[data-filter-occupancy]").forEach(function (checkbox) {
+      checkbox.addEventListener("change", function () {
+        roomOccupancyFilter[checkbox.dataset.filterOccupancy] = checkbox.checked;
+        persistState();
+        var list = ui.byId("roomStatusList");
+        if (list) {
+          list.innerHTML = roomStatusListHtml();
+        }
+      });
+    });
+
+    ui.byId("showAllFilterButton").addEventListener("click", function () {
+      showTypes = { reservations: true, absences: true, holidays: true };
+      persistState();
+      ui.closeSheet();
+      render();
+      openFilterMenu();
+    });
+
+    ui.byId("resetFilterButton").addEventListener("click", function () {
+      collabFilter = "Toutes";
+      roomFilter = "Toutes";
+      showTypes = { reservations: true, absences: true, holidays: true };
+      roomOccupancyFilter = { occupee: false, libre: false };
+      persistState();
+      ui.closeSheet();
+      render();
+      openFilterMenu();
+    });
   }
 
   function visibleDates() {
@@ -151,6 +376,8 @@
   }
 
   function renderHeader(visibleReservations) {
+    var summary = activeFilterSummary();
+
     return [
       '<div class="card page-header-card">',
       '  <div class="row">',
@@ -173,12 +400,14 @@
       "  </div>",
       '  <button id="headerAddReservation" class="primary" type="button" style="width:100%">Ajouter un RDV</button>',
       "</div>",
-      '<div class="row">',
-      '  <div class="chips grow">' + ["Toutes"].concat(data.ROOMS).map(function (room) {
-        var className = room === roomFilter ? "chip active" : "chip";
-        return '<button class="' + className + '" type="button" data-room="' + room + '">' + room + "</button>";
-      }).join("") + "</div>",
-      '  <button id="roomStatusButton" class="secondary" type="button">☰ Salles</button>',
+      '<div class="card">',
+      '  <div class="row" style="justify-content:space-between">',
+      '    <div class="grow">',
+      '      <div class="section-title">Filtres</div>',
+      '      <div class="tiny">' + (summary ? utils.escapeHtml(summary) : "Tout affiche") + "</div>",
+      "    </div>",
+      '    <button id="filterMenuButton" class="secondary" type="button">☰ Filtres</button>',
+      "  </div>",
       "</div>"
     ].join("");
   }
@@ -198,10 +427,7 @@
         return "<div></div>";
       }).join(""),
       dates.map(function (date) {
-        var reservations = db.reservations.filter(function (reservation) {
-          return reservation.date === date &&
-            (roomFilter === "Toutes" || reservation.room === roomFilter);
-        });
+        var reservations = filteredReservationsForDate(date);
         var blocked = blockedPeriodsOnDate(date);
 
         return [
@@ -236,10 +462,7 @@
 
   function renderDays(dates) {
     return '<div class="cards">' + dates.map(function (date) {
-      var reservations = db.reservations.filter(function (reservation) {
-        return reservation.date === date &&
-          (roomFilter === "Toutes" || reservation.room === roomFilter);
-      });
+      var reservations = filteredReservationsForDate(date);
       var blocked = blockedPeriodsOnDate(date);
 
       return [
@@ -292,19 +515,11 @@
       forms.openReservation();
     });
 
-    ui.byId("roomStatusButton").addEventListener("click", openRoomStatusSheet);
+    ui.byId("filterMenuButton").addEventListener("click", openFilterMenu);
 
     document.querySelectorAll("[data-view]").forEach(function (button) {
       button.addEventListener("click", function () {
         view = button.dataset.view;
-        persistState();
-        render();
-      });
-    });
-
-    document.querySelectorAll("[data-room]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        roomFilter = button.dataset.room;
         persistState();
         render();
       });
@@ -340,10 +555,7 @@
     });
 
     var dates = visibleDates();
-    var reservations = db.reservations.filter(function (reservation) {
-      return dates.includes(reservation.date) &&
-        (roomFilter === "Toutes" || reservation.room === roomFilter);
-    });
+    var reservations = filteredReservations(dates);
 
     var content = renderHeader(reservations);
     content += view === "month" ? renderMonth(dates) : renderDays(dates);

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-08 (5)
+
+### Ajoute
+
+- le menu "☰ Filtres" du planning devient un vrai centre de filtres : collaborateur, salle, type d'evenement (RDV / absences / conges-vacances), et filtre salles occupees/libres pour la liste des salles
+- boutons "Tout afficher" et "Reinitialiser les filtres"
+- resume du filtre actif affiche sur l'ecran principal, sans qu'il soit necessaire d'ouvrir le menu pour savoir ce qui est filtre
+
+### Corrige
+
+- la rangee de chips de salle a ete retiree de l'ecran principal du planning (deplacee dans le menu) pour gagner de la place, comme demande
+
 ## 2026-07-08 (4)
 
 ### Ajoute
