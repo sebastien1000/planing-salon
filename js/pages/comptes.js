@@ -111,6 +111,82 @@
     return account.active === false ? '<span class="badge">Compte desactive</span>' : "";
   }
 
+  function accountSecondaryActions(account) {
+    var isCollab = account.role === "collab";
+    var isSelf = account.id === user.id;
+    var actions = [];
+
+    if (isCollab) {
+      actions.push({ id: "manage-holidays", label: "Gerer les conges" });
+      actions.push({ id: "reset-link", label: "Generer un lien de reinitialisation" });
+    }
+
+    actions.push({ id: "reset-password", label: "Reinitialiser le mot de passe" });
+
+    if (!isSelf) {
+      actions.push({
+        id: "toggle-active",
+        label: account.active === false ? "Reactiver le compte" : "Desactiver le compte"
+      });
+      actions.push({ id: "delete-account", label: "Supprimer le compte", danger: true });
+    }
+
+    return actions;
+  }
+
+  function runAccountAction(actionId, accountId) {
+    if (actionId === "manage-holidays") {
+      var account = utils.findById(db.users, accountId);
+      if (account) {
+        openHolidaySheet(account);
+      }
+      return;
+    }
+
+    if (actionId === "reset-link") {
+      forms.resetLink(accountId);
+      return;
+    }
+
+    if (actionId === "reset-password") {
+      forms.resetPassword(accountId);
+      return;
+    }
+
+    if (actionId === "toggle-active") {
+      forms.toggleAccountActive(accountId);
+      return;
+    }
+
+    if (actionId === "delete-account") {
+      forms.deleteAccount(accountId);
+    }
+  }
+
+  function openAccountActionsSheet(account) {
+    var rows = accountSecondaryActions(account);
+
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>Plus d'actions - " + utils.escapeHtml(account.name) + "</h3>",
+      '  <button id="closeAccountActionsButton" class="x" type="button">x</button>',
+      "</div>",
+      '<div class="stack">' + rows.map(function (row) {
+        return '<button class="secondary' + (row.danger ? " danger" : "") + '" style="width:100%" type="button" data-account-action="' +
+          row.id + '">' + utils.escapeHtml(row.label) + "</button>";
+      }).join("") + "</div>"
+    ].join(""));
+
+    ui.byId("closeAccountActionsButton").addEventListener("click", ui.closeSheet);
+
+    document.querySelectorAll("[data-account-action]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        ui.closeSheet();
+        runAccountAction(button.dataset.accountAction, account.id);
+      });
+    });
+  }
+
   function renderUserCard(account) {
     var totalDone = db.reservations.filter(function (reservation) {
       return reservation.collab === account.name && reservation.status === "done";
@@ -149,16 +225,7 @@
       "  </div>",
       '  <div class="row">',
       '    <button class="secondary" type="button" data-edit-profile="' + account.id + '">Modifier</button>',
-      '    <button class="secondary" type="button" data-manage-holidays="' + account.id + '">Conges</button>',
-      '    <button class="secondary danger" type="button" data-reset-password="' + account.id + '">Reinitialiser MDP</button>',
-      '    <button class="secondary" type="button" data-reset-link="' + account.id + '">Lien reset</button>',
-      account.id !== user.id
-        ? '    <button class="secondary" type="button" data-toggle-active="' + account.id + '">' +
-          (account.active === false ? "Reactiver" : "Desactiver") + "</button>"
-        : "",
-      account.id !== user.id
-        ? '    <button class="secondary danger" type="button" data-delete-account="' + account.id + '">Supprimer</button>'
-        : "",
+      '    <button class="secondary" type="button" data-account-menu="' + account.id + '">Plus d actions</button>',
       "  </div>",
       "</div>"
     ].join("");
@@ -178,14 +245,7 @@
       '  <div class="meta"><span class="badge">Administrateur</span>' + accountBadges(account) + "</div>",
       '  <div class="row">',
       '    <button class="secondary" type="button" data-edit-profile="' + account.id + '">Modifier</button>',
-      '    <button class="secondary danger" type="button" data-reset-password="' + account.id + '">Reinitialiser MDP</button>',
-      account.id !== user.id
-        ? '    <button class="secondary" type="button" data-toggle-active="' + account.id + '">' +
-          (account.active === false ? "Reactiver" : "Desactiver") + "</button>"
-        : "",
-      account.id !== user.id
-        ? '    <button class="secondary danger" type="button" data-delete-account="' + account.id + '">Supprimer</button>'
-        : "",
+      '    <button class="secondary" type="button" data-account-menu="' + account.id + '">Plus d actions</button>',
       "  </div>",
       "</div>"
     ].join("");
@@ -241,41 +301,17 @@
       });
     });
 
-    document.querySelectorAll("[data-reset-password]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        forms.resetPassword(button.dataset.resetPassword);
-      });
-    });
-
-    document.querySelectorAll("[data-reset-link]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        forms.resetLink(button.dataset.resetLink);
-      });
-    });
-
     document.querySelectorAll("[data-history-collab]").forEach(function (button) {
       button.addEventListener("click", function () {
         openHistorySheet(button.dataset.historyCollab, button.dataset.historyRange);
       });
     });
 
-    document.querySelectorAll("[data-delete-account]").forEach(function (button) {
+    document.querySelectorAll("[data-account-menu]").forEach(function (button) {
       button.addEventListener("click", function () {
-        forms.deleteAccount(button.dataset.deleteAccount);
-      });
-    });
-
-    document.querySelectorAll("[data-toggle-active]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        forms.toggleAccountActive(button.dataset.toggleActive);
-      });
-    });
-
-    document.querySelectorAll("[data-manage-holidays]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        var account = utils.findById(db.users, button.dataset.manageHolidays);
+        var account = utils.findById(db.users, button.dataset.accountMenu);
         if (account) {
-          openHolidaySheet(account);
+          openAccountActionsSheet(account);
         }
       });
     });

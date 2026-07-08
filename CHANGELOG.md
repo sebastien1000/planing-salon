@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-08 (3)
+
+### Corrige
+
+- les cartes collaborateur/administrateur (page Comptes) n'affichent plus que 2 boutons (Modifier, Plus d actions) au lieu de 4 a 6 : les actions secondaires (conges, reinitialiser mot de passe, lien de reinitialisation, activer/desactiver, supprimer) sont regroupees dans un panneau "Plus d actions", sans perte de fonctionnalite
+
 ## 2026-07-08 (2)
 
 ### Ajoute
