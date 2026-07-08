@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v21-leave-absences-profile";
+const CACHE_NAME = "salon-mvp-v22-card-actions-menu";
 
 const APP_ASSETS = [
   "./",
