@@ -3,6 +3,7 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var forms = window.SalonForms;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
@@ -23,6 +24,13 @@
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
   var showTypes = loadShowTypes();
   var roomOccupancyFilter = loadRoomOccupancyFilter();
+
+  // Clientes/rendez-vous/profils viennent de Supabase, rafraichis a chaque
+  // render() ; le reste (collaborateurs, prestations, absences, conges)
+  // reste dans localStorage via db.
+  var reservations = [];
+  var clients = [];
+  var profiles = [];
 
   function loadShowTypes() {
     try {
@@ -50,12 +58,6 @@
     forms.openReservation();
   });
 
-  forms.configure({
-    db: db,
-    refresh: render,
-    selectedDate: selectedDate,
-    user: user
-  });
   forms.bindPhotoInput();
 
   function persistState() {
@@ -130,7 +132,7 @@
       return [];
     }
 
-    return db.reservations.filter(function (reservation) {
+    return reservations.filter(function (reservation) {
       return reservation.date === date &&
         (roomFilter === "Toutes" || reservation.room === roomFilter) &&
         matchesCollabFilter(reservation.collab);
@@ -141,6 +143,15 @@
     return dates.reduce(function (acc, date) {
       return acc.concat(filteredReservationsForDate(date));
     }, []);
+  }
+
+  // Rendez-vous actifs d'une salle pour la date choisie, a partir des
+  // rendez-vous deja recuperes depuis Supabase pour la vue courante
+  // (selectedDate fait toujours partie des dates visibles).
+  function roomReservationsForSelectedDate(room) {
+    return reservations.filter(function (item) {
+      return item.room === room && item.date === selectedDate && domain.isActiveReservation(item);
+    }).sort(function (a, b) { return a.time.localeCompare(b.time); });
   }
 
   var ROOM_STATUS_LABELS = { libre: "Libre", reservee: "Reservee", occupee: "Occupee" };
@@ -156,8 +167,7 @@
         return true;
       }
 
-      var reservations = domain.roomReservationsForDate(db, room, selectedDate);
-      var status = domain.roomStatus(reservations, isToday, nowTime);
+      var status = domain.roomStatus(roomReservationsForSelectedDate(room), isToday, nowTime);
       var isFree = status === "libre";
       return (roomOccupancyFilter.libre && isFree) || (roomOccupancyFilter.occupee && !isFree);
     });
@@ -167,11 +177,11 @@
     }
 
     return rooms.map(function (room) {
-      var reservations = domain.roomReservationsForDate(db, room, selectedDate)
+      var roomReservations = roomReservationsForSelectedDate(room)
         .filter(function (item) { return matchesCollabFilter(item.collab); });
-      var status = domain.roomStatus(reservations, isToday, nowTime);
+      var status = domain.roomStatus(roomReservations, isToday, nowTime);
 
-      var slotsHtml = reservations.map(function (reservation) {
+      var slotsHtml = roomReservations.map(function (reservation) {
         var canSee = auth.canSeeReservation(user, reservation);
         var who = canSee ? reservation.client : "Reserve - " + reservation.collab;
         var endTime = domain.addMinutes(reservation.time, reservation.duration);
@@ -428,14 +438,14 @@
         return "<div></div>";
       }).join(""),
       dates.map(function (date) {
-        var reservations = filteredReservationsForDate(date);
+        var dateReservations = filteredReservationsForDate(date);
         var blocked = blockedPeriodsOnDate(date);
 
         return [
-          '<button class="month-cell ' + ((reservations.length || blocked.length) ? "has" : "") +
+          '<button class="month-cell ' + ((dateReservations.length || blocked.length) ? "has" : "") +
             (date === utils.today() ? " today" : "") + '" type="button" data-open-day="' + date + '">',
           '  <span class="day-num">' + utils.dateObj(date).getDate() + "</span>",
-          reservations.slice(0, 2).map(function (reservation) {
+          dateReservations.slice(0, 2).map(function (reservation) {
             var isMine = reservation.collab === user.name;
             var dotClassName = [
               "dot",
@@ -451,7 +461,7 @@
             return '<span class="' + dotClassName + '"' + dotStyle + '>' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
           }).join(""),
           blocked.length ? '<span class="dot">Blocage ' + blocked.length + "</span>" : "",
-          reservations.length > 2 ? '<span class="dot">+' + (reservations.length - 2) + " autre</span>" : "",
+          dateReservations.length > 2 ? '<span class="dot">+' + (dateReservations.length - 2) + " autre</span>" : "",
           "</button>"
         ].join("");
       }).join(""),
@@ -463,7 +473,7 @@
 
   function renderDays(dates) {
     return '<div class="cards">' + dates.map(function (date) {
-      var reservations = filteredReservationsForDate(date);
+      var dateReservations = filteredReservationsForDate(date);
       var blocked = blockedPeriodsOnDate(date);
 
       return [
@@ -490,7 +500,7 @@
             "</div>"
           ].join("");
         }).join(""),
-        reservations.length ? reservations.map(forms.reservationCard).join("") : '<div class="empty">Aucune reservation</div>',
+        dateReservations.length ? dateReservations.map(forms.reservationCard).join("") : '<div class="empty">Aucune reservation</div>',
         "</div>"
       ].join("");
     }).join("") + "</div>";
@@ -512,7 +522,6 @@
     });
 
     ui.byId("headerAddReservation").addEventListener("click", function () {
-      forms.configure({ db: db, refresh: render, selectedDate: selectedDate, user: user });
       forms.openReservation();
     });
 
@@ -547,22 +556,50 @@
     forms.bindReservationCardActions(document);
   }
 
-  function render() {
-    forms.configure({
-      db: db,
-      refresh: render,
-      selectedDate: selectedDate,
-      user: user
-    });
-
-    var dates = visibleDates();
-    var reservations = filteredReservations(dates);
-
-    var content = renderHeader(reservations);
-    content += view === "month" ? renderMonth(dates) : renderDays(dates);
-    ui.setMain(content);
-    bindPlanningEvents();
+  function showLoadError(error) {
+    ui.setMain([
+      '<div class="card">',
+      '  <div class="alert">Impossible de charger le planning depuis Supabase. Verifiez la configuration (js/core/supabase-client.js) et votre connexion.</div>',
+      "</div>"
+    ].join(""));
+    window.console && window.console.error && window.console.error(error);
   }
+
+  function render() {
+    var dates = visibleDates();
+
+    return Promise.all([
+      supabaseData.listReservationsForDates(dates),
+      supabaseData.listClients(),
+      supabaseData.listProfiles()
+    ]).then(function (results) {
+      reservations = results[0];
+      clients = results[1];
+      profiles = results[2];
+
+      forms.configure({
+        db: db,
+        refresh: render,
+        selectedDate: selectedDate,
+        user: user,
+        clients: clients,
+        reservations: reservations,
+        profiles: profiles
+      });
+
+      var content = renderHeader(filteredReservations(dates));
+      content += view === "month" ? renderMonth(dates) : renderDays(dates);
+      ui.setMain(content);
+      bindPlanningEvents();
+    }).catch(showLoadError);
+  }
+
+  forms.configure({
+    db: db,
+    refresh: render,
+    selectedDate: selectedDate,
+    user: user
+  });
 
   render();
 }());
