@@ -1,6 +1,7 @@
 (function () {
   var data = window.SalonData;
   var utils = window.SalonUtils;
+  var supabaseClient = window.SalonSupabaseClient;
   var AUTH_KEY = "salonCurrentUserId";
 
   function getDb() {
@@ -25,23 +26,53 @@
     return utils.findById(getDb().users, userId) || null;
   }
 
-  function login(loginName, password) {
-    var db = getDb();
-    var normalized = String(loginName || "").trim().toLowerCase();
-    var user = db.users.find(function (item) {
-      return item.login.toLowerCase() === normalized && item.password === password;
-    });
-
-    if (!user || user.active === false) {
+  function findProfileByEmail(email) {
+    var normalized = String(email || "").trim().toLowerCase();
+    if (!normalized) {
       return null;
     }
 
-    saveCurrentUserId(user.id);
-    return user;
+    return getDb().users.find(function (item) {
+      return String(item.email || "").trim().toLowerCase() === normalized;
+    }) || null;
+  }
+
+  // Le mot de passe n'est plus verifie ici : Supabase Auth compare le mot
+  // de passe (jamais en clair, jamais hache par ce fichier) et renvoie une
+  // vraie session si c'est correct.
+  function login(email, password) {
+    if (!supabaseClient) {
+      window.alert("Supabase n'est pas configure. Voir js/core/supabase-client.js.");
+      return Promise.resolve(null);
+    }
+
+    return supabaseClient.auth.signInWithPassword({
+      email: String(email || "").trim(),
+      password: password
+    }).then(function (result) {
+      if (result.error || !result.data || !result.data.user) {
+        return null;
+      }
+
+      var profile = findProfileByEmail(result.data.user.email);
+      if (!profile || profile.active === false) {
+        return null;
+      }
+
+      saveCurrentUserId(profile.id);
+      return profile;
+    }).catch(function () {
+      return null;
+    });
   }
 
   function logout() {
     saveCurrentUserId("");
+
+    if (supabaseClient) {
+      supabaseClient.auth.signOut();
+    }
+
     window.location.href = "index.html";
   }
 
@@ -54,6 +85,21 @@
     }
 
     return user;
+  }
+
+  // Envoie un vrai email de reinitialisation via Supabase Auth. Reponse
+  // toujours neutre cote appelant : ne jamais reveler si l'email existe.
+  function requestPasswordReset(email) {
+    if (!supabaseClient) {
+      return Promise.resolve({ error: { message: "Supabase n'est pas configure." } });
+    }
+
+    var here = window.location.href.split(/[?#]/)[0];
+    var base = here.slice(0, here.lastIndexOf("/") + 1);
+
+    return supabaseClient.auth.resetPasswordForEmail(String(email || "").trim(), {
+      redirectTo: base + "reset-password.html"
+    });
   }
 
   function isAdmin(user) {
@@ -70,6 +116,7 @@
     isAdmin: isAdmin,
     login: login,
     logout: logout,
+    requestPasswordReset: requestPasswordReset,
     requireAuth: requireAuth
   };
 }());
