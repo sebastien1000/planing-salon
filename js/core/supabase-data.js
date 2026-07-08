@@ -17,6 +17,7 @@
   }
 
   var UNIQUE_VIOLATION = "23505";
+  var EXCLUSION_VIOLATION = "23P01"; // creneau/salle deja pris (contrainte EXCLUDE)
 
   // ---- Profiles (droits + resolution nom/email -> id Supabase) ----
 
@@ -26,6 +27,11 @@
 
   function upsertProfile(profile) {
     return unwrap(client().from("profiles").upsert(profile).select().single());
+  }
+
+  function resolveCollabId(profiles, name) {
+    var match = profiles.find(function (item) { return item.name === name; });
+    return match ? match.id : null;
   }
 
   // ---- Clientes ----
@@ -124,26 +130,79 @@
   // Lecture toujours via la vue reservations_public : elle renvoie deja les
   // vraies donnees pour le proprietaire/l'admin et les masque pour les
   // autres, cote serveur (voir supabase/schema.sql). L'app ne lit jamais la
-  // table brute directement.
+  // table brute directement. La forme renvoyee (client/collab/clientId...)
+  // reprend volontairement les noms de champs deja utilises partout
+  // ailleurs dans l'app, pour limiter les changements a faire autour.
+  function mapReservationRow(row) {
+    return {
+      id: row.id,
+      clientId: row.client_id,
+      client: row.client_name,
+      collab: row.collab_name,
+      collabId: row.collab_id,
+      room: row.room,
+      prestation: row.prestation,
+      date: row.date,
+      time: String(row.time || "").slice(0, 5),
+      duration: row.duration,
+      status: row.status,
+      notes: row.notes,
+      supplement: row.supplement
+    };
+  }
+
+  function toReservationRow(reservation) {
+    return {
+      client_id: reservation.clientId || null,
+      client_name: reservation.client,
+      collab_id: reservation.collabId,
+      room: reservation.room,
+      prestation: reservation.prestation,
+      date: reservation.date,
+      time: reservation.time,
+      duration: reservation.duration,
+      status: reservation.status,
+      notes: reservation.notes || null,
+      supplement: reservation.supplement || null
+    };
+  }
 
   function listReservationsForDates(dates) {
     return unwrap(
       client().from("reservations_public").select("*").in("date", dates)
-    );
+    ).then(function (rows) {
+      return rows.map(mapReservationRow);
+    });
   }
 
   function listReservationsForClient(clientId) {
     return unwrap(
       client().from("reservations_public").select("*").eq("client_id", clientId).order("date")
-    );
+    ).then(function (rows) {
+      return rows.map(mapReservationRow);
+    });
+  }
+
+  // error.isSlotTaken === true si l'erreur vient de la contrainte anti-
+  // double-reservation (salle/creneau deja pris), verifiee par PostgreSQL
+  // lui-meme et donc impossible a contourner cote navigateur.
+  function markSlotTakenError(error) {
+    if (error && error.code === EXCLUSION_VIOLATION) {
+      error.isSlotTaken = true;
+    }
+    throw error;
   }
 
   function createReservation(reservation) {
-    return unwrap(client().from("reservations").insert(reservation).select().single());
+    return unwrap(client().from("reservations").insert(toReservationRow(reservation)).select().single())
+      .then(mapReservationRow)
+      .catch(markSlotTakenError);
   }
 
-  function updateReservation(id, patch) {
-    return unwrap(client().from("reservations").update(patch).eq("id", id).select().single());
+  function updateReservation(id, reservation) {
+    return unwrap(client().from("reservations").update(toReservationRow(reservation)).eq("id", id).select().single())
+      .then(mapReservationRow)
+      .catch(markSlotTakenError);
   }
 
   window.SalonSupabaseData = {
@@ -153,6 +212,7 @@
     listProfiles: listProfiles,
     listReservationsForClient: listReservationsForClient,
     listReservationsForDates: listReservationsForDates,
+    resolveCollabId: resolveCollabId,
     updateClient: updateClient,
     updateReservation: updateReservation,
     upsertProfile: upsertProfile
