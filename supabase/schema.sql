@@ -13,6 +13,7 @@ create extension if not exists btree_gist;
 --    regles de securite ci-dessous sachent qui est admin ou non.
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
+  email text not null unique,
   name text not null,
   role text not null check (role in ('admin', 'collab')),
   active boolean not null default true,
