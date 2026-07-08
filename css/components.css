@@ -104,6 +104,15 @@
   min-width: 0;
 }
 
+/* Rangee de plusieurs boutons (2 ou plus) : passe a la ligne au lieu de deborder. */
+.row:has(> button + button) {
+  flex-wrap: wrap;
+}
+
+.row:has(> button + button) > button {
+  flex: 1 1 calc(50% - 5px);
+}
+
 .grow {
   flex: 1;
 }
@@ -177,6 +186,33 @@ label {
 .photo-btn,
 .x {
   border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  line-height: 1.25;
+}
+
+/* Boutons d'action : le texte revient a la ligne plutot que de deborder. */
+.primary,
+.secondary,
+.ghost,
+.photo-btn,
+.tab {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Pastilles compactes : le texte reste sur une ligne, tronque avec "..." si besoin. */
+.pill,
+.chip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .primary {
@@ -685,11 +721,14 @@ label {
   border-radius: 17px;
   padding: 10px;
   text-align: center;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .stat b {
   display: block;
   font-size: 18px;
+  overflow-wrap: break-word;
 }
 
 .stat span,
@@ -697,6 +736,14 @@ label {
   font-size: 11px;
   color: var(--muted);
   font-weight: 800;
+}
+
+.stat span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .section-title {
