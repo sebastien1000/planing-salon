@@ -81,7 +81,7 @@
   }
 
   function defaultCollabName(state) {
-    var firstCollab = state.db.users.find(function (user) { return user.role === "collab"; });
+    var firstCollab = state.db.users.find(function (user) { return user.role === "collab" && user.active !== false; });
     return firstCollab ? firstCollab.name : "";
   }
 
@@ -126,11 +126,14 @@
     }).join("");
 
     var collabOptions = state.db.users
-      .filter(function (user) { return user.role === "collab"; })
+      .filter(function (user) {
+        return user.role === "collab" && (user.active !== false || user.name === reservation.collab);
+      })
       .map(function (user) {
         var selected = user.name === reservation.collab ? " selected" : "";
+        var label = user.active === false ? user.name + " (inactif)" : user.name;
         return '<option value="' + utils.escapeHtml(user.name) + '"' + selected + ">" +
-          utils.escapeHtml(user.name) + "</option>";
+          utils.escapeHtml(label) + "</option>";
       }).join("");
 
     var prestationOptions = buildPrestationOptionsHtml(state, reservation.collab, reservation.prestation);
@@ -475,11 +478,14 @@
       '<label for="pTime">Heure</label><input id="pTime" class="field" type="time" value="' + reservation.time + '">',
       '<label for="pCollab">Collaboratrice</label>',
       '<select id="pCollab" class="field"' + (lockOwnCollab ? ' disabled' : '') + '>' + state.db.users
-        .filter(function (user) { return user.role === "collab"; })
+        .filter(function (user) {
+          return user.role === "collab" && (user.active !== false || user.name === proposalCollab);
+        })
         .map(function (user) {
           var selected = user.name === proposalCollab ? " selected" : "";
+          var label = user.active === false ? user.name + " (inactif)" : user.name;
           return '<option value="' + utils.escapeHtml(user.name) + '"' + selected + ">" +
-            utils.escapeHtml(user.name) + "</option>";
+            utils.escapeHtml(label) + "</option>";
         }).join("") + "</select>",
       '<label for="pPrest">Prestation</label>',
       '<select id="pPrest" class="field">' + state.db.prestations.map(function (prestation) {

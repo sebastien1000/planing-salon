@@ -1,4 +1,5 @@
 (function () {
+  var auth = window.SalonAuth;
   var data = window.SalonData;
   var forms = window.SalonForms;
   var ui = window.SalonUI;
@@ -24,14 +25,25 @@
   });
   forms.bindPhotoInput();
 
+  function sortByStartDate(list) {
+    return list.slice().sort(function (a, b) { return a.startDate.localeCompare(b.startDate); });
+  }
+
   function bindActions() {
     ui.byId("addPrestationButton").addEventListener("click", function () {
       forms.openPrestationForm();
     });
 
-    ui.byId("openAbsenceButton").addEventListener("click", function () {
+    ui.byId("addAbsenceButton").addEventListener("click", function () {
       forms.openAbsenceForm();
     });
+
+    forms.bindAbsenceCardActions(ui.byId("myAbsenceList"));
+
+    var teamAbsenceList = ui.byId("teamAbsenceList");
+    if (teamAbsenceList) {
+      forms.bindAbsenceCardActions(teamAbsenceList);
+    }
 
     ui.byId("resetDemoButton").addEventListener("click", function () {
       if (window.confirm("Remettre les donnees demo ?")) {
@@ -82,6 +94,13 @@
       return !client.next;
     }).length;
 
+    var myAbsences = sortByStartDate(db.absences.filter(function (item) {
+      return item.collab === user.name;
+    }));
+    var teamAbsences = auth.isAdmin(user)
+      ? sortByStartDate(db.absences.filter(function (item) { return item.collab !== user.name; }))
+      : [];
+
     ui.setMain([
       '<div class="cards">',
       '  <div class="card"><h3>Notifications internes</h3><p>' + waiting + ' cliente(s) sans prochain RDV valide.</p></div>',
@@ -95,7 +114,23 @@
       "    </div>",
       '    <div class="cards" style="margin-top:12px">' + db.prestations.map(forms.prestationCard).join("") + "</div>",
       "  </div>",
-      '  <div class="card"><h3>Absence / conges</h3><button id="openAbsenceButton" class="secondary" type="button">Bloquer un creneau</button></div>',
+      '  <div class="card">',
+      '    <div class="row">',
+      '      <div class="grow"><h3>Mes absences</h3></div>',
+      '      <button id="addAbsenceButton" class="primary" type="button">+ Ajouter</button>',
+      "    </div>",
+      '    <div id="myAbsenceList" class="cards" style="margin-top:12px">' +
+        (myAbsences.length ? myAbsences.map(forms.absenceCard).join("") : '<div class="empty">Aucune absence</div>') +
+        "</div>",
+      "  </div>",
+      auth.isAdmin(user) ? [
+        '  <div class="card">',
+        "    <h3>Absences de l equipe</h3>",
+        '    <div id="teamAbsenceList" class="cards" style="margin-top:12px">' +
+          (teamAbsences.length ? teamAbsences.map(forms.absenceCard).join("") : '<div class="empty">Aucune absence</div>') +
+          "</div>",
+        "  </div>"
+      ].join("") : "",
       '  <div class="card"><h3>Photo planning papier</h3><p class="tiny">Utilise l appareil photo du telephone.</p>' +
         (db.photos[0] ? '<img class="preview" src="' + db.photos[0] + '" alt="Planning photo">' : "") + "</div>",
       '  <div class="card">' +

@@ -32,7 +32,7 @@
       return item.login.toLowerCase() === normalized && item.password === password;
     });
 
-    if (!user) {
+    if (!user || user.active === false) {
       return null;
     }
 
@@ -47,7 +47,8 @@
 
   function requireAuth() {
     var user = getCurrentUser();
-    if (!user) {
+    if (!user || user.active === false) {
+      saveCurrentUserId("");
       window.location.href = "index.html";
       return null;
     }

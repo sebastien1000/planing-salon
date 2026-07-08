@@ -95,7 +95,47 @@
     return "A definir";
   }
 
+  function periodStamp(date, time) {
+    return date + "T" + (time || "00:00");
+  }
+
+  function slotOverlapsRange(date, time, duration, range) {
+    var slotStart = periodStamp(date, time);
+    var slotEnd = periodStamp(date, addMinutes(time, duration));
+    var rangeStart = periodStamp(range.startDate, range.startTime || "00:00");
+    var rangeEnd = periodStamp(range.endDate || range.startDate, range.endTime || "23:59");
+    return slotStart < rangeEnd && slotEnd > rangeStart;
+  }
+
+  function rangesOverlap(rangeA, rangeB) {
+    var startA = periodStamp(rangeA.startDate, rangeA.startTime || "00:00");
+    var endA = periodStamp(rangeA.endDate || rangeA.startDate, rangeA.endTime || "23:59");
+    var startB = periodStamp(rangeB.startDate, rangeB.startTime || "00:00");
+    var endB = periodStamp(rangeB.endDate || rangeB.startDate, rangeB.endTime || "23:59");
+    return startA < endB && endA > startB;
+  }
+
+  function periodCoversDate(period, date) {
+    return date >= period.startDate && date <= (period.endDate || period.startDate);
+  }
+
+  function findBlockingPeriod(list, collab, date, time, duration, ignoreId) {
+    return list.find(function (item) {
+      return item.id !== ignoreId &&
+        item.collab === collab &&
+        slotOverlapsRange(date, time, duration, item);
+    });
+  }
+
   function buildConflictPayload(type, reservation, item, message) {
+    var isPeriod = item && item.startDate;
+    var periodTime = isPeriod ? item.startTime || "00:00" : null;
+    var periodDuration = isPeriod
+      ? (item.startDate === item.endDate
+        ? Math.max(0, utils.mins(item.endTime || "23:59") - utils.mins(periodTime))
+        : (24 * 60 - utils.mins(periodTime)))
+      : null;
+
     return {
       type: type,
       message: message,
@@ -104,9 +144,9 @@
         client: item.client || "",
         collab: item.collab || "",
         room: item.room || "",
-        date: item.date || reservation.date,
-        time: item.time || reservation.time,
-        duration: Number(item.duration || 0)
+        date: item.date || item.startDate || reservation.date,
+        time: item.time || periodTime || reservation.time,
+        duration: Number(isPeriod ? periodDuration : item.duration || 0)
       } : null
     };
   }
@@ -114,6 +154,7 @@
   function conflictDetails(db, reservation, ignoreId) {
     var roomConflict;
     var collabConflict;
+    var holidayConflict;
     var absenceConflict;
 
     roomConflict = db.reservations.find(function (item) {
@@ -150,11 +191,32 @@
       );
     }
 
-    absenceConflict = db.absences.find(function (item) {
-      return item.date === reservation.date &&
-        item.collab === reservation.collab &&
-        utils.overlaps(item.time, item.duration, reservation.time, reservation.duration);
-    });
+    holidayConflict = findBlockingPeriod(
+      db.holidays,
+      reservation.collab,
+      reservation.date,
+      reservation.time,
+      reservation.duration,
+      ignoreId
+    );
+
+    if (holidayConflict) {
+      return buildConflictPayload(
+        "holiday",
+        reservation,
+        holidayConflict,
+        "Conflit : " + reservation.collab + " est en conge sur ce creneau."
+      );
+    }
+
+    absenceConflict = findBlockingPeriod(
+      db.absences,
+      reservation.collab,
+      reservation.date,
+      reservation.time,
+      reservation.duration,
+      ignoreId
+    );
 
     if (absenceConflict) {
       return buildConflictPayload(
@@ -284,6 +346,12 @@
         absence.collab = newName;
       }
     });
+
+    db.holidays.forEach(function (holiday) {
+      if (holiday.collab === oldName) {
+        holiday.collab = newName;
+      }
+    });
   }
 
   window.SalonDomain = {
@@ -294,6 +362,7 @@
     countFor: countFor,
     datesForRange: datesForRange,
     doneReservationsFor: doneReservationsFor,
+    findBlockingPeriod: findBlockingPeriod,
     fullDateLabel: fullDateLabel,
     getStatusLabel: getStatusLabel,
     isCancelled: isCancelled,
@@ -301,10 +370,13 @@
     isPrestationAllowedForUser: isPrestationAllowedForUser,
     isRoomAllowedForUser: isRoomAllowedForUser,
     normalizeStatus: normalizeStatus,
+    periodCoversDate: periodCoversDate,
     previewRoomForCat: previewRoomForCat,
+    rangesOverlap: rangesOverlap,
     renameCollaborator: renameCollaborator,
     revenueFor: revenueFor,
     roomFor: roomFor,
+    slotOverlapsRange: slotOverlapsRange,
     addMinutes: addMinutes
   };
 }());

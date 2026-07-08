@@ -69,6 +69,26 @@
     });
   }
 
+  function categoryLabelFor(type, category) {
+    var list = type === "holiday" ? data.HOLIDAY_CATEGORIES : data.ABSENCE_CATEGORIES;
+    var pair = list.find(function (item) { return item[0] === category; });
+    return pair ? pair[1] : category;
+  }
+
+  function canSeeBlockedDetail(type, collab) {
+    return type === "holiday" || auth.isAdmin(user) || collab === user.name;
+  }
+
+  function blockedPeriodsOnDate(date) {
+    var absences = db.absences
+      .filter(function (item) { return domain.periodCoversDate(item, date); })
+      .map(function (item) { return Object.assign({ type: "absence" }, item); });
+    var holidays = db.holidays
+      .filter(function (item) { return domain.periodCoversDate(item, date); })
+      .map(function (item) { return Object.assign({ type: "holiday" }, item); });
+    return absences.concat(holidays);
+  }
+
   function visibleDates() {
     if (view === "week") {
       return domain.datesForRange(selectedDate, "week");
@@ -130,13 +150,10 @@
           return reservation.date === date &&
             (roomFilter === "Toutes" || reservation.room === roomFilter);
         });
-        var absences = db.absences.filter(function (absence) {
-          return absence.date === date &&
-            (auth.isAdmin(user) || absence.collab === user.name);
-        });
+        var blocked = blockedPeriodsOnDate(date);
 
         return [
-          '<button class="month-cell ' + ((reservations.length || absences.length) ? "has" : "") +
+          '<button class="month-cell ' + ((reservations.length || blocked.length) ? "has" : "") +
             (date === utils.today() ? " today" : "") + '" type="button" data-open-day="' + date + '">',
           '  <span class="day-num">' + utils.dateObj(date).getDate() + "</span>",
           reservations.slice(0, 2).map(function (reservation) {
@@ -154,7 +171,7 @@
               : "Reserve - " + reservation.collab;
             return '<span class="' + dotClassName + '"' + dotStyle + '>' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
           }).join(""),
-          absences.length ? '<span class="dot">Blocage ' + absences.length + "</span>" : "",
+          blocked.length ? '<span class="dot">Blocage ' + blocked.length + "</span>" : "",
           reservations.length > 2 ? '<span class="dot">+' + (reservations.length - 2) + " autre</span>" : "",
           "</button>"
         ].join("");
@@ -171,10 +188,7 @@
         return reservation.date === date &&
           (roomFilter === "Toutes" || reservation.room === roomFilter);
       });
-      var absences = db.absences.filter(function (absence) {
-        return absence.date === date &&
-          (auth.isAdmin(user) || absence.collab === user.name);
-      });
+      var blocked = blockedPeriodsOnDate(date);
 
       return [
         '<div class="card">',
@@ -182,14 +196,21 @@
         "    <h3>" + utils.fmtDate(date) + "</h3>",
         '    <button class="secondary mini-action" type="button" data-add-date="' + date + '">+ RDV</button>',
         "  </div>",
-        absences.map(function (absence) {
+        blocked.map(function (item) {
+          var visible = canSeeBlockedDetail(item.type, item.collab);
+          var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
+
           return [
             '<div class="card absence-slot">',
-            "  <b>Blocage " + utils.escapeHtml(absence.label) + "</b>",
+            "  <b>" + utils.escapeHtml(title) + "</b>",
             '  <div class="meta">',
-            '    <span class="badge">' + utils.escapeHtml(absence.collab) + "</span>",
-            '    <span class="badge">' + utils.escapeHtml(absence.time) + " - " + absence.duration + " min</span>",
+            '    <span class="badge">' + utils.escapeHtml(item.collab) + "</span>",
+            '    <span class="badge">' + utils.escapeHtml(item.startTime) + " - " + utils.escapeHtml(item.endTime) + "</span>",
+            (item.startDate !== item.endDate
+              ? '    <span class="badge">jusqu au ' + utils.escapeHtml(item.endDate) + "</span>"
+              : ""),
             "  </div>",
+            (visible && item.notes ? '  <div class="tiny">' + utils.escapeHtml(item.notes) + "</div>" : ""),
             "</div>"
           ].join("");
         }).join(""),

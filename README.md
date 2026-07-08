@@ -14,7 +14,7 @@ Pages principales :
 - `clients.html` : fiches clientes
 - `recherche.html` : recherche de rendez-vous
 - `comptes.html` : comptes et statistiques
-- `plus.html` : prestations, absences, photo, reinitialisation
+- `plus.html` : prestations, mes absences (et celles de l'equipe pour l'admin), photo, reinitialisation
 
 ## Lancer le projet
 
@@ -61,6 +61,13 @@ Depuis l'espace admin (page Comptes), un administrateur peut creer, modifier ou 
 - si aucune salle ou prestation n'est cochee lors de la creation, le compte n'a aucune restriction
 - si toutes les cases sont decochees volontairement, le compte n'a plus aucun acces (a corriger depuis le formulaire)
 - la suppression est bloquee si le compte a des rendez-vous a venir, et il doit toujours rester au moins un administrateur
+- un compte peut etre desactive au lieu d'etre supprime : il ne peut plus se connecter ni recevoir de nouveaux rendez-vous, mais ses rendez-vous existants restent geres normalement
+
+## Conges et absences
+
+- **Conges** (page Comptes, bouton "Conges" sur une fiche collaborateur) : geres uniquement par l'admin, plage de dates/heures, motif (vacances, conge, formation, autre). Toujours visibles en detail par toute l'equipe.
+- **Absences** (page Plus) : chaque collaborateur cree, modifie et supprime ses propres absences (maladie, rendez-vous personnel, formation, urgence, indisponibilite, autre). L'admin voit et gere celles de tout le monde. Les autres collaborateurs voient qu'un creneau est bloque mais pas le motif.
+- Dans les deux cas, un rendez-vous ne peut pas etre enregistre sur une periode couverte par un conge ou une absence : le planning verifie la date, l'heure de debut et l'heure de fin.
 
 ## Stockage local
 

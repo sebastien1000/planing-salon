@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-08 (2)
+
+### Ajoute
+
+- gestion des conges/vacances par l'admin : creation, modification, suppression, plage de dates et heures, motif (vacances, conge, formation, autre)
+- gestion des absences par chaque collaborateur pour son propre compte (maladie, rendez-vous personnel, formation, urgence, indisponibilite, autre), avec vue et gestion complete pour l'admin
+- profil collaborateur etendu : telephone, email, photo de profil (redimensionnee automatiquement avant stockage)
+- activation/desactivation d'un compte par l'admin (bloque la connexion et les nouvelles reservations, garde les rendez-vous existants intacts)
+
+### Corrige
+
+- le planning verifie desormais une vraie plage de dates/heures pour les conges et absences (avant : un seul jour, sans heure de fin) avant d'autoriser un rendez-vous
+- un compte desactive est deconnecte automatiquement s'il etait deja connecte
+
 ## 2026-07-08
 
 ### Ajoute

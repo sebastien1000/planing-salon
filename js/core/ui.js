@@ -32,7 +32,7 @@
   function renderUserProfile(name, options) {
     var safeName = utils.escapeHtml(name || "");
     var config = options || {};
-    var imageSrc = profileImageSrc(name);
+    var imageSrc = config.photoSrc || profileImageSrc(name);
     var rootClassName = "profile-user" + (config.className ? " " + config.className : "");
     var avatarClassName = "profile-avatar" + (config.avatarClassName ? " " + config.avatarClassName : "");
     var nameClassName = "profile-name" + (config.nameClassName ? " " + config.nameClassName : "");
@@ -87,7 +87,8 @@
         renderUserProfile(user.name, {
           className: "profile-user-inline",
           avatarClassName: "profile-avatar-sm",
-          nameClassName: "profile-name-tiny"
+          nameClassName: "profile-name-tiny",
+          photoSrc: user.photo
         }) +
         "</div>",
       "      </div>",

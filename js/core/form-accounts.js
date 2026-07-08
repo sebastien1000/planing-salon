@@ -47,6 +47,87 @@
     return boxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
   }
 
+  var PHOTO_MAX_SIZE = 200;
+  var pendingPhoto; // undefined = no change, null = removed, "data:..." = new photo
+
+  function resizeImageToDataUrl(file, maxSize, onDone, onError) {
+    var reader = new FileReader();
+
+    reader.onerror = function () {
+      onError("Impossible de lire ce fichier.");
+    };
+
+    reader.onload = function () {
+      var img = new Image();
+
+      img.onerror = function () {
+        onError("Ce fichier n est pas une image valide.");
+      };
+
+      img.onload = function () {
+        var scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        var canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale) || 1;
+        canvas.height = Math.round(img.height * scale) || 1;
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        onDone(canvas.toDataURL("image/jpeg", 0.85));
+      };
+
+      img.src = reader.result;
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  function buildPhotoPreviewHtml(photoSrc) {
+    return photoSrc
+      ? '<img id="uPhotoPreview" src="' + photoSrc + '" alt="" style="width:56px;height:56px;border-radius:50%;object-fit:cover">'
+      : '<div id="uPhotoPreview" style="width:56px;height:56px;border-radius:50%;background:#f4dbe3"></div>';
+  }
+
+  function buildPhotoFieldHtml(user) {
+    return [
+      '<label for="uPhotoInput">Photo de profil</label>',
+      '<div id="photoMsg"></div>',
+      '<div class="row" style="align-items:center;gap:12px;margin-bottom:14px">',
+      buildPhotoPreviewHtml(user.photo),
+      '  <input id="uPhotoInput" class="field grow" style="margin-bottom:0" type="file" accept="image/*">',
+      '  <button id="removePhotoButton" class="secondary danger" type="button"' +
+        (user.photo ? "" : " disabled") + '>Retirer</button>',
+      "</div>"
+    ].join("");
+  }
+
+  function bindPhotoField() {
+    var input = ui.byId("uPhotoInput");
+    var removeButton = ui.byId("removePhotoButton");
+
+    if (!input) {
+      return;
+    }
+
+    input.addEventListener("change", function () {
+      var file = input.files[0];
+      if (!file) {
+        return;
+      }
+
+      resizeImageToDataUrl(file, PHOTO_MAX_SIZE, function (dataUrl) {
+        pendingPhoto = dataUrl;
+        ui.byId("uPhotoPreview").outerHTML = buildPhotoPreviewHtml(dataUrl);
+        removeButton.disabled = false;
+      }, function (message) {
+        ui.byId("photoMsg").innerHTML = '<div class="alert">' + utils.escapeHtml(message) + "</div>";
+      });
+    });
+
+    removeButton.addEventListener("click", function () {
+      pendingPhoto = null;
+      ui.byId("uPhotoPreview").outerHTML = buildPhotoPreviewHtml(null);
+      removeButton.disabled = true;
+    });
+  }
+
   function buildAccountExtraFieldsHtml(user, lockRole) {
     var state = formState.state;
     var prestationNames = state.db.prestations.map(function (item) { return item.name; });
@@ -76,6 +157,8 @@
     }
 
     var isAdminEditing = auth.isAdmin(state.user);
+    var isSelf = userId === state.user.id;
+    pendingPhoto = undefined;
 
     ui.showModal([
       '<div class="modal-head">',
@@ -83,16 +166,26 @@
       '  <button id="closeProfileModal" class="x" type="button">x</button>',
       "</div>",
       '<div id="profileMsg"></div>',
+      (user.active === false ? '<div class="alert">Ce compte est desactive.</div>' : ""),
+      buildPhotoFieldHtml(user),
       '<label for="uName">Nom affiche</label><input id="uName" class="field" value="' + utils.escapeHtml(user.name) + '">',
+      '<label for="uPhone">Telephone</label><input id="uPhone" class="field" value="' + utils.escapeHtml(user.phone || "") + '">',
+      '<label for="uEmail">Email</label><input id="uEmail" class="field" type="email" value="' + utils.escapeHtml(user.email || "") + '">',
       '<label for="uPass">Nouveau mot de passe</label><input id="uPass" class="field" type="password" placeholder="Laisser vide pour ne pas changer">',
-      isAdminEditing ? buildAccountExtraFieldsHtml(user, userId === state.user.id) : "",
+      isAdminEditing ? buildAccountExtraFieldsHtml(user, isSelf) : "",
       '<div class="row" style="margin-top:14px">',
       '  <button id="saveProfileButton" class="primary grow" type="button">Enregistrer</button>',
-      (isAdminEditing && userId !== state.user.id)
+      (isAdminEditing && !isSelf)
+        ? '  <button id="toggleActiveButton" class="secondary" type="button">' +
+          (user.active === false ? "Reactiver" : "Desactiver") + "</button>"
+        : "",
+      (isAdminEditing && !isSelf)
         ? '  <button id="deleteAccountButton" class="secondary danger" type="button">Supprimer</button>'
         : "",
       "</div>"
     ].join(""));
+
+    bindPhotoField();
 
     ui.byId("closeProfileModal").addEventListener("click", ui.closeModal);
     ui.byId("saveProfileButton").addEventListener("click", function () {
@@ -103,6 +196,13 @@
     if (deleteButton) {
       deleteButton.addEventListener("click", function () {
         deleteAccount(userId);
+      });
+    }
+
+    var toggleActiveButton = ui.byId("toggleActiveButton");
+    if (toggleActiveButton) {
+      toggleActiveButton.addEventListener("click", function () {
+        toggleAccountActive(userId);
       });
     }
   }
@@ -121,6 +221,11 @@
     var password = ui.byId("uPass").value;
 
     user.name = newName;
+    user.phone = ui.byId("uPhone").value.trim();
+    user.email = ui.byId("uEmail").value.trim();
+    if (pendingPhoto !== undefined) {
+      user.photo = pendingPhoto;
+    }
     if (password) {
       user.password = password;
     }
@@ -168,6 +273,8 @@
       '<div id="addAccountMsg"></div>',
       '<label for="naName">Nom affiche</label><input id="naName" class="field" placeholder="Ex : Lea">',
       '<label for="naLogin">Identifiant de connexion</label><input id="naLogin" class="field" placeholder="Ex : Lea">',
+      '<label for="naPhone">Telephone (facultatif)</label><input id="naPhone" class="field">',
+      '<label for="naEmail">Email (facultatif)</label><input id="naEmail" class="field" type="email">',
       '<label for="naPass">Mot de passe</label><input id="naPass" class="field" type="password" placeholder="Laisser vide pour demo">',
       buildAccountExtraFieldsHtml(blankUser),
       '<button id="saveAddAccountButton" class="primary" style="width:100%;margin-top:14px" type="button">Ajouter</button>'
@@ -211,8 +318,45 @@
       password: password,
       color: ui.byId("uColor").value,
       rooms: readCheckedValues("uRoom"),
-      prestations: readCheckedValues("uPrestation")
+      prestations: readCheckedValues("uPrestation"),
+      phone: ui.byId("naPhone").value.trim(),
+      email: ui.byId("naEmail").value.trim(),
+      photo: null,
+      active: true
     });
+
+    ui.closeModal();
+    formState.saveAndRefresh();
+  }
+
+  function toggleAccountActive(userId) {
+    var state = formState.state;
+
+    if (!auth.isAdmin(state.user)) {
+      window.alert("Seul l'administrateur peut activer ou desactiver un compte.");
+      return;
+    }
+
+    if (userId === state.user.id) {
+      window.alert("Vous ne pouvez pas desactiver votre propre compte.");
+      return;
+    }
+
+    var user = utils.findById(state.db.users, userId);
+    if (!user) {
+      return;
+    }
+
+    var activeAdmins = state.db.users.filter(function (item) {
+      return item.role === "admin" && item.active !== false;
+    });
+
+    if (user.role === "admin" && user.active !== false && activeAdmins.length <= 1) {
+      window.alert("Impossible : il doit rester au moins un administrateur actif.");
+      return;
+    }
+
+    user.active = user.active === false;
 
     ui.closeModal();
     formState.saveAndRefresh();
@@ -300,6 +444,7 @@
     openAddAccountForm: openAddAccountForm,
     openProfileForm: openProfileForm,
     resetLink: resetLink,
-    resetPassword: resetPassword
+    resetPassword: resetPassword,
+    toggleAccountActive: toggleAccountActive
   };
 }());

@@ -71,6 +71,46 @@
     ui.byId("closeHistoryButton").addEventListener("click", ui.closeSheet);
   }
 
+  function openHolidaySheet(account) {
+    var items = forms.holidaysForCollab(db, account.name);
+    var isAdmin = auth.isAdmin(user);
+
+    function refreshWhileOpen() {
+      render();
+      openHolidaySheet(account);
+    }
+
+    forms.configure({ db: db, refresh: refreshWhileOpen, selectedDate: selectedDate, user: user });
+
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>Conges - " + utils.escapeHtml(account.name) + "</h3>",
+      '  <button id="closeHolidaySheetButton" class="x" type="button">x</button>',
+      "</div>",
+      isAdmin ? '<button id="addHolidayButton" class="primary" style="width:100%;margin-bottom:12px" type="button">Ajouter un conge</button>' : "",
+      '<div id="holidayList" class="stack">' +
+        (items.length ? items.map(function (item) { return forms.holidayCard(item, !isAdmin); }).join("") : '<p class="tiny">Aucun conge enregistre.</p>') +
+        "</div>"
+    ].join(""));
+
+    ui.byId("closeHolidaySheetButton").addEventListener("click", function () {
+      forms.configure({ db: db, refresh: render, selectedDate: selectedDate, user: user });
+      ui.closeSheet();
+    });
+    forms.bindHolidayCardActions(ui.byId("holidayList"));
+
+    var addButton = ui.byId("addHolidayButton");
+    if (addButton) {
+      addButton.addEventListener("click", function () {
+        forms.openHolidayForm(null, account.name);
+      });
+    }
+  }
+
+  function accountBadges(account) {
+    return account.active === false ? '<span class="badge">Compte desactive</span>' : "";
+  }
+
   function renderUserCard(account) {
     var totalDone = db.reservations.filter(function (reservation) {
       return reservation.collab === account.name && reservation.status === "done";
@@ -91,7 +131,8 @@
       ui.renderUserProfile(account.name, {
         className: "profile-user-card",
         avatarClassName: "profile-avatar-md",
-        nameClassName: "profile-name-card"
+        nameClassName: "profile-name-card",
+        photoSrc: account.photo
       }),
       "  </div>",
       '  <div class="statgrid">',
@@ -104,11 +145,17 @@
       '    <span class="badge">' + totalDone.length + ' termines</span>',
       '    <span class="badge">' + upcoming + ' a venir</span>',
       '    <span class="badge">' + domain.countFor(db, account.name, "cancel", "month", selectedDate) + ' annules ce mois</span>',
+      accountBadges(account),
       "  </div>",
       '  <div class="row">',
       '    <button class="secondary" type="button" data-edit-profile="' + account.id + '">Modifier</button>',
+      '    <button class="secondary" type="button" data-manage-holidays="' + account.id + '">Conges</button>',
       '    <button class="secondary danger" type="button" data-reset-password="' + account.id + '">Reinitialiser MDP</button>',
       '    <button class="secondary" type="button" data-reset-link="' + account.id + '">Lien reset</button>',
+      account.id !== user.id
+        ? '    <button class="secondary" type="button" data-toggle-active="' + account.id + '">' +
+          (account.active === false ? "Reactiver" : "Desactiver") + "</button>"
+        : "",
       account.id !== user.id
         ? '    <button class="secondary danger" type="button" data-delete-account="' + account.id + '">Supprimer</button>'
         : "",
@@ -124,13 +171,18 @@
       ui.renderUserProfile(account.name, {
         className: "profile-user-card",
         avatarClassName: "profile-avatar-md",
-        nameClassName: "profile-name-card"
+        nameClassName: "profile-name-card",
+        photoSrc: account.photo
       }),
       "  </div>",
-      '  <div class="meta"><span class="badge">Administrateur</span></div>',
+      '  <div class="meta"><span class="badge">Administrateur</span>' + accountBadges(account) + "</div>",
       '  <div class="row">',
       '    <button class="secondary" type="button" data-edit-profile="' + account.id + '">Modifier</button>',
       '    <button class="secondary danger" type="button" data-reset-password="' + account.id + '">Reinitialiser MDP</button>',
+      account.id !== user.id
+        ? '    <button class="secondary" type="button" data-toggle-active="' + account.id + '">' +
+          (account.active === false ? "Reactiver" : "Desactiver") + "</button>"
+        : "",
       account.id !== user.id
         ? '    <button class="secondary danger" type="button" data-delete-account="' + account.id + '">Supprimer</button>'
         : "",
@@ -140,13 +192,16 @@
   }
 
   function renderOwnCard() {
+    var myHolidays = forms.holidaysForCollab(db, user.name);
+
     return [
       '<div class="card">',
       "  <h3>Mon profil</h3>",
       ui.renderUserProfile(user.name, {
         className: "profile-user-card profile-user-card-self",
         avatarClassName: "profile-avatar-md",
-        nameClassName: "profile-name-card"
+        nameClassName: "profile-name-card",
+        photoSrc: user.photo
       }),
       '  <div class="tiny">Tu vois uniquement ton propre compte.</div>',
       '  <div class="statgrid">',
@@ -155,6 +210,12 @@
       renderStatButton(user.name, "month"),
       "  </div>",
       '  <button id="editOwnProfile" class="primary" type="button">Modifier mon profil / mot de passe</button>',
+      "</div>",
+      '<div class="card">',
+      "  <h3>Mes conges</h3>",
+      '  <div class="stack">' +
+        (myHolidays.length ? myHolidays.map(function (item) { return forms.holidayCard(item, true); }).join("") : '<p class="tiny">Aucun conge enregistre.</p>') +
+        "</div>",
       "</div>"
     ].join("");
   }
@@ -201,6 +262,21 @@
     document.querySelectorAll("[data-delete-account]").forEach(function (button) {
       button.addEventListener("click", function () {
         forms.deleteAccount(button.dataset.deleteAccount);
+      });
+    });
+
+    document.querySelectorAll("[data-toggle-active]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        forms.toggleAccountActive(button.dataset.toggleActive);
+      });
+    });
+
+    document.querySelectorAll("[data-manage-holidays]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var account = utils.findById(db.users, button.dataset.manageHolidays);
+        if (account) {
+          openHolidaySheet(account);
+        }
       });
     });
   }

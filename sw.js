@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v20-admin-logo";
+const CACHE_NAME = "salon-mvp-v21-leave-absences-profile";
 
 const APP_ASSETS = [
   "./",
@@ -29,6 +29,8 @@ const APP_ASSETS = [
   "./js/core/form-accounts.js",
   "./js/core/form-prestations.js",
   "./js/core/form-misc.js",
+  "./js/core/form-absences.js",
+  "./js/core/form-holidays.js",
   "./js/core/forms.js",
   "./js/pages/login.js",
   "./js/pages/planning.js",

@@ -21,12 +21,28 @@
     ["move", "A reprogrammer"]
   ];
 
+  var HOLIDAY_CATEGORIES = [
+    ["vacances", "Vacances"],
+    ["conge", "Conge"],
+    ["formation", "Formation"],
+    ["autre", "Autre"]
+  ];
+
+  var ABSENCE_CATEGORIES = [
+    ["maladie", "Maladie"],
+    ["rdv_perso", "Rendez-vous personnel"],
+    ["formation", "Formation"],
+    ["urgence", "Urgence"],
+    ["indisponibilite", "Indisponibilite temporaire"],
+    ["autre", "Autre"]
+  ];
+
   function buildDefault() {
     return {
       users: [
-        { id: "u1", login: "Julie", name: "Julie", role: "collab", password: "demo", color: "#f4b5c5", rooms: null, prestations: null },
-        { id: "u2", login: "Marion", name: "Marion", role: "collab", password: "demo", color: "#b7dbef", rooms: null, prestations: null },
-        { id: "u0", login: "admin", name: "Administration", role: "admin", password: "demo", color: "#d9c2a3", rooms: null, prestations: null }
+        { id: "u1", login: "Julie", name: "Julie", role: "collab", password: "demo", color: "#f4b5c5", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true },
+        { id: "u2", login: "Marion", name: "Marion", role: "collab", password: "demo", color: "#b7dbef", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true },
+        { id: "u0", login: "admin", name: "Administration", role: "admin", password: "demo", color: "#d9c2a3", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true }
       ],
       prestations: [
         { id: "p1", name: "Pose gel", cat: "ongles", duration: 120, price: 45 },
@@ -121,12 +137,15 @@
         {
           id: "a1",
           collab: "Julie",
-          date: utils.today(1),
-          time: "09:00",
-          duration: 180,
-          label: "Indisponible"
+          startDate: utils.today(1),
+          startTime: "09:00",
+          endDate: utils.today(1),
+          endTime: "12:00",
+          category: "indisponibilite",
+          notes: "Indisponible"
         }
       ],
+      holidays: [],
       photos: []
     };
   }
@@ -135,7 +154,51 @@
     user.color = user.color || DEFAULT_COLLAB_COLOR;
     user.rooms = Array.isArray(user.rooms) ? user.rooms : null;
     user.prestations = Array.isArray(user.prestations) ? user.prestations : null;
+    user.phone = user.phone || "";
+    user.email = user.email || "";
+    user.photo = user.photo || null;
+    user.active = user.active !== false;
     return user;
+  }
+
+  function timeToMinutes(time) {
+    var parts = String(time || "00:00").split(":").map(Number);
+    return (parts[0] || 0) * 60 + (parts[1] || 0);
+  }
+
+  function minutesToTime(totalMinutes) {
+    var capped = Math.max(0, Math.min(23 * 60 + 59, totalMinutes));
+    var hours = Math.floor(capped / 60);
+    var minutes = capped % 60;
+    return (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes;
+  }
+
+  function sanitizeBlockedPeriod(item) {
+    var safeItem = item && typeof item === "object" ? item : {};
+
+    if (!safeItem.startDate && safeItem.date) {
+      safeItem = {
+        id: safeItem.id,
+        collab: safeItem.collab,
+        startDate: safeItem.date,
+        startTime: safeItem.time || "00:00",
+        endDate: safeItem.date,
+        endTime: minutesToTime(timeToMinutes(safeItem.time || "00:00") + Number(safeItem.duration || 0)),
+        category: "autre",
+        notes: safeItem.label || ""
+      };
+    }
+
+    return {
+      id: safeItem.id || utils.uid("a"),
+      collab: safeItem.collab || "",
+      startDate: safeItem.startDate || utils.today(),
+      startTime: safeItem.startTime || "00:00",
+      endDate: safeItem.endDate || safeItem.startDate || utils.today(),
+      endTime: safeItem.endTime || "23:59",
+      category: safeItem.category || "autre",
+      notes: safeItem.notes || ""
+    };
   }
 
   function sanitizeDb(db) {
@@ -144,7 +207,8 @@
     safe.prestations = Array.isArray(safe.prestations) ? safe.prestations : buildDefault().prestations;
     safe.clients = Array.isArray(safe.clients) ? safe.clients : [];
     safe.reservations = Array.isArray(safe.reservations) ? safe.reservations : [];
-    safe.absences = Array.isArray(safe.absences) ? safe.absences : [];
+    safe.absences = (Array.isArray(safe.absences) ? safe.absences : []).map(sanitizeBlockedPeriod);
+    safe.holidays = (Array.isArray(safe.holidays) ? safe.holidays : []).map(sanitizeBlockedPeriod);
     safe.photos = Array.isArray(safe.photos) ? safe.photos : [];
     return safe;
   }
@@ -217,6 +281,8 @@
   }
 
   window.SalonData = {
+    ABSENCE_CATEGORIES: ABSENCE_CATEGORIES,
+    HOLIDAY_CATEGORIES: HOLIDAY_CATEGORIES,
     ROOMS: ROOMS,
     STATUS: STATUS,
     STORAGE_KEY: STORAGE_KEY,
