@@ -2,6 +2,35 @@
   var utils = window.SalonUtils;
   var data = window.SalonData;
 
+  function roomReservationsForDate(db, room, date) {
+    return db.reservations
+      .filter(function (item) {
+        return item.room === room && item.date === date && isActiveReservation(item);
+      })
+      .sort(function (a, b) { return a.time.localeCompare(b.time); });
+  }
+
+  function roomStatus(reservations, isToday, nowTime) {
+    if (!reservations.length) {
+      return "libre";
+    }
+
+    if (isToday) {
+      var occupiedNow = reservations.some(function (item) {
+        var start = utils.mins(item.time);
+        var end = start + Number(item.duration || 0);
+        var now = utils.mins(nowTime);
+        return now >= start && now < end;
+      });
+
+      if (occupiedNow) {
+        return "occupee";
+      }
+    }
+
+    return "reservee";
+  }
+
   function getStatusLabel(status) {
     var normalized = normalizeStatus(status);
     var pair = data.STATUS.find(function (item) {
@@ -376,6 +405,8 @@
     renameCollaborator: renameCollaborator,
     revenueFor: revenueFor,
     roomFor: roomFor,
+    roomReservationsForDate: roomReservationsForDate,
+    roomStatus: roomStatus,
     slotOverlapsRange: slotOverlapsRange,
     addMinutes: addMinutes
   };

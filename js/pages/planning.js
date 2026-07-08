@@ -89,6 +89,55 @@
     return absences.concat(holidays);
   }
 
+  var ROOM_STATUS_LABELS = { libre: "Libre", reservee: "Reservee", occupee: "Occupee" };
+  var ROOM_STATUS_BADGE_CLASS = { libre: "status-done", reservee: "status-pre", occupee: "status-run" };
+
+  function openRoomStatusSheet() {
+    var isToday = selectedDate === utils.today();
+    var nowTime = new Date().toTimeString().slice(0, 5);
+
+    var roomsHtml = data.ROOMS.map(function (room) {
+      var reservations = domain.roomReservationsForDate(db, room, selectedDate);
+      var status = domain.roomStatus(reservations, isToday, nowTime);
+
+      var slotsHtml = reservations.map(function (reservation) {
+        var canSee = auth.canSeeReservation(user, reservation);
+        var who = canSee ? reservation.client : "Reserve - " + reservation.collab;
+        var endTime = domain.addMinutes(reservation.time, reservation.duration);
+
+        return [
+          '<div class="row" style="justify-content:space-between">',
+          '  <div class="grow">',
+          "    <b>" + utils.escapeHtml(who) + "</b>",
+          '    <div class="tiny">' + utils.escapeHtml(reservation.collab) + "</div>",
+          "  </div>",
+          '  <span class="badge">' + utils.escapeHtml(reservation.time) + " - " + utils.escapeHtml(endTime) + "</span>",
+          "</div>"
+        ].join("");
+      }).join("");
+
+      return [
+        '<div class="card">',
+        '  <div class="row" style="justify-content:space-between">',
+        "    <h3>" + utils.escapeHtml(room) + "</h3>",
+        '    <span class="badge ' + ROOM_STATUS_BADGE_CLASS[status] + '">' + ROOM_STATUS_LABELS[status] + "</span>",
+        "  </div>",
+        slotsHtml || '<p class="tiny">Aucun rendez-vous ce jour.</p>',
+        "</div>"
+      ].join("");
+    }).join("");
+
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>Salles - " + utils.escapeHtml(utils.fmtDate(selectedDate)) + "</h3>",
+      '  <button id="closeRoomStatusButton" class="x" type="button">x</button>',
+      "</div>",
+      '<div class="stack">' + roomsHtml + "</div>"
+    ].join(""));
+
+    ui.byId("closeRoomStatusButton").addEventListener("click", ui.closeSheet);
+  }
+
   function visibleDates() {
     if (view === "week") {
       return domain.datesForRange(selectedDate, "week");
@@ -124,10 +173,13 @@
       "  </div>",
       '  <button id="headerAddReservation" class="primary" type="button" style="width:100%">Ajouter un RDV</button>',
       "</div>",
-      '<div class="chips">' + ["Toutes"].concat(data.ROOMS).map(function (room) {
+      '<div class="row">',
+      '  <div class="chips grow">' + ["Toutes"].concat(data.ROOMS).map(function (room) {
         var className = room === roomFilter ? "chip active" : "chip";
         return '<button class="' + className + '" type="button" data-room="' + room + '">' + room + "</button>";
-      }).join("") + "</div>"
+      }).join("") + "</div>",
+      '  <button id="roomStatusButton" class="secondary" type="button">☰ Salles</button>',
+      "</div>"
     ].join("");
   }
 
@@ -239,6 +291,8 @@
       forms.configure({ db: db, refresh: render, selectedDate: selectedDate, user: user });
       forms.openReservation();
     });
+
+    ui.byId("roomStatusButton").addEventListener("click", openRoomStatusSheet);
 
     document.querySelectorAll("[data-view]").forEach(function (button) {
       button.addEventListener("click", function () {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-08 (4)
+
+### Ajoute
+
+- menu "☰ Salles" sur la page Planning : liste les 5 salles avec leur statut (Libre / Reservee / Occupee maintenant) pour le jour affiche, sans surcharger l'ecran principal
+- pour une salle non libre : collaborateur et horaire du creneau, avec la meme regle de confidentialite que le reste du planning (details prives masques aux autres collaborateurs)
+
 ## 2026-07-08 (3)
 
 ### Corrige
