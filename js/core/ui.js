@@ -11,7 +11,8 @@
   ];
   var PROFILE_IMAGES = {
     Julie: "assets/img/profiles/logojuliie.png",
-    Marion: "assets/img/profiles/logomarion.png"
+    Marion: "assets/img/profiles/logomarion.png",
+    Administration: "assets/img/profiles/adminlogo.png"
   };
 
   function byId(id) {

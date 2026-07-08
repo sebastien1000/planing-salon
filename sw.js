@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v19-collab-management";
+const CACHE_NAME = "salon-mvp-v20-admin-logo";
 
 const APP_ASSETS = [
   "./",
@@ -13,6 +13,7 @@ const APP_ASSETS = [
   "./assets/img/branding/favicon.png",
   "./assets/img/profiles/logojuliie.png",
   "./assets/img/profiles/logomarion.png",
+  "./assets/img/profiles/adminlogo.png",
   "./css/base.css",
   "./css/layout.css",
   "./css/components.css",
