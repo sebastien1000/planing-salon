@@ -39,10 +39,13 @@
 
   function buildDefault() {
     return {
+      // Le mot de passe n'est plus stocke ici : il vit uniquement dans
+      // Supabase Auth (hache cote serveur). L'email ci-dessous doit
+      // correspondre a un compte Supabase reel pour pouvoir se connecter.
       users: [
-        { id: "u1", login: "Julie", name: "Julie", role: "collab", password: "demo", color: "#f4b5c5", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true },
-        { id: "u2", login: "Marion", name: "Marion", role: "collab", password: "demo", color: "#b7dbef", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true },
-        { id: "u0", login: "admin", name: "Administration", role: "admin", password: "demo", color: "#d9c2a3", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true }
+        { id: "u1", login: "Julie", name: "Julie", role: "collab", color: "#f4b5c5", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true },
+        { id: "u2", login: "Marion", name: "Marion", role: "collab", color: "#b7dbef", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true },
+        { id: "u0", login: "admin", name: "Administration", role: "admin", color: "#d9c2a3", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true }
       ],
       prestations: [
         { id: "p1", name: "Pose gel", cat: "ongles", duration: 120, price: 45 },
@@ -158,6 +161,9 @@
     user.email = user.email || "";
     user.photo = user.photo || null;
     user.active = user.active !== false;
+    // Nettoyage d'une eventuelle ancienne donnee : le mot de passe ne doit
+    // plus jamais rester stocke en clair ici, seul Supabase Auth le connait.
+    delete user.password;
     return user;
   }
 
