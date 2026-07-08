@@ -2,6 +2,7 @@
   var data = window.SalonData;
   var utils = window.SalonUtils;
   var supabaseClient = window.SalonSupabaseClient;
+  var supabaseData = window.SalonSupabaseData;
   var AUTH_KEY = "salonCurrentUserId";
 
   function getDb() {
@@ -57,6 +58,20 @@
       var profile = findProfileByEmail(result.data.user.email);
       if (!profile || profile.active === false) {
         return null;
+      }
+
+      // Garde la ligne "profiles" Supabase (utilisee par les regles de
+      // securite et affichee sur les rendez-vous) synchronisee avec la
+      // fiche locale a chaque connexion : c'est ce qui cree la ligne la
+      // toute premiere fois qu'un collaborateur se connecte.
+      if (supabaseData) {
+        supabaseData.upsertProfile({
+          id: result.data.user.id,
+          email: profile.email,
+          name: profile.name,
+          role: profile.role,
+          active: profile.active !== false
+        }).catch(function () {});
       }
 
       saveCurrentUserId(profile.id);

@@ -179,7 +179,7 @@
       return;
     }
 
-    var clashingCount = state.db.reservations.filter(function (reservation) {
+    var clashingCount = (state.reservations || []).filter(function (reservation) {
       return reservation.collab === collab &&
         domain.isActiveReservation(reservation) &&
         domain.slotOverlapsRange(reservation.date, reservation.time, reservation.duration, absence);

@@ -207,6 +207,16 @@
     });
   }
 
+  // Pas de bornage par date : la recherche doit pouvoir retrouver un
+  // rendez-vous ancien ou a venir, comme le faisait la version localStorage.
+  function listAllReservations() {
+    return unwrap(
+      client().from("reservations_public").select("*").order("date", { ascending: false })
+    ).then(function (rows) {
+      return rows.map(mapReservationRow);
+    });
+  }
+
   function listReservationsForClient(clientId) {
     return unwrap(
       client().from("reservations_public").select("*").eq("client_id", clientId).order("date")
@@ -240,6 +250,7 @@
   window.SalonSupabaseData = {
     createReservation: createReservation,
     findOrCreateClient: findOrCreateClient,
+    listAllReservations: listAllReservations,
     listClients: listClients,
     listProfiles: listProfiles,
     listReservationsForClient: listReservationsForClient,

@@ -122,9 +122,9 @@
   function deletePrestation(prestationId) {
     var state = formState.state;
     var prestation = utils.findById(state.db.prestations, prestationId);
-    var used = state.db.reservations.some(function (reservation) {
+    var used = (state.reservations || []).some(function (reservation) {
       return reservation.prestation === prestation.name;
-    }) || state.db.clients.some(function (client) {
+    }) || (state.clients || []).some(function (client) {
       return client.prestation === prestation.name;
     });
 

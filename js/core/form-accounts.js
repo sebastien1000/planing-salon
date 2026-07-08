@@ -385,7 +385,7 @@
     }
 
     var today = utils.today();
-    var hasUpcoming = state.db.reservations.some(function (reservation) {
+    var hasUpcoming = (state.reservations || []).some(function (reservation) {
       return reservation.collab === user.name &&
         reservation.date >= today &&
         !domain.isCancelled(reservation);

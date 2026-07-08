@@ -3,6 +3,7 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var forms = window.SalonForms;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
@@ -17,25 +18,26 @@
   }
 
   var db = data.loadDb();
+  var reservations = [];
+  var clients = [];
+  var profiles = [];
 
-  forms.configure({
-    db: db,
-    refresh: render,
-    user: user
-  });
+  function matchesQuery(reservation, text) {
+    return [
+      reservation.client,
+      reservation.collab,
+      reservation.prestation,
+      reservation.room,
+      reservation.notes,
+      reservation.date,
+      reservation.time
+    ].join(" ").toLowerCase().includes(text);
+  }
 
   function filteredReservations(query) {
     var text = query.toLowerCase();
-    return db.reservations.filter(function (reservation) {
-      return [
-        reservation.client,
-        reservation.collab,
-        reservation.prestation,
-        reservation.room,
-        reservation.notes,
-        reservation.date,
-        reservation.time
-      ].join(" ").toLowerCase().includes(text);
+    return reservations.filter(function (reservation) {
+      return matchesQuery(reservation, text);
     });
   }
 
@@ -47,7 +49,7 @@
   }
 
   function reservationClient(reservation) {
-    return db.clients.find(function (client) {
+    return clients.find(function (client) {
       return client.id === reservation.clientId || client.name === reservation.client;
     }) || null;
   }
@@ -97,26 +99,58 @@
 
   function renderResults(query) {
     var root = ui.byId("results");
-    var reservations = filteredReservations(query);
+    if (!root) {
+      return;
+    }
 
-    root.innerHTML = reservations.length
-      ? reservations.map(renderSearchCard).join("")
+    var results = filteredReservations(query);
+
+    root.innerHTML = results.length
+      ? results.map(renderSearchCard).join("")
       : '<div class="empty">Aucun resultat</div>';
 
     forms.bindReservationCardActions(root);
   }
 
-  function render() {
+  function showLoadError(error) {
     ui.setMain([
-      '<input id="searchInput" class="field search-box" placeholder="Rechercher cliente, RDV, prestation, salle">',
-      '<div id="results" class="cards"></div>'
+      '<div class="card">',
+      '  <div class="alert">Impossible de charger les rendez-vous depuis Supabase. Verifiez la configuration et votre connexion.</div>',
+      "</div>"
     ].join(""));
+    window.console && window.console.error && window.console.error(error);
+  }
 
-    var field = ui.byId("searchInput");
-    field.addEventListener("input", function () {
-      renderResults(field.value || "");
-    });
-    renderResults("");
+  function render() {
+    Promise.all([
+      supabaseData.listAllReservations(),
+      supabaseData.listClients(),
+      supabaseData.listProfiles()
+    ]).then(function (results) {
+      reservations = results[0];
+      clients = results[1];
+      profiles = results[2];
+
+      forms.configure({
+        db: db,
+        refresh: render,
+        user: user,
+        clients: clients,
+        reservations: reservations,
+        profiles: profiles
+      });
+
+      ui.setMain([
+        '<input id="searchInput" class="field search-box" placeholder="Rechercher cliente, RDV, prestation, salle">',
+        '<div id="results" class="cards"></div>'
+      ].join(""));
+
+      var field = ui.byId("searchInput");
+      field.addEventListener("input", function () {
+        renderResults(field.value || "");
+      });
+      renderResults("");
+    }).catch(showLoadError);
   }
 
   render();

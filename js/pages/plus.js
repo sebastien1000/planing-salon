@@ -2,6 +2,7 @@
   var auth = window.SalonAuth;
   var data = window.SalonData;
   var forms = window.SalonForms;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
 
   var user = ui.initAppPage({
@@ -89,9 +90,36 @@
     forms.bindPrestationActions(document);
   }
 
+  function showLoadError(error) {
+    ui.setMain([
+      '<div class="card">',
+      '  <div class="alert">Impossible de charger les donnees depuis Supabase. Verifiez la configuration et votre connexion.</div>',
+      "</div>"
+    ].join(""));
+    window.console && window.console.error && window.console.error(error);
+  }
+
   function render() {
-    var waiting = db.clients.filter(function (client) {
-      return !client.next;
+    Promise.all([
+      supabaseData.listAllReservations(),
+      supabaseData.listClients()
+    ]).then(function (results) {
+      renderContent(results[0], results[1]);
+    }).catch(showLoadError);
+  }
+
+  function renderContent(reservations, clients) {
+    forms.configure({
+      db: db,
+      refresh: render,
+      selectedDate: selectedDate,
+      user: user,
+      reservations: reservations,
+      clients: clients
+    });
+
+    var waiting = clients.filter(function (client) {
+      return !client.nextDate;
     }).length;
 
     var myAbsences = sortByStartDate(db.absences.filter(function (item) {

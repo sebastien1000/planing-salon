@@ -3,6 +3,7 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var forms = window.SalonForms;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
@@ -18,26 +19,24 @@
 
   var db = data.loadDb();
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
+  var reservations = [];
 
-  forms.configure({
-    db: db,
-    refresh: render,
-    selectedDate: selectedDate,
-    user: user
-  });
+  function virtualDb() {
+    return { reservations: reservations, prestations: db.prestations };
+  }
 
   var RANGE_LABELS = { day: "Aujourd'hui", week: "Semaine", month: "Mois" };
 
   function renderStatButton(collab, range) {
     return '<button class="stat" type="button" data-history-collab="' + utils.escapeHtml(collab) +
       '" data-history-range="' + range + '">' +
-      "<b>" + domain.revenueFor(db, collab, range, selectedDate) + "EUR</b>" +
+      "<b>" + domain.revenueFor(virtualDb(), collab, range, selectedDate) + "EUR</b>" +
       "<span>" + RANGE_LABELS[range] + "</span>" +
       "</button>";
   }
 
   function openHistorySheet(collab, range) {
-    var items = domain.doneReservationsFor(db, collab, range, selectedDate);
+    var items = domain.doneReservationsFor(virtualDb(), collab, range, selectedDate);
     var total = items.reduce(function (sum, item) { return sum + item.price; }, 0);
 
     var rows = items.length
@@ -80,7 +79,7 @@
       openHolidaySheet(account);
     }
 
-    forms.configure({ db: db, refresh: refreshWhileOpen, selectedDate: selectedDate, user: user });
+    forms.configure({ db: db, refresh: refreshWhileOpen, selectedDate: selectedDate, user: user, reservations: reservations });
 
     ui.showSheet([
       '<div class="modal-head">',
@@ -94,7 +93,7 @@
     ].join(""));
 
     ui.byId("closeHolidaySheetButton").addEventListener("click", function () {
-      forms.configure({ db: db, refresh: render, selectedDate: selectedDate, user: user });
+      forms.configure({ db: db, refresh: render, selectedDate: selectedDate, user: user, reservations: reservations });
       ui.closeSheet();
     });
     forms.bindHolidayCardActions(ui.byId("holidayList"));
@@ -182,7 +181,7 @@
   }
 
   function renderUserCard(account) {
-    var totalDone = db.reservations.filter(function (reservation) {
+    var totalDone = reservations.filter(function (reservation) {
       return reservation.collab === account.name && reservation.status === "done";
     });
     var totalRevenue = totalDone.reduce(function (sum, reservation) {
@@ -191,7 +190,7 @@
       });
       return sum + (prestation ? prestation.price : 0) + (reservation.supplement || 0);
     }, 0);
-    var upcoming = db.reservations.filter(function (reservation) {
+    var upcoming = reservations.filter(function (reservation) {
       return reservation.collab === account.name && reservation.status === "pre";
     }).length;
 
@@ -214,7 +213,7 @@
       '    <span class="badge">Recette totale ' + totalRevenue + ' EUR</span>',
       '    <span class="badge">' + totalDone.length + ' termines</span>',
       '    <span class="badge">' + upcoming + ' a venir</span>',
-      '    <span class="badge">' + domain.countFor(db, account.name, "cancel", "month", selectedDate) + ' annules ce mois</span>',
+      '    <span class="badge">' + domain.countFor(virtualDb(), account.name, "cancel", "month", selectedDate) + ' annules ce mois</span>',
       accountBadges(account),
       "  </div>",
       '  <div class="row">',
@@ -311,36 +310,57 @@
     });
   }
 
+  function showLoadError(error) {
+    ui.setMain([
+      '<div class="card">',
+      '  <div class="alert">Impossible de charger les rendez-vous depuis Supabase. Verifiez la configuration et votre connexion.</div>',
+      "</div>"
+    ].join(""));
+    window.console && window.console.error && window.console.error(error);
+  }
+
   function render() {
-    if (auth.isAdmin(user)) {
-      var collabs = db.users.filter(function (account) {
-        return account.role === "collab";
-      });
-      var admins = db.users.filter(function (account) {
-        return account.role === "admin";
+    supabaseData.listAllReservations().then(function (list) {
+      reservations = list;
+
+      forms.configure({
+        db: db,
+        refresh: render,
+        selectedDate: selectedDate,
+        user: user,
+        reservations: reservations
       });
 
-      ui.setMain([
-        '<div class="card">',
-        "  <h3>Comptes collaborateurs</h3>",
-        '  <div class="tiny">L admin voit les recettes de chaque collaborateur individuellement.</div>',
-        '  <button id="addAccountButton" class="primary" style="width:100%;margin-top:10px" type="button">Ajouter un collaborateur</button>',
-        "</div>",
-        '<div class="cards">',
-        collabs.map(renderUserCard).join(""),
-        "</div>",
-        '<div class="card">',
-        "  <h3>Comptes administrateurs</h3>",
-        "</div>",
-        '<div class="cards">',
-        admins.map(renderAdminCard).join(""),
-        "</div>"
-      ].join(""));
-    } else {
-      ui.setMain(renderOwnCard());
-    }
+      if (auth.isAdmin(user)) {
+        var collabs = db.users.filter(function (account) {
+          return account.role === "collab";
+        });
+        var admins = db.users.filter(function (account) {
+          return account.role === "admin";
+        });
 
-    bindActions();
+        ui.setMain([
+          '<div class="card">',
+          "  <h3>Comptes collaborateurs</h3>",
+          '  <div class="tiny">L admin voit les recettes de chaque collaborateur individuellement.</div>',
+          '  <button id="addAccountButton" class="primary" style="width:100%;margin-top:10px" type="button">Ajouter un collaborateur</button>',
+          "</div>",
+          '<div class="cards">',
+          collabs.map(renderUserCard).join(""),
+          "</div>",
+          '<div class="card">',
+          "  <h3>Comptes administrateurs</h3>",
+          "</div>",
+          '<div class="cards">',
+          admins.map(renderAdminCard).join(""),
+          "</div>"
+        ].join(""));
+      } else {
+        ui.setMain(renderOwnCard());
+      }
+
+      bindActions();
+    }).catch(showLoadError);
   }
 
   render();

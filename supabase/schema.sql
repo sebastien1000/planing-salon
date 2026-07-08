@@ -26,19 +26,30 @@ create policy "profiles_select_authenticated"
   on profiles for select
   using (auth.uid() is not null);
 
--- Le tout premier profil peut etre cree librement (bootstrap de l'admin
--- initial) ; ensuite seul un admin peut en creer d'autres.
-create policy "profiles_insert_admin_or_bootstrap"
+-- Un utilisateur peut creer sa PROPRE ligne (auto-enregistrement a la
+-- premiere connexion) mais uniquement avec le role 'collab' - impossible
+-- de s'auto-declarer admin. Un admin peut creer n'importe quelle ligne
+-- avec n'importe quel role. Le tout premier profil (table vide, bootstrap
+-- du tout premier admin) est libre.
+create policy "profiles_insert_self_collab_or_admin"
   on profiles for insert
   with check (
-    exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
+    (auth.uid() = id and role = 'collab')
+    or exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
     or not exists (select 1 from profiles)
   );
 
+-- Un utilisateur peut mettre a jour sa propre ligne mais sans changer son
+-- propre role (empeche l'auto-promotion admin) ; un admin peut tout
+-- modifier, y compris le role des autres.
 create policy "profiles_update_self_or_admin"
   on profiles for update
   using (
     auth.uid() = id
+    or exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
+  )
+  with check (
+    (auth.uid() = id and role = (select p.role from profiles p where p.id = auth.uid()))
     or exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
   );
 
