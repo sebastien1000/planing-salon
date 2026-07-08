@@ -2,14 +2,6 @@
   var utils = window.SalonUtils;
   var data = window.SalonData;
 
-  function roomReservationsForDate(db, room, date) {
-    return db.reservations
-      .filter(function (item) {
-        return item.room === room && item.date === date && isActiveReservation(item);
-      })
-      .sort(function (a, b) { return a.time.localeCompare(b.time); });
-  }
-
   function roomStatus(reservations, isToday, nowTime) {
     if (!reservations.length) {
       return "libre";
@@ -357,19 +349,10 @@
     }).length;
   }
 
+  // Clientes/rendez-vous n'ont plus besoin d'etre parcourus ici : Supabase
+  // les relie a un collaborateur par id (collab_id), pas par nom - un
+  // renommage n'y touche donc rien, le nom affiche vient de profiles.name.
   function renameCollaborator(db, oldName, newName) {
-    db.clients.forEach(function (client) {
-      if (client.collab === oldName) {
-        client.collab = newName;
-      }
-    });
-
-    db.reservations.forEach(function (reservation) {
-      if (reservation.collab === oldName) {
-        reservation.collab = newName;
-      }
-    });
-
     db.absences.forEach(function (absence) {
       if (absence.collab === oldName) {
         absence.collab = newName;
@@ -405,7 +388,6 @@
     renameCollaborator: renameCollaborator,
     revenueFor: revenueFor,
     roomFor: roomFor,
-    roomReservationsForDate: roomReservationsForDate,
     roomStatus: roomStatus,
     slotOverlapsRange: slotOverlapsRange,
     addMinutes: addMinutes

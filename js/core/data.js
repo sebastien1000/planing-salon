@@ -57,85 +57,9 @@
         { id: "p7", name: "Baby spa", cat: "baby", duration: 60, price: 40 },
         { id: "p8", name: "Prestation exterieure", cat: "outside", duration: 120, price: 60 }
       ],
-      clients: [
-        {
-          id: "c1",
-          name: "Laura B.",
-          phone: "06 11 22 33 44",
-          email: "",
-          notes: "Aime les poses sobres.",
-          collab: "Julie",
-          prestation: "Remplissage gel",
-          duration: 90,
-          frequency: 21,
-          next: null
-        },
-        {
-          id: "c2",
-          name: "Nina M.",
-          phone: "06 55 44 33 22",
-          email: "",
-          notes: "Baby spa mensuel.",
-          collab: "Marion",
-          prestation: "Baby spa",
-          duration: 60,
-          frequency: 28,
-          next: null
-        },
-        {
-          id: "c3",
-          name: "Sarah L.",
-          phone: "06 77 88 99 00",
-          email: "",
-          notes: "Rendez-vous plutot le matin.",
-          collab: "Marion",
-          prestation: "Pose gel",
-          duration: 120,
-          frequency: 21,
-          next: null
-        }
-      ],
-      reservations: [
-        {
-          id: "r1",
-          client: "Laura B.",
-          clientId: "c1",
-          collab: "Julie",
-          prestation: "Remplissage gel",
-          room: "Salle Ongles",
-          date: utils.today(),
-          time: "14:00",
-          duration: 90,
-          status: "pre",
-          notes: "RDV demo"
-        },
-        {
-          id: "r2",
-          client: "Sarah L.",
-          clientId: "c3",
-          collab: "Marion",
-          prestation: "Pose gel",
-          room: "Salle Ongles 2",
-          date: utils.today(),
-          time: "10:00",
-          duration: 120,
-          status: "pre",
-          notes: ""
-        },
-        {
-          id: "r3",
-          client: "Nina M.",
-          clientId: "c2",
-          collab: "Marion",
-          prestation: "Baby spa",
-          room: "Baby Spa",
-          date: utils.today(),
-          time: "16:00",
-          duration: 60,
-          status: "pre",
-          notes: ""
-        }
-      ],
+      // Clientes et rendez-vous ne sont plus stockes ici : ils vivent dans
+      // Supabase (voir supabase/schema.sql et js/core/supabase-data.js),
+      // avec droits verifies cote serveur.
       absences: [
         {
           id: "a1",
@@ -211,11 +135,13 @@
     var safe = db && typeof db === "object" ? db : {};
     safe.users = (Array.isArray(safe.users) ? safe.users : buildDefault().users).map(sanitizeUser);
     safe.prestations = Array.isArray(safe.prestations) ? safe.prestations : buildDefault().prestations;
-    safe.clients = Array.isArray(safe.clients) ? safe.clients : [];
-    safe.reservations = Array.isArray(safe.reservations) ? safe.reservations : [];
     safe.absences = (Array.isArray(safe.absences) ? safe.absences : []).map(sanitizeBlockedPeriod);
     safe.holidays = (Array.isArray(safe.holidays) ? safe.holidays : []).map(sanitizeBlockedPeriod);
     safe.photos = Array.isArray(safe.photos) ? safe.photos : [];
+    // Nettoyage : clientes/rendez-vous vivent desormais dans Supabase, on
+    // ne les laisse pas trainer en double dans le localStorage existant.
+    delete safe.clients;
+    delete safe.reservations;
     return safe;
   }
 
