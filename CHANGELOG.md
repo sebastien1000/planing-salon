@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-08 (7)
+
+### Ajoute
+
+- migration complete des clientes et des rendez-vous vers Supabase (vraie base de donnees) : `supabase/schema.sql` avec Row Level Security, vue `reservations_public` qui masque les donnees privees cote serveur, contrainte anti-double-reservation au niveau base de donnees
+- creation/reutilisation automatique de la fiche cliente lors de la prise de RDV (recherche par telephone, email puis nom) - fini les doublons
+- fiche cliente enrichie : allergies/precautions, historique des rendez-vous, dernier RDV termine calcule automatiquement
+- synchronisation automatique du profil Supabase d'un collaborateur a sa premiere connexion
+
+### Corrige
+
+- plusieurs verifications de securite (suppression de compte, suppression de prestation, avertissement de creneau) lisaient encore l'ancien stockage local des rendez-vous et auraient laisse passer des actions qu'elles étaient censees bloquer
+- faille potentielle dans les regles Supabase : un collaborateur aurait pu s'auto-attribuer le role administrateur en modifiant directement sa fiche ; corrige avant toute mise en service
+
+### A configurer
+
+- executer `supabase/schema.sql` dans Supabase (une seule fois) - voir la section "Clientes et rendez-vous (Supabase)" du README
+
 ## 2026-07-08 (6)
 
 ### Ajoute

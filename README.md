@@ -4,8 +4,7 @@ Application web statique pour gerer un planning de salon, les clientes, les comp
 
 ## Apercu
 
-Le projet fonctionne sans backend.
-Toutes les donnees sont stockees dans le navigateur via `localStorage`.
+L'authentification, les clientes et les rendez-vous sont geres par [Supabase](https://supabase.com) (vraie base de donnees + droits verifies cote serveur). Le reste (comptes/roles, prestations, salles, absences, conges, preferences d'affichage) reste dans `localStorage` du navigateur.
 
 Pages principales :
 
@@ -46,6 +45,19 @@ Configuration a faire une seule fois :
 
 Le reset par SMS n'est pas encore branche (necessiterait un fournisseur SMS type Twilio configure dans Supabase, a faire dans un second temps si besoin).
 
+**Limite a connaitre** : un deuxieme compte administrateur ne peut pas se "creer" automatiquement a la premiere connexion (pour empecher qu'un simple collaborateur s'auto-promeuve admin). Apres avoir cree son compte Supabase Auth (email + mot de passe), ajoutez manuellement sa ligne dans la table `profiles` via Supabase > SQL Editor : `insert into profiles (id, email, name, role) values ('<uuid Supabase>', '<email>', '<nom>', 'admin');`.
+
+## Clientes et rendez-vous (Supabase)
+
+Executez une seule fois `supabase/schema.sql` dans Supabase > SQL Editor : il cree les tables `profiles`/`clients`/`reservations`, les regles de securite (Row Level Security), une vue `reservations_public` qui masque le nom de la cliente et les notes pour tout le monde sauf l'admin et la collaboratrice concernee, et une contrainte qui refuse tout double-reservation d'une salle au niveau de la base de donnees elle-meme (pas seulement en JavaScript).
+
+Comportement :
+
+- a la premiere connexion d'un collaborateur, sa ligne `profiles` Supabase est creee/mise a jour automatiquement (nom, role, email) a partir de sa fiche locale.
+- lors de la prise d'un rendez-vous, si la cliente n'est pas dans la liste, sa fiche est recherchee par telephone puis email puis nom, et reutilisee si trouvee ; sinon elle est creee automatiquement.
+- la fiche cliente affiche l'historique des rendez-vous, le dernier rendez-vous termine, les allergies/precautions.
+- un collaborateur ne voit que les clientes liees a ses propres rendez-vous ; l'admin voit tout. C'est applique par la base de donnees, pas par une simple verification JavaScript.
+
 ## Structure
 
 ```text
@@ -83,12 +95,12 @@ Les donnees sont stockees sous la cle `salonMvpV4`.
 
 Contenu principal :
 
-- utilisateurs
+- utilisateurs (roles, couleurs, salles/prestations autorisees)
 - prestations
-- clientes
-- reservations
-- absences
+- absences, conges
 - photos
+
+Les clientes et les rendez-vous ne sont plus ici : voir "Clientes et rendez-vous (Supabase)".
 
 ## Point important
 

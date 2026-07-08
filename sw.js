@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v26-supabase-password-reset";
+const CACHE_NAME = "salon-mvp-v27-clients-reservations-supabase";
 
 const APP_ASSETS = [
   "./",
@@ -22,6 +22,7 @@ const APP_ASSETS = [
   "./js/core/utils.js",
   "./js/core/data.js",
   "./js/core/supabase-client.js",
+  "./js/core/supabase-data.js",
   "./js/core/auth.js",
   "./js/core/domain.js",
   "./js/core/ui.js",
