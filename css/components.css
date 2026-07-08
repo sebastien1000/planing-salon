@@ -145,6 +145,27 @@ label {
   box-shadow: 0 0 0 3px rgba(221, 142, 164, 0.12);
 }
 
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.checkbox-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 500;
+}
+
+.checkbox-line input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 .primary,
 .secondary,
 .ghost,
@@ -747,18 +768,6 @@ label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.planning-dot-collab-julie {
-  background: #f4b5c5;
-  color: #6f1f39;
-  border: 1px solid #d97b93;
-}
-
-.planning-dot-collab-marion {
-  background: #b7dbef;
-  color: #1f587b;
-  border: 1px solid #6ba6c9;
 }
 
 .planning-dot-other {

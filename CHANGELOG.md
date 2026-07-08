@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-08
+
+### Ajoute
+
+- gestion complete des collaborateurs cote admin : creation, modification, suppression
+- role (admin ou collaborateur), couleur d'affichage, salles autorisees et prestations autorisees par compte
+- verification automatique qu'une collaboratrice ne peut pas etre assignee a une salle ou une prestation qui ne lui est pas autorisee
+- garde-fou pour toujours garder au moins un compte administrateur
+
+### Corrige
+
+- la suggestion automatique de salle et le conflit de salle ne dependent plus des noms "Julie"/"Marion" ecrits en dur, ils sont desormais generiques pour n'importe quel collaborateur
+
 ## 2026-07-07
 
 ### Ajoute

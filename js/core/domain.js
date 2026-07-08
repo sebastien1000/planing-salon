@@ -20,8 +20,13 @@
       return "";
     }
 
+    var user = utils.findByName(db.users, collab);
+    if (user && user.rooms && user.rooms.length) {
+      return user.rooms[0];
+    }
+
     if (prestation.cat === "ongles") {
-      return collab === "Marion" ? "Salle Ongles 2" : "Salle Ongles";
+      return "Salle Ongles";
     }
 
     if (prestation.cat === "baby") {
@@ -35,6 +40,32 @@
     return "Exterieur";
   }
 
+  function isRoomAllowedForUser(user, room) {
+    return !user || user.rooms == null || user.rooms.indexOf(room) !== -1;
+  }
+
+  function isPrestationAllowedForUser(user, prestationName) {
+    return !user || user.prestations == null || user.prestations.indexOf(prestationName) !== -1;
+  }
+
+  function assignmentError(db, reservation) {
+    var user = utils.findByName(db.users, reservation.collab);
+
+    if (!user) {
+      return null;
+    }
+
+    if (reservation.room && !isRoomAllowedForUser(user, reservation.room)) {
+      return reservation.collab + " ne peut pas utiliser la salle " + reservation.room + ".";
+    }
+
+    if (reservation.prestation && !isPrestationAllowedForUser(user, reservation.prestation)) {
+      return reservation.collab + " ne peut pas proposer la prestation " + reservation.prestation + ".";
+    }
+
+    return null;
+  }
+
   function catLabel(cat) {
     return {
       ongles: "Ongles",
@@ -46,7 +77,7 @@
 
   function previewRoomForCat(cat) {
     if (cat === "ongles") {
-      return "Salle Ongles pour Julie / Salle Ongles 2 pour Marion";
+      return "Salle Ongles (ou salle secondaire si occupee)";
     }
 
     if (cat === "noire") {
@@ -256,6 +287,7 @@
   }
 
   window.SalonDomain = {
+    assignmentError: assignmentError,
     catLabel: catLabel,
     conflict: conflict,
     conflictDetails: conflictDetails,
@@ -266,6 +298,8 @@
     getStatusLabel: getStatusLabel,
     isCancelled: isCancelled,
     isActiveReservation: isActiveReservation,
+    isPrestationAllowedForUser: isPrestationAllowedForUser,
+    isRoomAllowedForUser: isRoomAllowedForUser,
     normalizeStatus: normalizeStatus,
     previewRoomForCat: previewRoomForCat,
     renameCollaborator: renameCollaborator,

@@ -76,6 +76,25 @@
     });
   }
 
+  function findByName(list, name) {
+    return list.find(function (item) {
+      return item.name === name;
+    });
+  }
+
+  function readableTextColor(hex) {
+    var value = String(hex || "").replace("#", "");
+    if (value.length !== 6) {
+      return "#241019";
+    }
+
+    var r = parseInt(value.slice(0, 2), 16);
+    var g = parseInt(value.slice(2, 4), 16);
+    var b = parseInt(value.slice(4, 6), 16);
+    var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.6 ? "#241019" : "#ffffff";
+  }
+
   function escapeHtml(value) {
     return String(value || "")
       .replace(/&/g, "&amp;")
@@ -89,25 +108,19 @@
     return condition ? " " + name : "";
   }
 
-  function collaboratorClassName(name) {
-    return "collab-" + String(name || "")
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-");
-  }
-
   window.SalonUtils = {
     addDays: addDays,
     boolAttr: boolAttr,
-    collaboratorClassName: collaboratorClassName,
     dateObj: dateObj,
     escapeHtml: escapeHtml,
     findById: findById,
+    findByName: findByName,
     fmtDate: fmtDate,
     iso: iso,
     mins: mins,
     monthDates: monthDates,
     overlaps: overlaps,
+    readableTextColor: readableTextColor,
     startMonth: startMonth,
     startWeek: startWeek,
     today: today,

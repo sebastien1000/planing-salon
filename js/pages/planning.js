@@ -143,13 +143,16 @@
             var isMine = reservation.collab === user.name;
             var dotClassName = [
               "dot",
-              "planning-dot-" + utils.collaboratorClassName(reservation.collab),
               isMine ? "planning-dot-own" : "planning-dot-other"
             ].join(" ");
+            var collabUser = utils.findByName(db.users, reservation.collab);
+            var dotStyle = collabUser && collabUser.color
+              ? ' style="background:' + collabUser.color + ';color:' + utils.readableTextColor(collabUser.color) + '"'
+              : "";
             var label = auth.canSeeReservation(user, reservation)
               ? reservation.client
               : "Reserve - " + reservation.collab;
-            return '<span class="' + dotClassName + '">' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
+            return '<span class="' + dotClassName + '"' + dotStyle + '>' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
           }).join(""),
           absences.length ? '<span class="dot">Blocage ' + absences.length + "</span>" : "",
           reservations.length > 2 ? '<span class="dot">+' + (reservations.length - 2) + " autre</span>" : "",

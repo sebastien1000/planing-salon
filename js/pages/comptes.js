@@ -109,6 +109,31 @@
       '    <button class="secondary" type="button" data-edit-profile="' + account.id + '">Modifier</button>',
       '    <button class="secondary danger" type="button" data-reset-password="' + account.id + '">Reinitialiser MDP</button>',
       '    <button class="secondary" type="button" data-reset-link="' + account.id + '">Lien reset</button>',
+      account.id !== user.id
+        ? '    <button class="secondary danger" type="button" data-delete-account="' + account.id + '">Supprimer</button>'
+        : "",
+      "  </div>",
+      "</div>"
+    ].join("");
+  }
+
+  function renderAdminCard(account) {
+    return [
+      '<div class="card">',
+      '  <div class="profile-card-head">',
+      ui.renderUserProfile(account.name, {
+        className: "profile-user-card",
+        avatarClassName: "profile-avatar-md",
+        nameClassName: "profile-name-card"
+      }),
+      "  </div>",
+      '  <div class="meta"><span class="badge">Administrateur</span></div>',
+      '  <div class="row">',
+      '    <button class="secondary" type="button" data-edit-profile="' + account.id + '">Modifier</button>',
+      '    <button class="secondary danger" type="button" data-reset-password="' + account.id + '">Reinitialiser MDP</button>',
+      account.id !== user.id
+        ? '    <button class="secondary danger" type="button" data-delete-account="' + account.id + '">Supprimer</button>'
+        : "",
       "  </div>",
       "</div>"
     ].join("");
@@ -135,6 +160,13 @@
   }
 
   function bindActions() {
+    var addButton = ui.byId("addAccountButton");
+    if (addButton) {
+      addButton.addEventListener("click", function () {
+        forms.openAddAccountForm();
+      });
+    }
+
     var ownButton = ui.byId("editOwnProfile");
     if (ownButton) {
       ownButton.addEventListener("click", function () {
@@ -165,6 +197,12 @@
         openHistorySheet(button.dataset.historyCollab, button.dataset.historyRange);
       });
     });
+
+    document.querySelectorAll("[data-delete-account]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        forms.deleteAccount(button.dataset.deleteAccount);
+      });
+    });
   }
 
   function render() {
@@ -172,14 +210,24 @@
       var collabs = db.users.filter(function (account) {
         return account.role === "collab";
       });
+      var admins = db.users.filter(function (account) {
+        return account.role === "admin";
+      });
 
       ui.setMain([
         '<div class="card">',
-        "  <h3>Comptes collaboratrices</h3>",
-        '  <div class="tiny">L admin voit les recettes de chaque collaboratrice individuellement.</div>',
+        "  <h3>Comptes collaborateurs</h3>",
+        '  <div class="tiny">L admin voit les recettes de chaque collaborateur individuellement.</div>',
+        '  <button id="addAccountButton" class="primary" style="width:100%;margin-top:10px" type="button">Ajouter un collaborateur</button>',
         "</div>",
         '<div class="cards">',
         collabs.map(renderUserCard).join(""),
+        "</div>",
+        '<div class="card">',
+        "  <h3>Comptes administrateurs</h3>",
+        "</div>",
+        '<div class="cards">',
+        admins.map(renderAdminCard).join(""),
         "</div>"
       ].join(""));
     } else {

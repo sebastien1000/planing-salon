@@ -10,6 +10,8 @@
     "Exterieur"
   ];
 
+  var DEFAULT_COLLAB_COLOR = "#e8a7b6";
+
   var STATUS = [
     ["pre", "Prevu"],
     ["run", "En cours"],
@@ -22,9 +24,9 @@
   function buildDefault() {
     return {
       users: [
-        { id: "u1", login: "Julie", name: "Julie", role: "collab", password: "demo" },
-        { id: "u2", login: "Marion", name: "Marion", role: "collab", password: "demo" },
-        { id: "u0", login: "admin", name: "Administration", role: "admin", password: "demo" }
+        { id: "u1", login: "Julie", name: "Julie", role: "collab", password: "demo", color: "#f4b5c5", rooms: null, prestations: null },
+        { id: "u2", login: "Marion", name: "Marion", role: "collab", password: "demo", color: "#b7dbef", rooms: null, prestations: null },
+        { id: "u0", login: "admin", name: "Administration", role: "admin", password: "demo", color: "#d9c2a3", rooms: null, prestations: null }
       ],
       prestations: [
         { id: "p1", name: "Pose gel", cat: "ongles", duration: 120, price: 45 },
@@ -129,9 +131,16 @@
     };
   }
 
+  function sanitizeUser(user) {
+    user.color = user.color || DEFAULT_COLLAB_COLOR;
+    user.rooms = Array.isArray(user.rooms) ? user.rooms : null;
+    user.prestations = Array.isArray(user.prestations) ? user.prestations : null;
+    return user;
+  }
+
   function sanitizeDb(db) {
     var safe = db && typeof db === "object" ? db : {};
-    safe.users = Array.isArray(safe.users) ? safe.users : buildDefault().users;
+    safe.users = (Array.isArray(safe.users) ? safe.users : buildDefault().users).map(sanitizeUser);
     safe.prestations = Array.isArray(safe.prestations) ? safe.prestations : buildDefault().prestations;
     safe.clients = Array.isArray(safe.clients) ? safe.clients : [];
     safe.reservations = Array.isArray(safe.reservations) ? safe.reservations : [];

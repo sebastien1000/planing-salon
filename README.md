@@ -54,6 +54,14 @@ js/
 - `js/core/` contient la logique partagee
 - `js/pages/` contient la logique de chaque ecran
 
+## Gestion des collaborateurs
+
+Depuis l'espace admin (page Comptes), un administrateur peut creer, modifier ou supprimer un collaborateur : nom, identifiant, mot de passe, role (admin ou collaborateur), couleur d'affichage dans le planning, salles autorisees et prestations autorisees.
+
+- si aucune salle ou prestation n'est cochee lors de la creation, le compte n'a aucune restriction
+- si toutes les cases sont decochees volontairement, le compte n'a plus aucun acces (a corriger depuis le formulaire)
+- la suppression est bloquee si le compte a des rendez-vous a venir, et il doit toujours rester au moins un administrateur
+
 ## Stockage local
 
 Les donnees sont stockees sous la cle `salonMvpV4`.

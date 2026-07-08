@@ -13,6 +13,8 @@
     var canSee = auth.canSeeReservation(state.user, reservation);
     var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
     var subtitle = canSee ? reservation.prestation : "Detail prive";
+    var collabUser = utils.findByName(state.db.users, reservation.collab);
+    var borderStyle = collabUser && collabUser.color ? ' style="border-left-color:' + collabUser.color + '"' : "";
     var cardClassName = [
       "card",
       "appointment",
@@ -31,7 +33,7 @@
     }
 
     return [
-      '<div class="' + cardClassName + '">',
+      '<div class="' + cardClassName + '"' + borderStyle + '>',
       "  <div class=\"row\">",
       '    <div class="grow">',
       "      <b>" + utils.escapeHtml(title) + "</b>",
@@ -78,6 +80,11 @@
     });
   }
 
+  function defaultCollabName(state) {
+    var firstCollab = state.db.users.find(function (user) { return user.role === "collab"; });
+    return firstCollab ? firstCollab.name : "";
+  }
+
   function openReservation(reservationId) {
     var state = formState.state;
     var reservation = reservationId
@@ -86,7 +93,7 @@
           id: "",
           client: "",
           clientId: "",
-          collab: auth.isAdmin(state.user) ? "Julie" : state.user.name,
+          collab: auth.isAdmin(state.user) ? defaultCollabName(state) : state.user.name,
           prestation: state.db.prestations[0].name,
           date: state.selectedDate,
           time: "09:00",
@@ -126,16 +133,12 @@
           utils.escapeHtml(user.name) + "</option>";
       }).join("");
 
-    var prestationOptions = state.db.prestations.map(function (prestation) {
-      var selected = prestation.name === reservation.prestation ? " selected" : "";
-      return '<option value="' + utils.escapeHtml(prestation.name) + '"' + selected + ">" +
-        utils.escapeHtml(prestation.name) + "</option>";
-    }).join("");
-    var roomOptions = data.ROOMS.map(function (room) {
-      var selected = room === (reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation))
-        ? " selected" : "";
-      return '<option value="' + utils.escapeHtml(room) + '"' + selected + ">" + utils.escapeHtml(room) + "</option>";
-    }).join("");
+    var prestationOptions = buildPrestationOptionsHtml(state, reservation.collab, reservation.prestation);
+    var roomOptions = buildRoomOptionsHtml(
+      state,
+      reservation.collab,
+      reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation)
+    );
 
     var room = reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation);
     var lockOwnCollab = !auth.isAdmin(state.user);
@@ -185,6 +188,27 @@
     ].join("");
   }
 
+  function buildRoomOptionsHtml(state, collabName, selectedRoom) {
+    var user = utils.findByName(state.db.users, collabName);
+    return data.ROOMS.filter(function (room) {
+      return domain.isRoomAllowedForUser(user, room);
+    }).map(function (room) {
+      var selected = room === selectedRoom ? " selected" : "";
+      return '<option value="' + utils.escapeHtml(room) + '"' + selected + ">" + utils.escapeHtml(room) + "</option>";
+    }).join("");
+  }
+
+  function buildPrestationOptionsHtml(state, collabName, selectedPrestation) {
+    var user = utils.findByName(state.db.users, collabName);
+    return state.db.prestations.filter(function (prestation) {
+      return domain.isPrestationAllowedForUser(user, prestation.name);
+    }).map(function (prestation) {
+      var selected = prestation.name === selectedPrestation ? " selected" : "";
+      return '<option value="' + utils.escapeHtml(prestation.name) + '"' + selected + ">" +
+        utils.escapeHtml(prestation.name) + "</option>";
+    }).join("");
+  }
+
   function bindReservationForm(reservationId) {
     var closeButton = ui.byId("closeModalButton");
     var saveButton = ui.byId("saveReservationButton");
@@ -206,13 +230,26 @@
     }
 
     clientField.addEventListener("change", fillClientHabit);
-    collabField.addEventListener("change", updateReservationRoom);
+    collabField.addEventListener("change", function () {
+      refreshCollabRestrictedFields();
+      updateReservationRoom(false);
+    });
     prestationField.addEventListener("change", function () {
       updateReservationRoom(true);
     });
 
     updateReservationRoom(false);
     updateReservationMeta();
+  }
+
+  function refreshCollabRestrictedFields() {
+    var state = formState.state;
+    var collab = ui.byId("fCollab").value;
+    var currentPrestation = ui.byId("fPrest").value;
+    var currentRoom = ui.byId("fRoom").value;
+
+    ui.byId("fPrest").innerHTML = buildPrestationOptionsHtml(state, collab, currentPrestation);
+    ui.byId("fRoom").innerHTML = buildRoomOptionsHtml(state, collab, currentRoom);
   }
 
   function updateReservationRoom(updateDuration) {
@@ -246,6 +283,7 @@
     ui.byId("fClientName").value = client.name;
     ui.byId("fClientPhone").value = client.phone || "";
     ui.byId("fCollab").value = auth.isAdmin(state.user) ? client.collab : state.user.name;
+    refreshCollabRestrictedFields();
     ui.byId("fPrest").value = client.prestation;
     ui.byId("fDuration").value = client.duration;
     updateReservationRoom(false);
@@ -292,6 +330,12 @@
 
     if (currentReservation && !canManageReservation(currentReservation)) {
       ui.byId("reservationMsg").innerHTML = '<div class="alert reservation-alert-box">Modification refusee pour cette collaboratrice.</div>';
+      return;
+    }
+
+    var assignmentError = domain.assignmentError(state.db, reservation);
+    if (assignmentError) {
+      ui.byId("reservationMsg").innerHTML = '<div class="alert">' + utils.escapeHtml(assignmentError) + "</div>";
       return;
     }
 
@@ -499,6 +543,12 @@
       status: "pre",
       notes: "Prochain RDV valide"
     };
+
+    var assignmentError = domain.assignmentError(state.db, reservation);
+    if (assignmentError) {
+      ui.byId("proposalMsg").innerHTML = '<div class="alert">' + utils.escapeHtml(assignmentError) + "</div>";
+      return;
+    }
 
     var error = domain.conflict(state.db, reservation, null);
     if (error) {
