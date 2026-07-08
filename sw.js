@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v24-planning-filter-menu";
+const CACHE_NAME = "salon-mvp-v25-filter-menu-validate-button";
 
 const APP_ASSETS = [
   "./",

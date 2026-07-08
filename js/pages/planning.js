@@ -253,7 +253,6 @@
     ui.showSheet([
       '<div class="modal-head">',
       "  <h3>Filtres du planning</h3>",
-      '  <button id="closeFilterMenuButton" class="x" type="button">x</button>',
       "</div>",
 
       '<div class="section-title">Collaborateur</div>',
@@ -289,14 +288,16 @@
       "</div>",
 
       '<div class="section-title" style="margin-top:18px">Salles - ' + utils.escapeHtml(utils.fmtDate(selectedDate)) + "</div>",
-      '<div id="roomStatusList" class="stack">' + roomStatusListHtml() + "</div>"
+      '<div id="roomStatusList" class="stack">' + roomStatusListHtml() + "</div>",
+
+      '<button id="validateFilterButton" class="primary" style="width:100%;margin-top:16px" type="button">Valider</button>'
     ].join(""));
 
     bindFilterMenuEvents();
   }
 
   function bindFilterMenuEvents() {
-    ui.byId("closeFilterMenuButton").addEventListener("click", ui.closeSheet);
+    ui.byId("validateFilterButton").addEventListener("click", ui.closeSheet);
 
     document.querySelectorAll("[data-filter-collab]").forEach(function (button) {
       button.addEventListener("click", function () {
