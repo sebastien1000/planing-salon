@@ -118,10 +118,9 @@
 
     if (isCollab) {
       actions.push({ id: "manage-holidays", label: "Gerer les conges" });
-      actions.push({ id: "reset-link", label: "Generer un lien de reinitialisation" });
     }
 
-    actions.push({ id: "reset-password", label: "Reinitialiser le mot de passe" });
+    actions.push({ id: "send-password-reset", label: "Envoyer un lien de reinitialisation" });
 
     if (!isSelf) {
       actions.push({
@@ -143,13 +142,8 @@
       return;
     }
 
-    if (actionId === "reset-link") {
-      forms.resetLink(accountId);
-      return;
-    }
-
-    if (actionId === "reset-password") {
-      forms.resetPassword(accountId);
+    if (actionId === "send-password-reset") {
+      forms.sendPasswordReset(accountId);
       return;
     }
 

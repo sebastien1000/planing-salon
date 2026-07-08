@@ -32,10 +32,9 @@
     openReservation: reservations.openReservation,
     prestationCard: prestations.prestationCard,
     reservationCard: reservations.reservationCard,
-    resetLink: accounts.resetLink,
-    resetPassword: accounts.resetPassword,
     saveAbsence: absences.saveAbsence,
     saveHoliday: holidays.saveHoliday,
+    sendPasswordReset: accounts.sendPasswordReset,
     setReservationStatus: reservations.setReservationStatus,
     toggleAccountActive: accounts.toggleAccountActive
   };

@@ -171,7 +171,7 @@
       '<label for="uName">Nom affiche</label><input id="uName" class="field" value="' + utils.escapeHtml(user.name) + '">',
       '<label for="uPhone">Telephone</label><input id="uPhone" class="field" value="' + utils.escapeHtml(user.phone || "") + '">',
       '<label for="uEmail">Email</label><input id="uEmail" class="field" type="email" value="' + utils.escapeHtml(user.email || "") + '">',
-      '<label for="uPass">Nouveau mot de passe</label><input id="uPass" class="field" type="password" placeholder="Laisser vide pour ne pas changer">',
+      '<button id="sendResetButton" class="secondary" style="width:100%;margin-bottom:14px" type="button">Envoyer un lien de reinitialisation</button>',
       isAdminEditing ? buildAccountExtraFieldsHtml(user, isSelf) : "",
       '<div class="row" style="margin-top:14px">',
       '  <button id="saveProfileButton" class="primary grow" type="button">Enregistrer</button>',
@@ -190,6 +190,9 @@
     ui.byId("closeProfileModal").addEventListener("click", ui.closeModal);
     ui.byId("saveProfileButton").addEventListener("click", function () {
       saveProfile(userId);
+    });
+    ui.byId("sendResetButton").addEventListener("click", function () {
+      sendPasswordReset(userId);
     });
 
     var deleteButton = ui.byId("deleteAccountButton");
@@ -218,16 +221,12 @@
 
     var oldName = user.name;
     var newName = ui.byId("uName").value.trim() || user.name;
-    var password = ui.byId("uPass").value;
 
     user.name = newName;
     user.phone = ui.byId("uPhone").value.trim();
     user.email = ui.byId("uEmail").value.trim();
     if (pendingPhoto !== undefined) {
       user.photo = pendingPhoto;
-    }
-    if (password) {
-      user.password = password;
     }
 
     var roleField = ui.byId("uRole");
@@ -274,8 +273,9 @@
       '<label for="naName">Nom affiche</label><input id="naName" class="field" placeholder="Ex : Lea">',
       '<label for="naLogin">Identifiant de connexion</label><input id="naLogin" class="field" placeholder="Ex : Lea">',
       '<label for="naPhone">Telephone (facultatif)</label><input id="naPhone" class="field">',
-      '<label for="naEmail">Email (facultatif)</label><input id="naEmail" class="field" type="email">',
-      '<label for="naPass">Mot de passe</label><input id="naPass" class="field" type="password" placeholder="Laisser vide pour demo">',
+      '<label for="naEmail">Email</label><input id="naEmail" class="field" type="email" placeholder="obligatoire pour la connexion">',
+      '<p class="tiny">Le mot de passe n est plus defini ici : creez le compte correspondant dans Supabase avec le meme email, ' +
+        'puis utilisez "Envoyer un lien de reinitialisation" pour que la personne choisisse son mot de passe.</p>',
       buildAccountExtraFieldsHtml(blankUser),
       '<button id="saveAddAccountButton" class="primary" style="width:100%;margin-top:14px" type="button">Ajouter</button>'
     ].join(""));
@@ -294,10 +294,10 @@
 
     var name = ui.byId("naName").value.trim();
     var login = ui.byId("naLogin").value.trim();
-    var password = ui.byId("naPass").value.trim() || "demo";
+    var email = ui.byId("naEmail").value.trim();
 
-    if (!name || !login) {
-      ui.byId("addAccountMsg").innerHTML = '<div class="alert">Le nom et l identifiant sont obligatoires.</div>';
+    if (!name || !login || !email) {
+      ui.byId("addAccountMsg").innerHTML = '<div class="alert">Le nom, l identifiant et l email sont obligatoires.</div>';
       return;
     }
 
@@ -315,12 +315,11 @@
       login: login,
       name: name,
       role: ui.byId("uRole").value,
-      password: password,
       color: ui.byId("uColor").value,
       rooms: readCheckedValues("uRoom"),
       prestations: readCheckedValues("uPrestation"),
       phone: ui.byId("naPhone").value.trim(),
-      email: ui.byId("naEmail").value.trim(),
+      email: email,
       photo: null,
       active: true
     });
@@ -409,42 +408,33 @@
     formState.saveAndRefresh();
   }
 
-  function resetPassword(userId) {
+  // Remplace les anciens resetPassword("demo" en clair) et resetLink (faux
+  // lien salon-reset://) : la seule action reelle possible cote navigateur
+  // est de demander a Supabase d'envoyer un vrai email de reinitialisation.
+  function sendPasswordReset(userId) {
     var state = formState.state;
     var user = utils.findById(state.db.users, userId);
 
-    if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut reinitialiser un mot de passe.");
+    if (!user || !canManageAccount(userId)) {
+      window.alert("Vous ne pouvez pas demander une reinitialisation pour ce compte.");
       return;
     }
 
-    if (!window.confirm("Reinitialiser le mot de passe ?")) {
+    if (!user.email) {
+      window.alert("Ce compte n'a pas d'email enregistre. Ajoutez-en un avant d'envoyer un lien.");
       return;
     }
 
-    user.password = "demo";
-    data.saveDb(state.db);
-    window.alert("Mot de passe remis a demo.");
-  }
-
-  function resetLink(userId) {
-    var state = formState.state;
-
-    if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut generer un lien de reinitialisation.");
-      return;
-    }
-
-    var user = utils.findById(state.db.users, userId);
-    window.alert("Lien de reinitialisation : salon-reset://" + user.login + "-" + utils.uid());
+    auth.requestPasswordReset(user.email).then(function () {
+      window.alert("Si un compte Supabase existe pour " + user.email + ", un lien de reinitialisation vient d etre envoye.");
+    });
   }
 
   window.SalonAccountForms = {
     deleteAccount: deleteAccount,
     openAddAccountForm: openAddAccountForm,
     openProfileForm: openProfileForm,
-    resetLink: resetLink,
-    resetPassword: resetPassword,
+    sendPasswordReset: sendPasswordReset,
     toggleAccountActive: toggleAccountActive
   };
 }());
