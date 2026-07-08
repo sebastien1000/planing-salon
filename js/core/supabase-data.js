@@ -34,7 +34,46 @@
     return match ? match.id : null;
   }
 
+  function resolveCollabName(profiles, id) {
+    var match = profiles.find(function (item) { return item.id === id; });
+    return match ? match.name : "";
+  }
+
   // ---- Clientes ----
+  // Meme principe que pour les rendez-vous : la table stocke collab_id
+  // (uuid), l'app manipule collabId ; le nom du collaborateur se resout au
+  // besoin via resolveCollabName(state.profiles, client.collabId).
+
+  function mapClientRow(row) {
+    return {
+      id: row.id,
+      name: row.name,
+      phone: row.phone,
+      email: row.email,
+      notes: row.notes,
+      allergies: row.allergies,
+      collabId: row.collab_id,
+      prestation: row.prestation,
+      duration: row.duration,
+      frequency: row.frequency,
+      nextDate: row.next_date
+    };
+  }
+
+  function toClientRow(input) {
+    var row = {};
+    if (input.name !== undefined) row.name = input.name;
+    if (input.phone !== undefined) row.phone = input.phone || null;
+    if (input.email !== undefined) row.email = input.email || null;
+    if (input.notes !== undefined) row.notes = input.notes || null;
+    if (input.allergies !== undefined) row.allergies = input.allergies || null;
+    if (input.collabId !== undefined) row.collab_id = input.collabId || null;
+    if (input.prestation !== undefined) row.prestation = input.prestation || null;
+    if (input.duration !== undefined) row.duration = input.duration || null;
+    if (input.frequency !== undefined) row.frequency = input.frequency || null;
+    if (input.nextDate !== undefined) row.next_date = input.nextDate || null;
+    return row;
+  }
 
   function normalizePhone(phone) {
     return String(phone || "").replace(/\D/g, "");
@@ -76,23 +115,15 @@
   }
 
   function listClients() {
-    return unwrap(client().from("clients").select("*").order("name"));
+    return unwrap(client().from("clients").select("*").order("name")).then(function (rows) {
+      return rows.map(mapClientRow);
+    });
   }
 
   function insertClient(input) {
     return unwrap(
-      client().from("clients").insert({
-        name: input.name,
-        phone: input.phone || null,
-        email: input.email || null,
-        notes: input.notes || null,
-        allergies: input.allergies || null,
-        collab_id: input.collabId || null,
-        prestation: input.prestation || null,
-        duration: input.duration || null,
-        frequency: input.frequency || null
-      }).select().single()
-    );
+      client().from("clients").insert(toClientRow(input)).select().single()
+    ).then(mapClientRow);
   }
 
   // Recherche par telephone, email ou nom ; reutilise la fiche existante,
@@ -123,7 +154,8 @@
   }
 
   function updateClient(id, patch) {
-    return unwrap(client().from("clients").update(patch).eq("id", id).select().single());
+    return unwrap(client().from("clients").update(toClientRow(patch)).eq("id", id).select().single())
+      .then(mapClientRow);
   }
 
   // ---- Rendez-vous ----
@@ -213,6 +245,7 @@
     listReservationsForClient: listReservationsForClient,
     listReservationsForDates: listReservationsForDates,
     resolveCollabId: resolveCollabId,
+    resolveCollabName: resolveCollabName,
     updateClient: updateClient,
     updateReservation: updateReservation,
     upsertProfile: upsertProfile
