@@ -32,11 +32,19 @@ Puis ouvrir :
 http://localhost:8000
 ```
 
-## Comptes de demo
+## Authentification (Supabase)
 
-- `Julie` / `demo`
-- `Marion` / `demo`
-- `admin` / `demo`
+La connexion, le mot de passe et sa reinitialisation par email sont geres par [Supabase Auth](https://supabase.com) - plus aucun mot de passe n'est stocke dans ce projet (ni en clair, ni hache).
+
+Configuration a faire une seule fois :
+
+1. Creer un projet gratuit sur supabase.com.
+2. Dans Project Settings -> API, recuperer l'URL du projet et la cle publique `anon`. Renseigner ces deux valeurs dans `js/core/supabase-client.js`. Cette cle `anon` n'est pas un secret, elle est faite pour etre publique - ne jamais utiliser la cle `service_role` ici.
+3. Dans Authentication -> Email Templates, personnaliser le mail "Reset Password" (le bouton "Reinitialiser mon mot de passe").
+4. Dans Authentication -> URL Configuration, autoriser l'URL du site (et `.../reset-password.html`) en Redirect URL.
+5. Pour chaque collaborateur : creer un utilisateur Supabase (Authentication -> Users -> Add user) avec le meme email que celui renseigne dans sa fiche (page Comptes), puis lui envoyer un lien de reinitialisation ("Envoyer un lien de reinitialisation" dans son profil) pour qu'il choisisse son propre mot de passe.
+
+Le reset par SMS n'est pas encore branche (necessiterait un fournisseur SMS type Twilio configure dans Supabase, a faire dans un second temps si besoin).
 
 ## Structure
 
@@ -56,7 +64,7 @@ js/
 
 ## Gestion des collaborateurs
 
-Depuis l'espace admin (page Comptes), un administrateur peut creer, modifier ou supprimer un collaborateur : nom, identifiant, mot de passe, role (admin ou collaborateur), couleur d'affichage dans le planning, salles autorisees et prestations autorisees.
+Depuis l'espace admin (page Comptes), un administrateur peut creer, modifier ou supprimer un collaborateur : nom, identifiant, email, telephone, role (admin ou collaborateur), couleur d'affichage dans le planning, salles autorisees et prestations autorisees. Le mot de passe n'est plus defini ici : voir la section "Authentification (Supabase)".
 
 - si aucune salle ou prestation n'est cochee lors de la creation, le compte n'a aucune restriction
 - si toutes les cases sont decochees volontairement, le compte n'a plus aucun acces (a corriger depuis le formulaire)

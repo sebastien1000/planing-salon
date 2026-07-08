@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-08 (6)
+
+### Ajoute
+
+- vraie reinitialisation de mot de passe par email via Supabase Auth : lien securise, temporaire, a usage unique, mot de passe hache cote serveur (jamais en JS navigateur)
+- page "Mot de passe oublie" sur l'ecran de connexion (message toujours neutre, aucune fuite sur l'existence d'un compte) et nouvelle page `reset-password.html`
+- connexion desormais par email (remplace l'identifiant court)
+
+### Corrige
+
+- suppression du faux bouton "Lien reset" (`salon-reset://`, ne faisait rien) et de la fausse reinitialisation admin (mot de passe remis en clair a "demo") : remplaces par un vrai envoi d'email
+- les mots de passe ne sont plus stockes du tout dans `localStorage`, meme en clair (nettoyage automatique des anciennes donnees)
+- retrait des boutons de connexion demo (reposaient sur un mot de passe partage incompatible avec Supabase)
+
+### A configurer
+
+- voir la section "Authentification (Supabase)" du `README.md` : creer un projet Supabase, renseigner l'URL/cle anon, et creer un compte Supabase par collaborateur
+
 ## 2026-07-08 (5)
 
 ### Ajoute

@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v25-filter-menu-validate-button";
+const CACHE_NAME = "salon-mvp-v26-supabase-password-reset";
 
 const APP_ASSETS = [
   "./",
@@ -8,6 +8,7 @@ const APP_ASSETS = [
   "./recherche.html",
   "./comptes.html",
   "./plus.html",
+  "./reset-password.html",
   "./manifest.json",
   "./assets/img/branding/logo.png",
   "./assets/img/branding/favicon.png",
@@ -20,6 +21,7 @@ const APP_ASSETS = [
   "./css/pages.css",
   "./js/core/utils.js",
   "./js/core/data.js",
+  "./js/core/supabase-client.js",
   "./js/core/auth.js",
   "./js/core/domain.js",
   "./js/core/ui.js",
@@ -33,6 +35,7 @@ const APP_ASSETS = [
   "./js/core/form-holidays.js",
   "./js/core/forms.js",
   "./js/pages/login.js",
+  "./js/pages/reset-password.js",
   "./js/pages/planning.js",
   "./js/pages/clients.js",
   "./js/pages/recherche.js",
