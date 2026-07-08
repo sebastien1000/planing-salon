@@ -67,6 +67,11 @@ create table if not exists clients (
   created_at timestamptz not null default now()
 );
 
+-- Defense en profondeur contre une double-creation en cas de deux
+-- reservations quasi simultanees pour la meme nouvelle cliente.
+create unique index if not exists clients_phone_unique
+  on clients (phone) where phone is not null and phone <> '';
+
 alter table clients enable row level security;
 
 create policy "clients_select_admin_or_linked"
