@@ -101,7 +101,7 @@
       '<label for="cPhone">Telephone</label><input id="cPhone" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
       '<label for="cEmail">Email</label><input id="cEmail" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.email || "") + '">',
       '<div class="grid2">',
-      '  <div><label for="cCollab">Collaboratrice habituelle</label><select id="cCollab" class="field"' + (manageable ? "" : " disabled") + '>' + state.db.users
+      '  <div><label for="cCollab">Collaboratrice habituelle</label><select id="cCollab" class="field"' + (auth.isAdmin(state.user) ? "" : " disabled") + '>' + state.db.users
         .filter(function (item) { return item.role === "collab"; })
         .map(function (item) {
           var selected = item.name === habitualCollab ? " selected" : "";

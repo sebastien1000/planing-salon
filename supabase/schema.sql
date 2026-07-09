@@ -154,15 +154,28 @@ create policy "clients_select_admin_or_linked"
     )
   );
 
+-- Une collaboratrice ne peut creer une cliente que sans proprietaire (null,
+-- cas courant : cliente pas encore liee) ou pour elle-meme ; seul l'admin
+-- peut creer directement une fiche rattachee a une autre collaboratrice.
 drop policy if exists "clients_insert_authenticated" on clients;
 create policy "clients_insert_authenticated"
   on clients for insert
-  with check (auth.uid() is not null);
+  with check (
+    is_admin()
+    or collab_id is null
+    or collab_id = auth.uid()
+  );
 
+-- "with check" ajoute en plus du "using" existant : avant, une collaboratrice
+-- pouvait modifier une fiche cliente qui lui appartenait (using) puis en
+-- profiter pour changer collab_id et la reassigner a quelqu'un d'autre,
+-- aucune regle ne verifiant la ligne APRES modification. Desormais la ligne
+-- doit encore lui appartenir (ou etre admin) une fois la modification faite.
 drop policy if exists "clients_update_admin_or_linked" on clients;
 create policy "clients_update_admin_or_linked"
   on clients for update
-  using (is_admin() or collab_id = auth.uid());
+  using (is_admin() or collab_id = auth.uid())
+  with check (is_admin() or collab_id = auth.uid());
 
 -- reservations
 drop policy if exists "reservations_select_authenticated" on reservations;

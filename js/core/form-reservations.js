@@ -11,16 +11,30 @@
   // Assemble un objet ayant la forme attendue par domain.js (conflits,
   // restrictions salle/prestation) a partir de l'etat courant : les
   // collaborateurs/prestations/absences/conges restent dans localStorage,
-  // les clientes/rendez-vous viennent de Supabase.
-  function buildVirtualDb(state) {
+  // les clientes/rendez-vous viennent de Supabase. reservationsOverride
+  // permet de remplacer state.reservations (qui ne contient que les dates
+  // deja chargees par la vue planning courante) par une liste fraiche.
+  function buildVirtualDb(state, reservationsOverride) {
     return {
       users: state.db.users,
       prestations: state.db.prestations,
       absences: state.db.absences,
       holidays: state.db.holidays,
-      reservations: state.reservations,
+      reservations: reservationsOverride || state.reservations,
       clients: state.clients
     };
+  }
+
+  // state.reservations ne couvre que les dates deja affichees dans le
+  // planning (jour/semaine/mois courant) : verifier un conflit avec ces
+  // seules donnees peut annoncer a tort un creneau libre pour une date hors
+  // de cette vue. On interroge donc Supabase pour la date exacte du
+  // rendez-vous a chaque verification, la contrainte PostgreSQL restant de
+  // toute facon le dernier rempart en cas d'ecart.
+  function freshVirtualDbForDate(state, date) {
+    return supabaseData.listReservationsForDates([date]).then(function (list) {
+      return buildVirtualDb(state, list);
+    });
   }
 
   function reservationCard(reservation) {
@@ -371,51 +385,53 @@
       notes: ui.byId("fNotes").value
     };
 
-    var virtualDb = buildVirtualDb(state);
-    var assignmentError = domain.assignmentError(virtualDb, draft);
+    var assignmentError = domain.assignmentError(buildVirtualDb(state), draft);
     if (assignmentError) {
       showSaveError("reservationMsg", assignmentError);
-      return;
-    }
-
-    var conflict = domain.conflictDetails(virtualDb, draft, reservationId || null);
-    if (conflict) {
-      ui.byId("reservationMsg").innerHTML = ENABLE_CONFLICT_ASSISTANT
-        ? '<div class="alert reservation-alert-box">Creneau deja pris. Choisissez un autre horaire.</div>'
-        : '<div class="alert">' + utils.escapeHtml(conflict.message) + "</div>";
-      if (ENABLE_CONFLICT_ASSISTANT) {
-        showConflictPopup(draft, conflict, reservationId || null);
-      }
       return;
     }
 
     var saveButton = ui.byId("saveReservationButton");
     saveButton.disabled = true;
 
-    var clientPromise = selectedClientId
-      ? Promise.resolve(utils.findById(state.clients, selectedClientId))
-      : supabaseData.findOrCreateClient({
-          name: draft.client,
-          phone: ui.byId("fClientPhone").value.trim(),
-          email: ui.byId("fClientEmail").value.trim(),
-          prestation: draft.prestation,
-          duration: draft.duration,
-          frequency: 21,
-          notes: draft.notes,
-          collabId: draft.collabId
-        });
+    freshVirtualDbForDate(state, draft.date).then(function (virtualDb) {
+      var conflict = domain.conflictDetails(virtualDb, draft, reservationId || null);
+      if (conflict) {
+        saveButton.disabled = false;
+        ui.byId("reservationMsg").innerHTML = ENABLE_CONFLICT_ASSISTANT
+          ? '<div class="alert reservation-alert-box">Creneau deja pris. Choisissez un autre horaire.</div>'
+          : '<div class="alert">' + utils.escapeHtml(conflict.message) + "</div>";
+        if (ENABLE_CONFLICT_ASSISTANT) {
+          showConflictPopup(draft, conflict, reservationId || null);
+        }
+        return null;
+      }
 
-    clientPromise.then(function (client) {
-      draft.clientId = client.id;
-      draft.client = client.name;
+      var clientPromise = selectedClientId
+        ? Promise.resolve(utils.findById(state.clients, selectedClientId))
+        : supabaseData.findOrCreateClient({
+            name: draft.client,
+            phone: ui.byId("fClientPhone").value.trim(),
+            email: ui.byId("fClientEmail").value.trim(),
+            prestation: draft.prestation,
+            duration: draft.duration,
+            frequency: 21,
+            notes: draft.notes,
+            collabId: draft.collabId
+          });
 
-      return reservationId
-        ? supabaseData.updateReservation(reservationId, draft)
-        : supabaseData.createReservation(draft);
-    }).then(function () {
-      state.selectedDate = draft.date;
-      ui.closeModal();
-      state.refresh();
+      return clientPromise.then(function (client) {
+        draft.clientId = client.id;
+        draft.client = client.name;
+
+        return reservationId
+          ? supabaseData.updateReservation(reservationId, draft)
+          : supabaseData.createReservation(draft);
+      }).then(function () {
+        state.selectedDate = draft.date;
+        ui.closeModal();
+        state.refresh();
+      });
     }).catch(function (error) {
       saveButton.disabled = false;
 
@@ -623,27 +639,29 @@
       notes: "Prochain RDV valide"
     };
 
-    var virtualDb = buildVirtualDb(state);
-    var assignmentError = domain.assignmentError(virtualDb, draft);
+    var assignmentError = domain.assignmentError(buildVirtualDb(state), draft);
     if (assignmentError) {
       showSaveError("proposalMsg", assignmentError);
-      return;
-    }
-
-    var error = domain.conflict(virtualDb, draft, null);
-    if (error) {
-      showSaveError("proposalMsg", error);
       return;
     }
 
     var saveButton = ui.byId("saveProposalButton");
     saveButton.disabled = true;
 
-    supabaseData.createReservation(draft).then(function () {
-      return supabaseData.updateClient(client.id, { next_date: draft.date });
-    }).then(function () {
-      ui.closeSheet();
-      state.refresh();
+    freshVirtualDbForDate(state, draft.date).then(function (virtualDb) {
+      var error = domain.conflict(virtualDb, draft, null);
+      if (error) {
+        saveButton.disabled = false;
+        showSaveError("proposalMsg", error);
+        return null;
+      }
+
+      return supabaseData.createReservation(draft).then(function () {
+        return supabaseData.updateClient(client.id, { next_date: draft.date });
+      }).then(function () {
+        ui.closeSheet();
+        state.refresh();
+      });
     }).catch(function (error) {
       saveButton.disabled = false;
 
@@ -661,30 +679,37 @@
     var state = formState.state;
     var times = ["09:00", "11:00", "14:00", "16:00"];
     var chosenCollab = auth.isAdmin(state.user) ? ui.byId("pCollab").value : state.user.name;
-    var virtualDb = buildVirtualDb(state);
-    var html = ['<div class="success">Creneaux proposes :</div><div class="chips">'];
+    var date = ui.byId("pDate").value;
 
-    times.forEach(function (time) {
-      var reservation = {
-        date: ui.byId("pDate").value,
-        time: time,
-        duration: Number(ui.byId("pDuration").value) || 0,
-        room: ui.byId("pRoom").value,
-        collab: chosenCollab
-      };
+    ui.byId("proposalMsg").innerHTML = '<p class="tiny">Verification des creneaux...</p>';
 
-      if (!domain.conflict(virtualDb, reservation, null)) {
-        html.push('<button class="chip" type="button" data-slot="' + time + '">' + time + "</button>");
-      }
-    });
+    freshVirtualDbForDate(state, date).then(function (virtualDb) {
+      var html = ['<div class="success">Creneaux proposes :</div><div class="chips">'];
 
-    html.push("</div>");
-    ui.byId("proposalMsg").innerHTML = html.join("");
+      times.forEach(function (time) {
+        var reservation = {
+          date: date,
+          time: time,
+          duration: Number(ui.byId("pDuration").value) || 0,
+          room: ui.byId("pRoom").value,
+          collab: chosenCollab
+        };
 
-    ui.byId("proposalMsg").querySelectorAll("[data-slot]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        ui.byId("pTime").value = button.dataset.slot;
+        if (!domain.conflict(virtualDb, reservation, null)) {
+          html.push('<button class="chip" type="button" data-slot="' + time + '">' + time + "</button>");
+        }
       });
+
+      html.push("</div>");
+      ui.byId("proposalMsg").innerHTML = html.join("");
+
+      ui.byId("proposalMsg").querySelectorAll("[data-slot]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          ui.byId("pTime").value = button.dataset.slot;
+        });
+      });
+    }).catch(function () {
+      ui.byId("proposalMsg").innerHTML = '<div class="alert">Impossible de verifier les creneaux, reessayez.</div>';
     });
   }
 
@@ -741,35 +766,41 @@
 
   function renderConflictSuggestions(reservation, ignoreId) {
     var state = formState.state;
-    var virtualDb = buildVirtualDb(state);
     var root = ui.byId("conflictSlotSuggestions");
     var times = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
-    var available = [];
 
-    times.forEach(function (time) {
-      var testReservation = Object.assign({}, reservation, { time: time });
-      if (!domain.conflict(virtualDb, testReservation, ignoreId)) {
-        available.push(time);
-      }
-    });
+    root.innerHTML = '<p class="tiny">Verification des creneaux...</p>';
 
-    if (!available.length) {
-      root.innerHTML = '<div class="alert">Aucun autre creneau rapide disponible ce jour.</div>';
-      return;
-    }
+    freshVirtualDbForDate(state, reservation.date).then(function (virtualDb) {
+      var available = [];
 
-    root.innerHTML = [
-      '<div class="success">Creneaux disponibles :</div>',
-      '<div class="chips">' + available.map(function (time) {
-        return '<button class="chip" type="button" data-conflict-slot="' + time + '">' + time + "</button>";
-      }).join("") + "</div>"
-    ].join("");
-
-    root.querySelectorAll("[data-conflict-slot]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        ui.byId("fTime").value = button.dataset.conflictSlot;
-        ui.closeSheet();
+      times.forEach(function (time) {
+        var testReservation = Object.assign({}, reservation, { time: time });
+        if (!domain.conflict(virtualDb, testReservation, ignoreId)) {
+          available.push(time);
+        }
       });
+
+      if (!available.length) {
+        root.innerHTML = '<div class="alert">Aucun autre creneau rapide disponible ce jour.</div>';
+        return;
+      }
+
+      root.innerHTML = [
+        '<div class="success">Creneaux disponibles :</div>',
+        '<div class="chips">' + available.map(function (time) {
+          return '<button class="chip" type="button" data-conflict-slot="' + time + '">' + time + "</button>";
+        }).join("") + "</div>"
+      ].join("");
+
+      root.querySelectorAll("[data-conflict-slot]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          ui.byId("fTime").value = button.dataset.conflictSlot;
+          ui.closeSheet();
+        });
+      });
+    }).catch(function () {
+      root.innerHTML = '<div class="alert">Impossible de verifier les creneaux, reessayez.</div>';
     });
   }
 

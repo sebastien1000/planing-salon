@@ -3,6 +3,7 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var formState = window.SalonFormState;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
@@ -210,6 +211,62 @@
     }
   }
 
+  // Pousse tout de suite le nouveau role vers la ligne "profiles" Supabase
+  // (la seule que PostgreSQL regarde pour les droits RLS), au lieu d'attendre
+  // la prochaine connexion de la personne. is_admin() est reevalue a chaque
+  // requete a partir de cette table, donc des que l'upsert reussit, les
+  // droits reels changent immediatement, sans deconnexion necessaire.
+  // Si la personne ne s'est jamais connectee a Supabase, sa ligne "profiles"
+  // n'existe pas encore : impossible de la mettre a jour maintenant, on le
+  // dit clairement plutot que de laisser croire que c'est deja applique.
+  function syncRoleToSupabase(user) {
+    if (!supabaseData) {
+      window.alert(
+        "Role change localement, mais Supabase n'est pas configure : impossible de synchroniser les droits reels."
+      );
+      return;
+    }
+
+    if (!user.email) {
+      window.alert(
+        "Role change localement. " + user.name + " n'a pas d'email enregistre : " +
+        "impossible de synchroniser les droits reels tant qu'un email n'est pas ajoute a sa fiche."
+      );
+      return;
+    }
+
+    supabaseData.listProfiles().then(function (profiles) {
+      var normalizedEmail = String(user.email).trim().toLowerCase();
+      var match = profiles.find(function (item) {
+        return String(item.email || "").trim().toLowerCase() === normalizedEmail;
+      });
+
+      if (!match) {
+        window.alert(
+          "Role change localement. " + user.name + " ne s'est jamais connecte a Supabase : " +
+          "le nouveau role sera applique automatiquement a sa prochaine connexion, pas avant."
+        );
+        return;
+      }
+
+      return supabaseData.upsertProfile({
+        id: match.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        active: user.active !== false
+      }).then(function () {
+        window.alert("Role mis a jour : les droits reels de " + user.name + " ont change immediatement, sans reconnexion.");
+      });
+    }).catch(function (error) {
+      window.alert(
+        "Le role a ete change localement mais la synchronisation avec Supabase a echoue : " +
+        user.name + " garde ses anciens droits reels tant que ce n'est pas corrige. Reessayez."
+      );
+      window.console && window.console.error && window.console.error(error);
+    });
+  }
+
   function saveProfile(userId) {
     var state = formState.state;
     var user = utils.findById(state.db.users, userId);
@@ -229,6 +286,7 @@
       user.photo = pendingPhoto;
     }
 
+    var roleChanged = false;
     var roleField = ui.byId("uRole");
     if (auth.isAdmin(state.user) && roleField) {
       if (roleField.tagName === "SELECT") {
@@ -238,6 +296,7 @@
           return;
         }
 
+        roleChanged = newRole !== user.role;
         user.role = newRole;
       }
 
@@ -252,6 +311,10 @@
 
     ui.closeModal();
     formState.saveAndRefresh();
+
+    if (roleChanged) {
+      syncRoleToSupabase(user);
+    }
   }
 
   function openAddAccountForm() {
