@@ -189,29 +189,6 @@
     return persistDb(sanitizeDb(db));
   }
 
-  function resetDb() {
-    localStorage.removeItem(STORAGE_KEY);
-    return loadDb();
-  }
-
-  function clearPhotos() {
-    var db = loadDb();
-    db.photos = [];
-    return saveDb(db);
-  }
-
-  function repairDb() {
-    var db;
-
-    try {
-      db = sanitizeDb(loadDb());
-      return saveDb(db);
-    } catch (error) {
-      db = buildDefault();
-      return saveDb(db);
-    }
-  }
-
   window.SalonData = {
     ABSENCE_CATEGORIES: ABSENCE_CATEGORIES,
     HOLIDAY_CATEGORIES: HOLIDAY_CATEGORIES,
@@ -219,10 +196,7 @@
     STATUS: STATUS,
     STORAGE_KEY: STORAGE_KEY,
     buildDefault: buildDefault,
-    clearPhotos: clearPhotos,
     loadDb: loadDb,
-    repairDb: repairDb,
-    resetDb: resetDb,
     saveDb: saveDb
   };
 }());

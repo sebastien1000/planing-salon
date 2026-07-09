@@ -46,47 +46,6 @@
       forms.bindAbsenceCardActions(teamAbsenceList);
     }
 
-    ui.byId("resetDemoButton").addEventListener("click", function () {
-      if (window.confirm("Remettre les donnees demo ?")) {
-        db = data.resetDb();
-        forms.configure({
-          db: db,
-          refresh: render,
-          selectedDate: selectedDate,
-          user: user
-        });
-        render();
-      }
-    });
-
-    ui.byId("repairDataButton").addEventListener("click", function () {
-      db = data.repairDb();
-      forms.configure({
-        db: db,
-        refresh: render,
-        selectedDate: selectedDate,
-        user: user
-      });
-      render();
-      window.alert("Les donnees locales ont ete verifiees et reparees.");
-    });
-
-    ui.byId("clearPhotosButton").addEventListener("click", function () {
-      if (!window.confirm("Supprimer les photos enregistrees localement ?")) {
-        return;
-      }
-
-      db = data.clearPhotos();
-      forms.configure({
-        db: db,
-        refresh: render,
-        selectedDate: selectedDate,
-        user: user
-      });
-      render();
-      window.alert("Les photos locales ont ete supprimees.");
-    });
-
     forms.bindPrestationActions(document);
   }
 
@@ -161,15 +120,6 @@
       ].join("") : "",
       '  <div class="card"><h3>Photo planning papier</h3><p class="tiny">Utilise l appareil photo du telephone.</p>' +
         (db.photos[0] ? '<img class="preview" src="' + db.photos[0] + '" alt="Planning photo">' : "") + "</div>",
-      '  <div class="card">' +
-        '    <h3>Maintenance</h3>' +
-        '    <p class="tiny">Outils de reparation rapide pour les donnees locales et les photos en cache navigateur.</p>' +
-        '    <div class="row">' +
-        '      <button id="repairDataButton" class="secondary grow" type="button">Reparer les donnees</button>' +
-        '      <button id="clearPhotosButton" class="secondary danger grow" type="button">Vider les photos</button>' +
-        "    </div>" +
-        "  </div>",
-      '  <div class="card"><h3>Donnees demo</h3><button id="resetDemoButton" class="secondary danger" type="button">Reinitialiser les donnees demo</button></div>',
       "</div>"
     ].join(""));
 
