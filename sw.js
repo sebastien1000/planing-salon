@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v27-clients-reservations-supabase";
+const CACHE_NAME = "salon-mvp-v28-supabase-keys-filled-in";
 
 const APP_ASSETS = [
   "./",
