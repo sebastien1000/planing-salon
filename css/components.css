@@ -670,7 +670,9 @@ label {
 .fab {
   position: fixed;
   right: calc(50% - 199px);
-  bottom: 82px;
+  /* La barre d'onglets grandit avec la safe-area Android (voir .tabs) :
+     le bouton doit rester au-dessus, pas juste a 82px fixes. */
+  bottom: calc(82px + env(safe-area-inset-bottom, 0px));
   width: 58px;
   height: 58px;
   border-radius: 20px;
