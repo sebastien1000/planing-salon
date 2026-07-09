@@ -102,7 +102,6 @@
       renderTabs(options.activePage),
       '  <div id="modal" class="modal hidden"><div id="modalBox" class="modal-box"></div></div>',
       '  <div id="sheet" class="sheet hidden"><div id="sheetBox" class="modal-box"></div></div>',
-      '  <input id="photoInput" class="hidden" type="file" accept="image/*" capture="environment">',
       "</div>"
     ].join("");
 
@@ -116,10 +115,6 @@
 
   function renderActions(actions) {
     var parts = ['<div class="app-actions">'];
-
-    if (actions.photo) {
-      parts.push('<button id="photoButton" class="photo-btn" type="button">Photo</button>');
-    }
 
     if (actions.fab) {
       parts.push('<button id="fabButton" class="fab" type="button">+</button>');

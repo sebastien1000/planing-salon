@@ -7,7 +7,7 @@
 
   var user = ui.initAppPage({
     activePage: "plus",
-    actions: { photo: true },
+    actions: {},
     pageTitle: "Plus"
   });
 
@@ -24,7 +24,6 @@
     selectedDate: selectedDate,
     user: user
   });
-  forms.bindPhotoInput();
 
   function sortByStartDate(list) {
     return list.slice().sort(function (a, b) { return a.startDate.localeCompare(b.startDate); });
@@ -118,8 +117,6 @@
           "</div>",
         "  </div>"
       ].join("") : "",
-      '  <div class="card"><h3>Photo planning papier</h3><p class="tiny">Utilise l appareil photo du telephone.</p>' +
-        (db.photos[0] ? '<img class="preview" src="' + db.photos[0] + '" alt="Planning photo">' : "") + "</div>",
       "</div>"
     ].join(""));
 

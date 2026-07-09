@@ -183,7 +183,6 @@ label {
 .chip,
 .tab,
 .fab,
-.photo-btn,
 .x {
   border-radius: 16px;
   display: inline-flex;
@@ -200,7 +199,6 @@ label {
 .primary,
 .secondary,
 .ghost,
-.photo-btn,
 .tab {
   white-space: normal;
   word-break: break-word;
@@ -683,27 +681,6 @@ label {
   z-index: 7;
 }
 
-.photo-btn {
-  position: fixed;
-  left: calc(50% - 199px);
-  bottom: 82px;
-  background: #fff;
-  border: 1px solid var(--line);
-  padding: 14px 15px;
-  font-weight: 850;
-  box-shadow: var(--shadow);
-  z-index: 7;
-}
-
-.preview {
-  width: 100%;
-  max-height: 220px;
-  margin-top: 10px;
-  object-fit: cover;
-  border-radius: 18px;
-  border: 1px solid var(--line);
-}
-
 .statgrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -898,10 +875,6 @@ label {
 
   .fab {
     right: 18px;
-  }
-
-  .photo-btn {
-    left: 18px;
   }
 
   .login-logo {

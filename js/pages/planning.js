@@ -9,7 +9,7 @@
 
   var user = ui.initAppPage({
     activePage: "planning",
-    actions: { fab: true, photo: true },
+    actions: { fab: true },
     pageTitle: "Planning"
   });
 
@@ -57,8 +57,6 @@
   ui.bindActionButton("fabButton", function () {
     forms.openReservation();
   });
-
-  forms.bindPhotoInput();
 
   function persistState() {
     sessionStorage.setItem("planning:view", view);

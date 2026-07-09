@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v29-network-first-html-js";
+const CACHE_NAME = "salon-mvp-v30-remove-paper-planning-photo";
 
 const APP_ASSETS = [
   "./",
@@ -31,7 +31,6 @@ const APP_ASSETS = [
   "./js/core/form-clients.js",
   "./js/core/form-accounts.js",
   "./js/core/form-prestations.js",
-  "./js/core/form-misc.js",
   "./js/core/form-absences.js",
   "./js/core/form-holidays.js",
   "./js/core/forms.js",

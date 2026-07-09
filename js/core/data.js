@@ -72,8 +72,7 @@
           notes: "Indisponible"
         }
       ],
-      holidays: [],
-      photos: []
+      holidays: []
     };
   }
 
@@ -137,29 +136,18 @@
     safe.prestations = Array.isArray(safe.prestations) ? safe.prestations : buildDefault().prestations;
     safe.absences = (Array.isArray(safe.absences) ? safe.absences : []).map(sanitizeBlockedPeriod);
     safe.holidays = (Array.isArray(safe.holidays) ? safe.holidays : []).map(sanitizeBlockedPeriod);
-    safe.photos = Array.isArray(safe.photos) ? safe.photos : [];
-    // Nettoyage : clientes/rendez-vous vivent desormais dans Supabase, on
-    // ne les laisse pas trainer en double dans le localStorage existant.
+    // Nettoyage : clientes/rendez-vous vivent desormais dans Supabase, et
+    // les photos "planning papier" (fonctionnalite retiree) ne doivent pas
+    // trainer en double dans le localStorage existant.
     delete safe.clients;
     delete safe.reservations;
+    delete safe.photos;
     return safe;
   }
 
   function persistDb(db) {
-    var payload = JSON.stringify(db);
-
-    try {
-      localStorage.setItem(STORAGE_KEY, payload);
-      return db;
-    } catch (error) {
-      if (!db.photos || !db.photos.length) {
-        throw error;
-      }
-
-      db.photos = [];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-      return db;
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    return db;
   }
 
   function loadDb() {

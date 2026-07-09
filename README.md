@@ -13,7 +13,7 @@ Pages principales :
 - `clients.html` : fiches clientes
 - `recherche.html` : recherche de rendez-vous
 - `comptes.html` : comptes et statistiques
-- `plus.html` : prestations, mes absences (et celles de l'equipe pour l'admin), photo, reinitialisation
+- `plus.html` : prestations, mes absences (et celles de l'equipe pour l'admin)
 
 ## Lancer le projet
 
@@ -95,17 +95,11 @@ Les donnees sont stockees sous la cle `salonMvpV4`.
 
 Contenu principal :
 
-- utilisateurs (roles, couleurs, salles/prestations autorisees)
+- utilisateurs (roles, couleurs, salles/prestations autorisees, photo de profil)
 - prestations
 - absences, conges
-- photos
 
 Les clientes et les rendez-vous ne sont plus ici : voir "Clientes et rendez-vous (Supabase)".
-
-## Point important
-
-Les photos peuvent prendre beaucoup de place dans `localStorage`.
-Le projet inclut maintenant une protection : si le stockage local est plein, les photos sont supprimees automatiquement pour eviter que l'application ne plante au chargement.
 
 ## Depannage
 

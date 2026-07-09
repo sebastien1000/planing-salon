@@ -4,7 +4,6 @@
   var clients = window.SalonClientForms;
   var accounts = window.SalonAccountForms;
   var prestations = window.SalonPrestationForms;
-  var misc = window.SalonMiscForms;
   var absences = window.SalonAbsenceForms;
   var holidays = window.SalonHolidayForms;
 
@@ -12,7 +11,6 @@
     absenceCard: absences.absenceCard,
     bindAbsenceCardActions: absences.bindAbsenceCardActions,
     bindHolidayCardActions: holidays.bindHolidayCardActions,
-    bindPhotoInput: misc.bindPhotoInput,
     bindPrestationActions: prestations.bindPrestationActions,
     bindReservationCardActions: reservations.bindReservationCardActions,
     cancelReservation: reservations.cancelReservation,
