@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v28-supabase-keys-filled-in";
+const CACHE_NAME = "salon-mvp-v29-network-first-html-js";
 
 const APP_ASSETS = [
   "./",
@@ -70,11 +70,57 @@ self.addEventListener("activate", function (event) {
   self.clients.claim();
 });
 
+// Seuls les fichiers de l'app elle-meme (meme origine) et le CDN du SDK
+// Supabase (statique, verrouille sur une version precise) passent par le
+// cache. Tout le reste - en particulier l'API Supabase (donnees dynamiques,
+// dependantes de la session et des droits RLS) - ne doit jamais etre
+// intercepte ni rejoue depuis le cache : chaque appel doit toujours
+// atteindre le reseau pour refleter l'etat reel.
+const SAME_ORIGIN = self.location.origin;
+const CACHEABLE_CDN_ORIGINS = ["https://unpkg.com"];
+
+function isCacheable(url) {
+  return url.origin === SAME_ORIGIN || CACHEABLE_CDN_ORIGINS.indexOf(url.origin) !== -1;
+}
+
+function putInCache(request, response) {
+  var copy = response.clone();
+  caches.open(CACHE_NAME).then(function (cache) {
+    cache.put(request, copy).catch(function () {});
+  });
+  return response;
+}
+
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") {
     return;
   }
 
+  var requestUrl = new URL(event.request.url);
+
+  if (!isCacheable(requestUrl)) {
+    return;
+  }
+
+  // Reseau d'abord pour les pages HTML (navigation) et le code JS de l'app :
+  // pendant le developpement (et en general), la derniere version deployee
+  // doit toujours s'afficher quand le reseau est disponible. Le cache ne
+  // sert que de secours hors-ligne, plus de source par defaut.
+  var isNavigationOrAppScript = event.request.mode === "navigate" ||
+    (requestUrl.origin === SAME_ORIGIN && requestUrl.pathname.endsWith(".js"));
+
+  if (isNavigationOrAppScript) {
+    event.respondWith(
+      fetch(event.request)
+        .then(function (response) { return putInCache(event.request, response); })
+        .catch(function () { return caches.match(event.request); })
+    );
+    return;
+  }
+
+  // Le reste (CSS, images, SDK Supabase en CDN) change rarement et profite
+  // davantage du hors-ligne que d'etre systematiquement revalide : cache
+  // d'abord, reseau en secours si rien en cache.
   event.respondWith(
     caches.match(event.request).then(function (cached) {
       if (cached) {
@@ -82,11 +128,7 @@ self.addEventListener("fetch", function (event) {
       }
 
       return fetch(event.request).then(function (response) {
-        var copy = response.clone();
-        caches.open(CACHE_NAME).then(function (cache) {
-          cache.put(event.request, copy).catch(function () {});
-        });
-        return response;
+        return putInCache(event.request, response);
       });
     })
   );

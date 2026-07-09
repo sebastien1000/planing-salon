@@ -199,6 +199,8 @@
 
     bindTabs();
     registerServiceWorker();
+    bindBfcacheReload();
+    verifySupabaseSession();
 
     return user;
   }
@@ -209,6 +211,49 @@
     }
 
     navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+
+  // Cette appli navigue d'une page a l'autre en rechargement complet (pas
+  // de routeur cote client), mais le navigateur peut quand meme restaurer
+  // une page depuis le bfcache (retour arriere/avant) sans reexecuter son
+  // JavaScript : le planning/les clientes/etc. resteraient figes tels
+  // qu'ils etaient au moment de quitter la page, au lieu de refleter les
+  // donnees a jour. event.persisted signale ce cas ; on force alors un vrai
+  // rechargement pour relancer normalement le chargement des donnees.
+  var bfcacheReloadBound = false;
+
+  function bindBfcacheReload() {
+    if (bfcacheReloadBound) {
+      return;
+    }
+
+    bfcacheReloadBound = true;
+
+    window.addEventListener("pageshow", function (event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+  }
+
+  // Verification de securite en tache de fond : requireAuth() ne regarde
+  // que la fiche locale (localStorage), pas la vraie session Supabase. Si
+  // cette session a expire ou a ete fermee ailleurs, chaque appel Supabase
+  // echouerait silencieusement (donnees qui ne se chargent jamais) sans
+  // que l'app ne le signale clairement. On verifie donc la vraie session et
+  // on deconnecte proprement si elle n'existe plus.
+  function verifySupabaseSession() {
+    var supabaseClient = window.SalonSupabaseClient;
+    if (!supabaseClient) {
+      return;
+    }
+
+    supabaseClient.auth.getSession().then(function (result) {
+      var session = result && result.data && result.data.session;
+      if (!session) {
+        auth.logout();
+      }
+    }).catch(function () {});
   }
 
   window.SalonUI = {
