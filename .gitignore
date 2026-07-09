@@ -16,3 +16,7 @@ tmp/
 
 # Claude Code local settings
 .claude/
+
+# Android / Capacitor
+node_modules/
+www/
