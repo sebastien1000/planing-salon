@@ -75,12 +75,16 @@ create table if not exists reservations (
   created_at timestamptz not null default now(),
   -- Protection anti-double-reservation appliquee par PostgreSQL lui-meme :
   -- impossible a contourner meme en appelant l'API directement.
+  -- (duration * interval '1 minute') plutot que (duration || ' minutes')::interval :
+  -- le cast d'un texte vers interval depend du parsing/locale (STABLE), refuse
+  -- dans une expression d'index/exclusion qui exige IMMUTABLE ; la multiplication
+  -- entier x interval est une operation immutable.
   exclude using gist (
     room with =,
     date with =,
     tsrange(
       (date + time)::timestamp,
-      (date + time)::timestamp + (duration || ' minutes')::interval
+      (date + time)::timestamp + (duration * interval '1 minute')
     ) with &&
   ) where (status <> 'cancel')
 );
