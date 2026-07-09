@@ -25,15 +25,29 @@
     element.classList.remove("hidden");
   }
 
+  // Messages distincts pour chaque cause d'echec : Supabase Auth peut avoir
+  // reussi la connexion (email/mot de passe corrects) alors que le probleme
+  // vient de la fiche "profiles" (absente, desactivee, role invalide) - ce
+  // n'est plus jamais confondu avec un vrai mauvais mot de passe.
+  var LOGIN_ERROR_MESSAGES = {
+    "bad-credentials": "Email ou mot de passe incorrect.",
+    "profile-missing": "Connexion Supabase reussie, mais aucun profil trouve dans la table profiles. Contactez l administrateur.",
+    "inactive": "Ce compte est desactive.",
+    "bad-role": "Role inconnu ou non autorise pour ce compte.",
+    "no-config": "Supabase n'est pas configure. Voir js/core/supabase-client.js.",
+    "error": "Erreur technique, reessayez."
+  };
+
   function submitLogin() {
     loginButton.disabled = true;
     uiMessage.classList.add("hidden");
 
-    auth.login(emailField.value, passwordField.value).then(function (user) {
+    auth.login(emailField.value, passwordField.value).then(function (result) {
       loginButton.disabled = false;
 
-      if (!user) {
-        showMessage(uiMessage, "Email ou mot de passe incorrect.");
+      if (!result || result.status !== "ok") {
+        var status = result && result.status;
+        showMessage(uiMessage, LOGIN_ERROR_MESSAGES[status] || LOGIN_ERROR_MESSAGES.error);
         return;
       }
 

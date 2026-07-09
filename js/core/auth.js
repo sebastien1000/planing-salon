@@ -27,7 +27,7 @@
     return utils.findById(getDb().users, userId) || null;
   }
 
-  function findProfileByEmail(email) {
+  function findLocalUserByEmail(email) {
     var normalized = String(email || "").trim().toLowerCase();
     if (!normalized) {
       return null;
@@ -38,13 +38,62 @@
     }) || null;
   }
 
+  // La table Supabase "profiles" n'utilise que 'admin'/'collab' (contrainte
+  // CHECK dans schema.sql), mais on accepte ici quelques variantes en
+  // ecriture libre (vieille fiche locale, saisie manuelle en SQL...) plutot
+  // que de rejeter la connexion pour un simple mot different.
+  var ROLE_ALIASES = {
+    admin: "admin",
+    administrateur: "admin",
+    administratrice: "admin",
+    collab: "collab",
+    collaborateur: "collab",
+    collaboratrice: "collab"
+  };
+
+  function normalizeRole(role) {
+    var key = String(role || "").trim().toLowerCase();
+    return ROLE_ALIASES[key] || null;
+  }
+
+  // Cree ou met a jour la fiche locale (couleur, salles/prestations
+  // autorisees, telephone, photo... des champs qui ne vivent que dans
+  // localStorage) a partir de la ligne "profiles" Supabase, qui reste la
+  // source de verite pour l'identite/le role/l'activation.
+  function syncLocalUserFromRemoteProfile(remoteProfile, normalizedRole) {
+    var db = getDb();
+    var local = utils.findById(db.users, remoteProfile.id) || findLocalUserByEmail(remoteProfile.email);
+
+    if (!local) {
+      local = {
+        id: remoteProfile.id,
+        login: remoteProfile.name,
+        rooms: null,
+        prestations: null,
+        phone: "",
+        photo: null
+      };
+      db.users.push(local);
+    }
+
+    local.name = remoteProfile.name || local.name;
+    local.email = remoteProfile.email;
+    local.role = normalizedRole;
+    local.active = remoteProfile.active !== false;
+
+    data.saveDb(db);
+    return local;
+  }
+
   // Le mot de passe n'est plus verifie ici : Supabase Auth compare le mot
   // de passe (jamais en clair, jamais hache par ce fichier) et renvoie une
-  // vraie session si c'est correct.
+  // vraie session si c'est correct. Le resultat n'est plus juste un profil
+  // ou null : { status, user? } permet a l'ecran de connexion d'afficher un
+  // message different selon la cause reelle de l'echec (identifiants faux,
+  // profil manquant, compte desactive, role invalide...).
   function login(email, password) {
-    if (!supabaseClient) {
-      window.alert("Supabase n'est pas configure. Voir js/core/supabase-client.js.");
-      return Promise.resolve(null);
+    if (!supabaseClient || !supabaseData) {
+      return Promise.resolve({ status: "no-config" });
     }
 
     return supabaseClient.auth.signInWithPassword({
@@ -52,32 +101,72 @@
       password: password
     }).then(function (result) {
       if (result.error || !result.data || !result.data.user) {
-        return null;
+        return { status: "bad-credentials" };
       }
 
-      var profile = findProfileByEmail(result.data.user.email);
-      if (!profile || profile.active === false) {
-        return null;
-      }
+      var authUser = result.data.user;
+      var normalizedAuthEmail = String(authUser.email || "").trim().toLowerCase();
 
-      // Garde la ligne "profiles" Supabase (utilisee par les regles de
-      // securite et affichee sur les rendez-vous) synchronisee avec la
-      // fiche locale a chaque connexion : c'est ce qui cree la ligne la
-      // toute premiere fois qu'un collaborateur se connecte.
-      if (supabaseData) {
-        supabaseData.upsertProfile({
-          id: result.data.user.id,
-          email: profile.email,
-          name: profile.name,
-          role: profile.role,
-          active: profile.active !== false
-        }).catch(function () {});
-      }
+      return supabaseData.listProfiles().then(function (profiles) {
+        var remoteProfile = profiles.find(function (item) {
+          return item.id === authUser.id ||
+            String(item.email || "").trim().toLowerCase() === normalizedAuthEmail;
+        });
 
-      saveCurrentUserId(profile.id);
-      return profile;
-    }).catch(function () {
-      return null;
+        var localUser = findLocalUserByEmail(authUser.email);
+
+        // Cas normal pour un collaborateur cree via "Ajouter un
+        // collaborateur" (page Comptes) : sa fiche locale existe deja mais
+        // sa ligne Supabase n'a encore jamais ete creee. On la cree
+        // maintenant a partir de la fiche locale (comportement historique).
+        if (!remoteProfile && localUser) {
+          if (localUser.active === false) {
+            return { status: "inactive" };
+          }
+
+          var localRole = normalizeRole(localUser.role);
+          if (!localRole) {
+            return { status: "bad-role" };
+          }
+
+          supabaseData.upsertProfile({
+            id: authUser.id,
+            email: localUser.email,
+            name: localUser.name,
+            role: localRole,
+            active: localUser.active !== false
+          }).catch(function () {});
+
+          saveCurrentUserId(localUser.id);
+          return { status: "ok", user: localUser };
+        }
+
+        // Aucune ligne "profiles" et aucune fiche locale : Supabase Auth a
+        // accepte l'email/mot de passe, mais rien ne dit qui est cette
+        // personne ni quels droits lui donner. On ne devine jamais un role.
+        if (!remoteProfile) {
+          return { status: "profile-missing" };
+        }
+
+        if (remoteProfile.active === false) {
+          return { status: "inactive" };
+        }
+
+        var normalizedRole = normalizeRole(remoteProfile.role);
+        if (!normalizedRole) {
+          return { status: "bad-role" };
+        }
+
+        // La ligne "profiles" existe deja (compte cree directement dans
+        // Supabase, ex. procedure d'ajout d'un 2e admin) : c'est elle qui
+        // fait foi, on (re)cree/synchronise juste la fiche locale avec.
+        var syncedUser = syncLocalUserFromRemoteProfile(remoteProfile, normalizedRole);
+        saveCurrentUserId(syncedUser.id);
+        return { status: "ok", user: syncedUser };
+      });
+    }).catch(function (error) {
+      window.console && window.console.error && window.console.error(error);
+      return { status: "error" };
     });
   }
 
