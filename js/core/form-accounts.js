@@ -171,7 +171,7 @@
       (user.active === false ? '<div class="alert">Ce compte est desactive.</div>' : ""),
       buildPhotoFieldHtml(user),
       '<label for="uName">Nom affiche</label><input id="uName" class="field" value="' + utils.escapeHtml(user.name) + '">',
-      '<label for="uPhone">Telephone</label><input id="uPhone" class="field" value="' + utils.escapeHtml(user.phone || "") + '">',
+      '<label for="uPhone">Telephone</label><input id="uPhone" class="field" type="tel" value="' + utils.escapeHtml(user.phone || "") + '">',
       '<label for="uEmail">Email</label><input id="uEmail" class="field" type="email" value="' + utils.escapeHtml(user.email || "") + '">',
       '<button id="sendResetButton" class="secondary" style="width:100%;margin-bottom:14px" type="button">Envoyer un lien de reinitialisation</button>',
       isAdminEditing ? buildAccountExtraFieldsHtml(user, isSelf) : "",

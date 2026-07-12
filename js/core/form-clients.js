@@ -98,8 +98,8 @@
       '<div id="clientMsg"></div>',
       (!manageable ? '<div class="alert">Vous pouvez consulter cette fiche mais pas la modifier.</div>' : ""),
       '<label for="cName">Nom</label><input id="cName" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.name) + '">',
-      '<label for="cPhone">Telephone</label><input id="cPhone" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
-      '<label for="cEmail">Email</label><input id="cEmail" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.email || "") + '">',
+      '<label for="cPhone">Telephone</label><input id="cPhone" class="field" type="tel"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
+      '<label for="cEmail">Email</label><input id="cEmail" class="field" type="email"' + readonlyAttr + ' value="' + utils.escapeHtml(client.email || "") + '">',
       '<div class="grid2">',
       '  <div><label for="cCollab">Collaboratrice habituelle</label><select id="cCollab" class="field"' + (auth.isAdmin(state.user) ? "" : " disabled") + '>' + state.db.users
         .filter(function (item) { return item.role === "collab"; })
