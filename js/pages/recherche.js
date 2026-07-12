@@ -68,7 +68,7 @@
         '      <div class="tiny">' + utils.escapeHtml(domain.fullDateLabel(reservation.date)) + "</div>",
         '      <div class="tiny">' + utils.escapeHtml(reservation.time) + " - " + utils.escapeHtml(endTime) + "</div>",
         "    </div>",
-        '    <span class="badge status-' + reservation.status + '">' + utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</span>",
+        '    <span class="badge status-' + utils.escapeHtml(reservation.status) + '">' + utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</span>",
         "  </div>",
         "</div>"
       ].join("");

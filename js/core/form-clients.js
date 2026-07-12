@@ -27,7 +27,7 @@
       '    <div class="tiny">' + utils.escapeHtml(reservation.date) + " " + utils.escapeHtml(reservation.time) +
         " · " + utils.escapeHtml(reservation.collab) + "</div>",
       "  </div>",
-      '  <span class="badge status-' + reservation.status + '">' +
+      '  <span class="badge status-' + utils.escapeHtml(reservation.status) + '">' +
         utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</span>",
       "</div>"
     ].join("");
