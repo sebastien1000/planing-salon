@@ -351,10 +351,7 @@
   }
 
   function showSaveError(targetId, message) {
-    var target = ui.byId(targetId);
-    if (target) {
-      target.innerHTML = '<div class="alert">' + utils.escapeHtml(message) + "</div>";
-    }
+    ui.showAlert(targetId, message);
   }
 
   function saveReservation(reservationId) {
@@ -709,7 +706,7 @@
         });
       });
     }).catch(function () {
-      ui.byId("proposalMsg").innerHTML = '<div class="alert">Impossible de verifier les creneaux, reessayez.</div>';
+      ui.showAlert("proposalMsg", "Impossible de verifier les creneaux, reessayez.");
     });
   }
 

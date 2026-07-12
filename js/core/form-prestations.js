@@ -85,7 +85,7 @@
     var prestation;
 
     if (!name) {
-      ui.byId("prestationMsg").innerHTML = '<div class="alert">Le nom est obligatoire.</div>';
+      ui.showAlert("prestationMsg", "Le nom est obligatoire.");
       return;
     }
 
@@ -94,7 +94,7 @@
     });
 
     if (duplicate) {
-      ui.byId("prestationMsg").innerHTML = '<div class="alert">Cette prestation existe deja.</div>';
+      ui.showAlert("prestationMsg", "Cette prestation existe deja.");
       return;
     }
 
@@ -102,12 +102,12 @@
     var price = Number(ui.byId("prPrice").value);
 
     if (!duration || duration <= 0) {
-      ui.byId("prestationMsg").innerHTML = '<div class="alert">La duree doit etre superieure a 0.</div>';
+      ui.showAlert("prestationMsg", "La duree doit etre superieure a 0.");
       return;
     }
 
     if (!(price >= 0)) {
-      ui.byId("prestationMsg").innerHTML = '<div class="alert">Le prix ne peut pas etre negatif.</div>';
+      ui.showAlert("prestationMsg", "Le prix ne peut pas etre negatif.");
       return;
     }
 
@@ -142,11 +142,7 @@
     });
 
     if (used) {
-      ui.byId("prestationMsg").innerHTML = [
-        '<div class="alert">',
-        "Impossible de supprimer : cette prestation est deja utilisee.",
-        "</div>"
-      ].join("");
+      ui.showAlert("prestationMsg", "Impossible de supprimer : cette prestation est deja utilisee.");
       return;
     }
 

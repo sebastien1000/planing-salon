@@ -152,7 +152,7 @@
     var current = absenceId ? utils.findById(state.db.absences, absenceId) : null;
 
     if (absenceId && (!current || !canManageAbsence(current))) {
-      ui.byId("absenceMsg").innerHTML = '<div class="alert">Vous ne pouvez pas modifier cette absence.</div>';
+      ui.showAlert("absenceMsg", "Vous ne pouvez pas modifier cette absence.");
       return;
     }
 
@@ -169,13 +169,13 @@
     };
 
     if (!absenceId && !canManageAbsence(absence)) {
-      ui.byId("absenceMsg").innerHTML = '<div class="alert">Vous ne pouvez creer une absence que pour vous-meme.</div>';
+      ui.showAlert("absenceMsg", "Vous ne pouvez creer une absence que pour vous-meme.");
       return;
     }
 
     if (absence.endDate < absence.startDate ||
       (absence.endDate === absence.startDate && absence.endTime <= absence.startTime)) {
-      ui.byId("absenceMsg").innerHTML = '<div class="alert">La date/heure de fin doit etre apres le debut.</div>';
+      ui.showAlert("absenceMsg", "La date/heure de fin doit etre apres le debut.");
       return;
     }
 

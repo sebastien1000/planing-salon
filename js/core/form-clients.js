@@ -145,7 +145,7 @@
     var name = ui.byId("cName").value.trim();
 
     if (!name) {
-      ui.byId("clientMsg").innerHTML = '<div class="alert">Le nom est obligatoire.</div>';
+      ui.showAlert("clientMsg", "Le nom est obligatoire.");
       return;
     }
 
@@ -173,7 +173,7 @@
       state.refresh();
     }).catch(function (error) {
       saveButton.disabled = false;
-      ui.byId("clientMsg").innerHTML = '<div class="alert">Erreur, impossible d enregistrer cette fiche.</div>';
+      ui.showAlert("clientMsg", "Erreur, impossible d enregistrer cette fiche.");
       window.console && window.console.error && window.console.error(error);
     });
   }

@@ -119,7 +119,7 @@
         ui.byId("uPhotoPreview").outerHTML = buildPhotoPreviewHtml(dataUrl);
         removeButton.disabled = false;
       }, function (message) {
-        ui.byId("photoMsg").innerHTML = '<div class="alert">' + utils.escapeHtml(message) + "</div>";
+        ui.showAlert("photoMsg", message);
       });
     });
 
@@ -297,7 +297,7 @@
       if (roleField.tagName === "SELECT") {
         var newRole = roleField.value;
         if (user.role === "admin" && newRole !== "admin" && countAdmins(state.db.users) <= 1) {
-          ui.byId("profileMsg").innerHTML = '<div class="alert">Impossible : il doit rester au moins un administrateur.</div>';
+          ui.showAlert("profileMsg", "Impossible : il doit rester au moins un administrateur.");
           return;
         }
 
@@ -365,7 +365,7 @@
     var email = ui.byId("naEmail").value.trim();
 
     if (!name || !login || !email) {
-      ui.byId("addAccountMsg").innerHTML = '<div class="alert">Le nom, l identifiant et l email sont obligatoires.</div>';
+      ui.showAlert("addAccountMsg", "Le nom, l identifiant et l email sont obligatoires.");
       return;
     }
 
@@ -374,7 +374,7 @@
     });
 
     if (duplicate) {
-      ui.byId("addAccountMsg").innerHTML = '<div class="alert">Cet identifiant existe deja.</div>';
+      ui.showAlert("addAccountMsg", "Cet identifiant existe deja.");
       return;
     }
 
