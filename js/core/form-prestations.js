@@ -15,7 +15,7 @@
       '        <span class="badge">' + prestation.duration + " min</span>",
       '        <span class="badge">' + prestation.price + " EUR</span>",
       "      </div>",
-      '      <div class="tiny">Salle auto : ' + utils.escapeHtml(domain.previewRoomForCat(prestation.cat)) + "</div>",
+      '      <div class="tiny">Salle auto : ' + utils.escapeHtml(domain.previewRoomForCat(prestation.cat)) + "</div>",Confirm your new email address
       "    </div>",
       '    <button class="secondary" type="button" data-edit-prestation="' + prestation.id + '">Modifier</button>',
       "  </div>",
@@ -98,12 +98,25 @@
       return;
     }
 
+    var duration = Number(ui.byId("prDuration").value);
+    var price = Number(ui.byId("prPrice").value);
+
+    if (!duration || duration <= 0) {
+      ui.byId("prestationMsg").innerHTML = '<div class="alert">La duree doit etre superieure a 0.</div>';
+      return;
+    }
+
+    if (!(price >= 0)) {
+      ui.byId("prestationMsg").innerHTML = '<div class="alert">Le prix ne peut pas etre negatif.</div>';
+      return;
+    }
+
     prestation = {
       id: prestationId || utils.uid("p"),
       name: name,
       cat: ui.byId("prCat").value,
-      duration: Number(ui.byId("prDuration").value) || 0,
-      price: Number(ui.byId("prPrice").value) || 0
+      duration: duration,
+      price: price
     };
 
     if (prestationId) {
