@@ -539,12 +539,12 @@ label {
 
 .status-run {
   background: #fff6d9;
-  color: #927039;
+  color: #7d5a29;
 }
 
 .status-done {
   background: #eef8f0;
-  color: #60986c;
+  color: var(--ok);
 }
 
 .status-cancel,
@@ -667,8 +667,8 @@ label {
 }
 
 .x {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   background: #fff;
   border: 1px solid var(--line);
 }
