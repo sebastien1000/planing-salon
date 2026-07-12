@@ -45,7 +45,8 @@
   function readCheckedValues(namePrefix) {
     var dataAttr = "data-" + namePrefix.toLowerCase() + "-option";
     var boxes = Array.prototype.slice.call(document.querySelectorAll("[" + dataAttr + "]"));
-    return boxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
+    var checked = boxes.filter(function (box) { return box.checked; }).map(function (box) { return box.value; });
+    return checked.length === boxes.length ? null : checked;
   }
 
   var PHOTO_MAX_SIZE = 200;
@@ -219,17 +220,21 @@
   // Si la personne ne s'est jamais connectee a Supabase, sa ligne "profiles"
   // n'existe pas encore : impossible de la mettre a jour maintenant, on le
   // dit clairement plutot que de laisser croire que c'est deja applique.
-  function syncRoleToSupabase(user) {
+  // Synchronise role/active vers Supabase "profiles", qui fait foi pour la
+  // connexion (voir auth.js login()). Sans cet appel, un changement de role
+  // ou une desactivation ne resterait que local et n'empecherait pas la
+  // vraie connexion Supabase de la personne concernee.
+  function syncAccountToSupabase(user, changeLabel) {
     if (!supabaseData) {
       window.alert(
-        "Role change localement, mais Supabase n'est pas configure : impossible de synchroniser les droits reels."
+        changeLabel + " change localement, mais Supabase n'est pas configure : impossible de synchroniser les droits reels."
       );
       return;
     }
 
     if (!user.email) {
       window.alert(
-        "Role change localement. " + user.name + " n'a pas d'email enregistre : " +
+        changeLabel + " change localement. " + user.name + " n'a pas d'email enregistre : " +
         "impossible de synchroniser les droits reels tant qu'un email n'est pas ajoute a sa fiche."
       );
       return;
@@ -243,8 +248,8 @@
 
       if (!match) {
         window.alert(
-          "Role change localement. " + user.name + " ne s'est jamais connecte a Supabase : " +
-          "le nouveau role sera applique automatiquement a sa prochaine connexion, pas avant."
+          changeLabel + " change localement. " + user.name + " ne s'est jamais connecte a Supabase : " +
+          "le changement sera applique automatiquement a sa prochaine connexion, pas avant."
         );
         return;
       }
@@ -256,11 +261,11 @@
         role: user.role,
         active: user.active !== false
       }).then(function () {
-        window.alert("Role mis a jour : les droits reels de " + user.name + " ont change immediatement, sans reconnexion.");
+        window.alert(changeLabel + " mis a jour : les droits reels de " + user.name + " ont change immediatement, sans reconnexion.");
       });
     }).catch(function (error) {
       window.alert(
-        "Le role a ete change localement mais la synchronisation avec Supabase a echoue : " +
+        changeLabel + " a ete change localement mais la synchronisation avec Supabase a echoue : " +
         user.name + " garde ses anciens droits reels tant que ce n'est pas corrige. Reessayez."
       );
       window.console && window.console.error && window.console.error(error);
@@ -313,7 +318,7 @@
     formState.saveAndRefresh();
 
     if (roleChanged) {
-      syncRoleToSupabase(user);
+      syncAccountToSupabase(user, "Role");
     }
   }
 
@@ -422,6 +427,7 @@
 
     ui.closeModal();
     formState.saveAndRefresh();
+    syncAccountToSupabase(user, "Statut du compte");
   }
 
   function deleteAccount(userId) {
@@ -462,6 +468,14 @@
     if (!window.confirm("Supprimer ce compte ?")) {
       return;
     }
+
+    // Supabase n'autorise aucune policy "delete" sur profiles (voisement
+    // volontaire, pour ne pas casser l'historique des reservations/clients
+    // lies a ce collab_id) : on desactive le profil distant au lieu de le
+    // supprimer, sinon le compte resterait actif et utilisable pour se
+    // connecter malgre sa suppression locale.
+    user.active = false;
+    syncAccountToSupabase(user, "Suppression du compte");
 
     state.db.users = state.db.users.filter(function (item) {
       return item.id !== userId;

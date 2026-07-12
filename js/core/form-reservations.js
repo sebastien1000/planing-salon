@@ -657,7 +657,7 @@
       }
 
       return supabaseData.createReservation(draft).then(function () {
-        return supabaseData.updateClient(client.id, { next_date: draft.date });
+        return supabaseData.updateClient(client.id, { nextDate: draft.date });
       }).then(function () {
         ui.closeSheet();
         state.refresh();
