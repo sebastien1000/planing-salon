@@ -15,9 +15,9 @@
       '        <span class="badge">' + prestation.duration + " min</span>",
       '        <span class="badge">' + prestation.price + " EUR</span>",
       "      </div>",
-      '      <div class="tiny">Salle auto : ' + utils.escapeHtml(domain.previewRoomForCat(prestation.cat)) + "</div>",Confirm your new email address
+      '      <div class="tiny">Salle auto : ' + utils.escapeHtml(domain.previewRoomForCat(prestation.cat)) + "</div>",
       "    </div>",
-      '    <button class="secondary" type="button" data-edit-prestation="' + prestation.id + '">Modifier</button>',
+      `    <button class="secondary" type="button" data-edit-prestation="${prestation.id}">Modifier</button>`,
       "  </div>",
       "</div>"
     ].join("");
