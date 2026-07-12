@@ -19,6 +19,13 @@
     return document.getElementById(id);
   }
 
+  function showAlert(targetId, message) {
+    var target = byId(targetId);
+    if (target) {
+      target.innerHTML = '<div class="alert">' + utils.escapeHtml(message) + "</div>";
+    }
+  }
+
   function html(tag, className, content) {
     return '<' + tag + (className ? ' class="' + className + '"' : "") + ">" +
       (content || "") +
@@ -262,6 +269,7 @@
     renderUserProfile: renderUserProfile,
     registerServiceWorker: registerServiceWorker,
     setMain: setMain,
+    showAlert: showAlert,
     showModal: showModal,
     showSheet: showSheet
   };

@@ -158,7 +158,7 @@
 
     if (holiday.endDate < holiday.startDate ||
       (holiday.endDate === holiday.startDate && holiday.endTime <= holiday.startTime)) {
-      ui.byId("holidayMsg").innerHTML = '<div class="alert">La date/heure de fin doit etre apres le debut.</div>';
+      ui.showAlert("holidayMsg", "La date/heure de fin doit etre apres le debut.");
       return;
     }
 

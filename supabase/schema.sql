@@ -69,7 +69,8 @@ create table if not exists reservations (
   date date not null,
   time time not null,
   duration integer not null,
-  status text not null default 'pre',
+  status text not null default 'pre'
+    check (status in ('pre', 'run', 'done', 'cancel', 'absent', 'move')),
   notes text,
   supplement numeric,
   created_at timestamptz not null default now(),
@@ -88,6 +89,45 @@ create table if not exists reservations (
     ) with &&
   ) where (status <> 'cancel')
 );
+
+-- Si la table "reservations" existe deja (script relance apres une premiere
+-- execution sans ces contraintes), "create table if not exists" ne les
+-- ajoute pas retroactivement : on les ajoute donc explicitement ici, sans
+-- erreur si elles existent deja. Actuellement la duree/le supplement ne sont
+-- verifies que cote JavaScript (formulaire) ; un appel direct a l'API
+-- Supabase avec un compte valide pourrait donc contourner ce controle sans
+-- ces contraintes cote base.
+-- "not valid" : ne verifie que les nouvelles lignes, pas l'historique
+-- existant (evite un blocage si d'anciennes donnees ne respectent pas la
+-- regle). Une fois verifie que l'historique est propre, on peut lancer
+-- "alter table reservations validate constraint reservations_duration_check;"
+-- (et l'equivalent pour le supplement) pour la valider aussi retroactivement.
+do $$
+begin
+  alter table reservations
+    add constraint reservations_status_check
+    check (status in ('pre', 'run', 'done', 'cancel', 'absent', 'move'));
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table reservations
+    add constraint reservations_duration_check
+    check (duration > 0) not valid;
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  alter table reservations
+    add constraint reservations_supplement_check
+    check (supplement is null or supplement >= 0) not valid;
+exception
+  when duplicate_object then null;
+end $$;
 
 -- 5. Activation Row Level Security
 alter table profiles enable row level security;

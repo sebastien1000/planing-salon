@@ -119,7 +119,7 @@
         ui.byId("uPhotoPreview").outerHTML = buildPhotoPreviewHtml(dataUrl);
         removeButton.disabled = false;
       }, function (message) {
-        ui.byId("photoMsg").innerHTML = '<div class="alert">' + utils.escapeHtml(message) + "</div>";
+        ui.showAlert("photoMsg", message);
       });
     });
 
@@ -171,7 +171,7 @@
       (user.active === false ? '<div class="alert">Ce compte est desactive.</div>' : ""),
       buildPhotoFieldHtml(user),
       '<label for="uName">Nom affiche</label><input id="uName" class="field" value="' + utils.escapeHtml(user.name) + '">',
-      '<label for="uPhone">Telephone</label><input id="uPhone" class="field" value="' + utils.escapeHtml(user.phone || "") + '">',
+      '<label for="uPhone">Telephone</label><input id="uPhone" class="field" type="tel" value="' + utils.escapeHtml(user.phone || "") + '">',
       '<label for="uEmail">Email</label><input id="uEmail" class="field" type="email" value="' + utils.escapeHtml(user.email || "") + '">',
       '<button id="sendResetButton" class="secondary" style="width:100%;margin-bottom:14px" type="button">Envoyer un lien de reinitialisation</button>',
       isAdminEditing ? buildAccountExtraFieldsHtml(user, isSelf) : "",
@@ -297,7 +297,7 @@
       if (roleField.tagName === "SELECT") {
         var newRole = roleField.value;
         if (user.role === "admin" && newRole !== "admin" && countAdmins(state.db.users) <= 1) {
-          ui.byId("profileMsg").innerHTML = '<div class="alert">Impossible : il doit rester au moins un administrateur.</div>';
+          ui.showAlert("profileMsg", "Impossible : il doit rester au moins un administrateur.");
           return;
         }
 
@@ -365,7 +365,7 @@
     var email = ui.byId("naEmail").value.trim();
 
     if (!name || !login || !email) {
-      ui.byId("addAccountMsg").innerHTML = '<div class="alert">Le nom, l identifiant et l email sont obligatoires.</div>';
+      ui.showAlert("addAccountMsg", "Le nom, l identifiant et l email sont obligatoires.");
       return;
     }
 
@@ -374,7 +374,7 @@
     });
 
     if (duplicate) {
-      ui.byId("addAccountMsg").innerHTML = '<div class="alert">Cet identifiant existe deja.</div>';
+      ui.showAlert("addAccountMsg", "Cet identifiant existe deja.");
       return;
     }
 

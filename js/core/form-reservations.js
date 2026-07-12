@@ -44,7 +44,7 @@
     var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
     var subtitle = canSee ? reservation.prestation : "Detail prive";
     var collabUser = utils.findByName(state.db.users, reservation.collab);
-    var borderStyle = collabUser && collabUser.color ? ' style="border-left-color:' + collabUser.color + '"' : "";
+    var borderStyle = collabUser && collabUser.color ? ' style="border-left-color:' + utils.escapeHtml(collabUser.color) + '"' : "";
     var cardClassName = [
       "card",
       "appointment",
@@ -69,7 +69,7 @@
       "      <b>" + utils.escapeHtml(title) + "</b>",
       '      <div class="tiny">' + utils.escapeHtml(subtitle) + "</div>",
       "    </div>",
-      '    <span class="badge status-' + reservation.status + '">' +
+      '    <span class="badge status-' + utils.escapeHtml(reservation.status) + '">' +
         utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</span>",
       "  </div>",
       '  <div class="meta">',
@@ -351,10 +351,7 @@
   }
 
   function showSaveError(targetId, message) {
-    var target = ui.byId(targetId);
-    if (target) {
-      target.innerHTML = '<div class="alert">' + utils.escapeHtml(message) + "</div>";
-    }
+    ui.showAlert(targetId, message);
   }
 
   function saveReservation(reservationId) {
@@ -709,7 +706,7 @@
         });
       });
     }).catch(function () {
-      ui.byId("proposalMsg").innerHTML = '<div class="alert">Impossible de verifier les creneaux, reessayez.</div>';
+      ui.showAlert("proposalMsg", "Impossible de verifier les creneaux, reessayez.");
     });
   }
 
