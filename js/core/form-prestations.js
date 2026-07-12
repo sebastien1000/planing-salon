@@ -17,7 +17,7 @@
       "      </div>",
       '      <div class="tiny">Salle auto : ' + utils.escapeHtml(domain.previewRoomForCat(prestation.cat)) + "</div>",
       "    </div>",
-      `    <button class="secondary" type="button" data-edit-prestation="${prestation.id}">Modifier</button>`,
+      '    <button class="secondary" type="button" data-edit-prestation="' + prestation.id + '">Modifier</button>',
       "  </div>",
       "</div>"
     ].join("");
