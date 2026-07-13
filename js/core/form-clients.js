@@ -115,7 +115,10 @@
       '<label for="cNotes">Notes / commentaires importants</label><textarea id="cNotes" class="field"' + readonlyAttr + '>' + utils.escapeHtml(client.notes || "") + "</textarea>",
       '<label for="cAllergies">Allergies / precautions</label><textarea id="cAllergies" class="field"' + readonlyAttr + '>' + utils.escapeHtml(client.allergies || "") + "</textarea>",
       clientId ? '<label>Historique des rendez-vous</label><div id="clientHistory" class="stack"><p class="tiny">Chargement...</p></div>' : "",
-      manageable ? '<button id="saveClientButton" class="primary" style="margin-top:14px;width:100%" type="button">Enregistrer</button>' : ""
+      '<div class="row" style="margin-top:14px">',
+      manageable ? '  <button id="saveClientButton" class="primary grow" type="button">Enregistrer</button>' : "",
+      (manageable && clientId) ? '  <button id="deleteClientButton" class="secondary danger" type="button">Supprimer</button>' : "",
+      "</div>"
     ].join(""));
 
     ui.byId("closeClientModal").addEventListener("click", ui.closeModal);
@@ -127,9 +130,45 @@
       });
     }
 
+    var deleteButton = ui.byId("deleteClientButton");
+    if (deleteButton) {
+      deleteButton.addEventListener("click", function () {
+        confirmDeleteClient(clientId);
+      });
+    }
+
     if (clientId) {
       loadHistory(clientId);
     }
+  }
+
+  // Une fiche cliente ayant deja des rendez-vous ne peut pas etre
+  // supprimee (contrainte de cle etrangere cote base) : on le verifie
+  // d'abord pour afficher un message clair plutot qu'une erreur SQL brute.
+  function confirmDeleteClient(clientId) {
+    var state = formState.state;
+
+    supabaseData.listReservationsForClient(clientId).then(function (reservations) {
+      if (reservations.length > 0) {
+        window.alert(
+          "Impossible de supprimer : cette cliente a " + reservations.length +
+          " rendez-vous enregistre(s). Annulez-les ou reassignez-les d abord."
+        );
+        return;
+      }
+
+      if (!window.confirm("Supprimer definitivement cette fiche cliente ?")) {
+        return;
+      }
+
+      return supabaseData.deleteClient(clientId).then(function () {
+        ui.closeModal();
+        state.refresh();
+      });
+    }).catch(function (error) {
+      window.alert("Impossible de supprimer cette fiche, reessayez.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   function saveClient(clientId) {

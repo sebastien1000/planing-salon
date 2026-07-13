@@ -230,6 +230,15 @@ create policy "clients_update_authenticated"
   using (auth.uid() is not null)
   with check (auth.uid() is not null);
 
+-- La contrainte de cle etrangere reservations.client_id -> clients.id
+-- (sans "on delete cascade") bloque deja la suppression cote base si des
+-- rendez-vous y font encore reference : l'application le verifie d'abord
+-- pour afficher un message clair (voir js/core/form-clients.js).
+drop policy if exists "clients_delete_authenticated" on clients;
+create policy "clients_delete_authenticated"
+  on clients for delete
+  using (auth.uid() is not null);
+
 -- reservations
 drop policy if exists "reservations_select_authenticated" on reservations;
 create policy "reservations_select_authenticated"

@@ -314,6 +314,14 @@
       .then(mapClientRow);
   }
 
+  // La contrainte de cle etrangere reservations.client_id -> clients.id
+  // bloque deja cette suppression si des rendez-vous y font encore
+  // reference (voir js/core/form-clients.js pour la verification prealable
+  // qui affiche un message clair plutot que cette erreur SQL brute).
+  function deleteClient(id) {
+    return unwrap(client().from("clients").delete().eq("id", id).select());
+  }
+
   // ---- Rendez-vous ----
   // Lecture toujours via la vue reservations_public : elle renvoie deja les
   // vraies donnees pour le proprietaire/l'admin et les masque pour les
@@ -414,6 +422,7 @@
     countReservationsForService: countReservationsForService,
     countServiceUsage: countServiceUsage,
     createReservation: createReservation,
+    deleteClient: deleteClient,
     deleteCollaboratorService: deleteCollaboratorService,
     deleteService: deleteService,
     findOrCreateClient: findOrCreateClient,
