@@ -424,7 +424,7 @@ join (values
   ('ongles', 'Dépose avec nouvelle pose', 6),
   ('ongles', 'Semi-permanent mains', 7),
   ('ongles', 'Semi-permanent pieds', 8),
-  ('ongles', 'Renforcement sur ongles naturels', 9),
+  ('ongles', 'Renfort', 9),
   ('ongles', 'Réparation d''un ongle', 10),
   ('ongles', 'Nail art', 11),
   ('ongles', 'French', 12),
