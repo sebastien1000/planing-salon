@@ -78,33 +78,68 @@
 
   // ---- Menu de prestations par categorie (utilise dans le formulaire de
   // rendez-vous) : uniquement les prestations actives et proposees par
-  // cette collaboratrice, regroupees par categorie, repliables au clic. ----
+  // cette collaboratrice. Chaque categorie est un bouton "menu burger" (☰) ;
+  // au clic, la feuille affiche ses prestations avec un retour vers la
+  // liste des categories - meme principe que le bouton "☰ Filtres" du
+  // planning (js/pages/planning.js). ----
 
-  function buildPickerHtml(groups, selectedEntryId) {
+  function buildCategoryMenuHtml(groups) {
     if (!groups.length) {
       return '<p class="tiny">Aucune prestation active pour cette collaboratrice. Un administrateur doit d abord lui en attribuer dans la page Plus.</p>';
     }
 
-    return groups.map(function (group, index) {
-      var isOpen = index === 0 || group.items.some(function (item) { return item.id === selectedEntryId; });
+    return '<div class="service-category-menu">' + groups.map(function (group, index) {
+      return '<button class="secondary service-category-burger" type="button" data-category-index="' + index + '">' +
+        "<span>☰ " + utils.escapeHtml(group.name) + "</span>" +
+        '<span class="tiny">(' + group.items.length + ")</span>" +
+        "</button>";
+    }).join("") + "</div>";
+  }
 
-      return [
-        '<details class="service-category"' + (isOpen ? " open" : "") + '>',
-        "  <summary>" + utils.escapeHtml(group.name) +
-          ' <span class="tiny">(' + group.items.length + ")</span></summary>",
-        '  <div class="service-category-list">',
-        group.items.map(function (item) {
-          var selectedClass = item.id === selectedEntryId ? " service-option--selected" : "";
-          return '<button class="secondary service-option' + selectedClass +
-            '" type="button" data-service-entry="' + item.id + '">' +
-            '<span class="service-option-name">' + utils.escapeHtml(item.name) + "</span>" +
-            '<span class="service-option-meta">' + item.price + " EUR &middot; " + item.duration + " min</span>" +
-            "</button>";
-        }).join(""),
-        "  </div>",
-        "</details>"
-      ].join("");
-    }).join("");
+  function buildCategoryServicesHtml(group, selectedEntryId) {
+    return [
+      '<button class="secondary service-category-back" type="button" data-back-to-categories>&larr; Retour aux categories</button>',
+      '<h4 class="service-category-title">' + utils.escapeHtml(group.name) + "</h4>",
+      '<div class="service-category-list">',
+      group.items.map(function (item) {
+        var selectedClass = item.id === selectedEntryId ? " service-option--selected" : "";
+        return '<button class="secondary service-option' + selectedClass +
+          '" type="button" data-service-entry="' + item.id + '">' +
+          '<span class="service-option-name">' + utils.escapeHtml(item.name) + "</span>" +
+          '<span class="service-option-meta">' + item.price + " EUR &middot; " + item.duration + " min</span>" +
+          "</button>";
+      }).join(""),
+      "</div>"
+    ].join("");
+  }
+
+  function renderPickerCategoryList(body, groups, active, selectedEntryId, onSelect) {
+    body.innerHTML = buildCategoryMenuHtml(groups);
+
+    body.querySelectorAll("[data-category-index]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var group = groups[Number(button.dataset.categoryIndex)];
+        renderPickerCategoryServices(body, groups, group, active, selectedEntryId, onSelect);
+      });
+    });
+  }
+
+  function renderPickerCategoryServices(body, groups, group, active, selectedEntryId, onSelect) {
+    body.innerHTML = buildCategoryServicesHtml(group, selectedEntryId);
+
+    body.querySelector("[data-back-to-categories]").addEventListener("click", function () {
+      renderPickerCategoryList(body, groups, active, selectedEntryId, onSelect);
+    });
+
+    body.querySelectorAll("[data-service-entry]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var entry = active.find(function (item) { return item.id === button.dataset.serviceEntry; });
+        if (entry) {
+          onSelect(entry);
+        }
+        ui.closeSheet();
+      });
+    });
   }
 
   // onSelect(entry) est appele avec la prestation choisie (id, nom, prix,
@@ -137,17 +172,7 @@
       });
       var groups = groupByCategory(active);
 
-      body.innerHTML = buildPickerHtml(groups, selectedEntryId);
-
-      body.querySelectorAll("[data-service-entry]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          var entry = active.find(function (item) { return item.id === button.dataset.serviceEntry; });
-          if (entry) {
-            onSelect(entry);
-          }
-          ui.closeSheet();
-        });
-      });
+      renderPickerCategoryList(body, groups, active, selectedEntryId, onSelect);
     }).catch(function (error) {
       var body = ui.byId("servicePickerBody");
       if (body) {
@@ -214,15 +239,18 @@
         })
         .filter(function (group) { return group.services.length > 0; });
 
-      container.innerHTML = renderAdminServicesHtml(categoryGroups, entryByServiceId);
-      bindAdminServicesActions(containerId, catalog, entryByServiceId);
+      container.innerHTML = renderAdminServicesHtml(categoryGroups);
+      bindAdminServicesActions(containerId, catalog, entryByServiceId, categoryGroups);
     }).catch(function (error) {
       container.innerHTML = '<div class="alert">Impossible de charger les prestations, reessayez.</div>';
       window.console && window.console.error && window.console.error(error);
     });
   }
 
-  function renderAdminServicesHtml(categoryGroups, entryByServiceId) {
+  // Chaque categorie est un bouton "menu burger" (☰) qui ouvre une feuille
+  // avec ses prestations - meme principe que le bouton "☰ Filtres" du
+  // planning (js/pages/planning.js).
+  function renderAdminServicesHtml(categoryGroups) {
     var collabOptions = adminState.collaborators.map(function (collab) {
       var selected = collab.id === adminState.selectedCollaboratorId ? " selected" : "";
       return '<option value="' + collab.id + '"' + selected + ">" +
@@ -230,19 +258,12 @@
     }).join("");
 
     var categoriesHtml = categoryGroups.length
-      ? categoryGroups.map(function (group) {
-          return [
-            '<details class="service-category" open>',
-            "  <summary>" + utils.escapeHtml(group.category.name) +
-              ' <span class="tiny">(' + group.services.length + ")</span></summary>",
-            '  <div class="service-category-list">',
-            group.services.map(function (service) {
-              return renderAdminServiceRow(service, entryByServiceId[service.id]);
-            }).join(""),
-            "  </div>",
-            "</details>"
-          ].join("");
-        }).join("")
+      ? '<div class="service-category-menu">' + categoryGroups.map(function (group, index) {
+          return '<button class="secondary service-category-burger" type="button" data-open-category="' + index + '">' +
+            "<span>☰ " + utils.escapeHtml(group.category.name) + "</span>" +
+            '<span class="tiny">(' + group.services.length + ")</span>" +
+            "</button>";
+        }).join("") + "</div>"
       : '<p class="tiny">Aucune prestation dans le catalogue pour le moment.</p>';
 
     return [
@@ -252,6 +273,33 @@
       '<div id="adminServiceMsg"></div>',
       categoriesHtml
     ].join("");
+  }
+
+  function openAdminCategorySheet(group, catalog, entryByServiceId, containerId) {
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>" + utils.escapeHtml(group.category.name) + "</h3>",
+      '  <button id="closeCategorySheetButton" class="x" type="button">x</button>',
+      "</div>",
+      '<div class="service-category-list">' +
+        group.services.map(function (service) {
+          return renderAdminServiceRow(service, entryByServiceId[service.id]);
+        }).join("") +
+      "</div>"
+    ].join(""));
+
+    ui.byId("closeCategorySheetButton").addEventListener("click", ui.closeSheet);
+
+    ui.byId("sheetBox").querySelectorAll("[data-manage-service]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var service = utils.findById(catalog.services, button.dataset.manageService);
+        var entry = entryByServiceId[button.dataset.manageService] || null;
+        if (service) {
+          ui.closeSheet();
+          openCollaboratorServiceForm(service, entry, containerId);
+        }
+      });
+    });
   }
 
   function renderAdminServiceRow(service, entry) {
@@ -279,7 +327,7 @@
     ].join("");
   }
 
-  function bindAdminServicesActions(containerId, catalog, entryByServiceId) {
+  function bindAdminServicesActions(containerId, catalog, entryByServiceId, categoryGroups) {
     ui.byId("servicesCollabSelect").addEventListener("change", function (event) {
       adminState.selectedCollaboratorId = event.target.value;
       renderAdminServicesBody(containerId);
@@ -289,13 +337,10 @@
       openCatalogServiceForm(catalog, containerId);
     });
 
-    document.querySelectorAll("[data-manage-service]").forEach(function (button) {
+    document.querySelectorAll("[data-open-category]").forEach(function (button) {
       button.addEventListener("click", function () {
-        var service = utils.findById(catalog.services, button.dataset.manageService);
-        var entry = entryByServiceId[button.dataset.manageService] || null;
-        if (service) {
-          openCollaboratorServiceForm(service, entry, containerId);
-        }
+        var group = categoryGroups[Number(button.dataset.openCategory)];
+        openAdminCategorySheet(group, catalog, entryByServiceId, containerId);
       });
     });
   }
@@ -469,6 +514,37 @@
   // ---- Vue collaboratrice (lecture seule) : ses propres prestations,
   // regroupees par categorie, avec son tarif et sa duree a elle. ----
 
+  function renderMyServiceRow(item) {
+    return [
+      '<div class="service-admin-row">',
+      '  <div class="grow">',
+      "    <b>" + utils.escapeHtml(item.name) + "</b>",
+      '    <div class="row" style="margin-top:4px;flex-wrap:wrap;gap:6px">',
+      '      <span class="badge">' + item.price + " EUR</span>",
+      '      <span class="badge">' + item.duration + " min</span>",
+      item.active === false ? '<span class="badge status-cancel">Inactive</span>' : "",
+      "    </div>",
+      "  </div>",
+      "</div>"
+    ].join("");
+  }
+
+  function openMyCategorySheet(group) {
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>" + utils.escapeHtml(group.name) + "</h3>",
+      '  <button id="closeMyCategorySheetButton" class="x" type="button">x</button>',
+      "</div>",
+      '<div class="service-category-list">' +
+        group.items.map(renderMyServiceRow).join("") +
+      "</div>"
+    ].join(""));
+
+    ui.byId("closeMyCategorySheetButton").addEventListener("click", ui.closeSheet);
+  }
+
+  // Meme menu burger que l'ecran admin, en lecture seule (chaque
+  // categorie ouvre une feuille avec ses prestations).
   function renderMyServicesSection(containerId, user) {
     var container = ui.byId(containerId);
     if (!container) {
@@ -480,32 +556,23 @@
     loadCollaboratorEntries(user.id).then(function (entries) {
       var groups = groupByCategory(entries);
 
-      container.innerHTML = groups.length
-        ? groups.map(function (group) {
-            return [
-              '<details class="service-category" open>',
-              "  <summary>" + utils.escapeHtml(group.name) +
-                ' <span class="tiny">(' + group.items.length + ")</span></summary>",
-              '  <div class="service-category-list">',
-              group.items.map(function (item) {
-                return [
-                  '<div class="service-admin-row">',
-                  "  <div class=\"grow\">",
-                  "    <b>" + utils.escapeHtml(item.name) + "</b>",
-                  '    <div class="row" style="margin-top:4px;flex-wrap:wrap;gap:6px">',
-                  '      <span class="badge">' + item.price + " EUR</span>",
-                  '      <span class="badge">' + item.duration + " min</span>",
-                  item.active === false ? '<span class="badge status-cancel">Inactive</span>' : "",
-                  "    </div>",
-                  "  </div>",
-                  "</div>"
-                ].join("");
-              }).join(""),
-              "  </div>",
-              "</details>"
-            ].join("");
-          }).join("")
-        : '<p class="tiny">Aucune prestation ne vous a encore ete attribuee. Contactez l administrateur.</p>';
+      if (!groups.length) {
+        container.innerHTML = '<p class="tiny">Aucune prestation ne vous a encore ete attribuee. Contactez l administrateur.</p>';
+        return;
+      }
+
+      container.innerHTML = '<div class="service-category-menu">' + groups.map(function (group, index) {
+        return '<button class="secondary service-category-burger" type="button" data-open-my-category="' + index + '">' +
+          "<span>☰ " + utils.escapeHtml(group.name) + "</span>" +
+          '<span class="tiny">(' + group.items.length + ")</span>" +
+          "</button>";
+      }).join("") + "</div>";
+
+      container.querySelectorAll("[data-open-my-category]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          openMyCategorySheet(groups[Number(button.dataset.openMyCategory)]);
+        });
+      });
     }).catch(function (error) {
       container.innerHTML = '<div class="alert">Impossible de charger vos prestations, reessayez.</div>';
       window.console && window.console.error && window.console.error(error);

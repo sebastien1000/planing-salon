@@ -877,47 +877,39 @@ label {
 }
 
 /* Menu de prestations par categorie (choix d'une prestation, ecran
-   d'administration des prestations) : accordeon natif <details>/<summary>,
-   deja accessible au clavier et lisible par un lecteur d'ecran sans ARIA
-   supplementaire, et qui ne recharge jamais la page a l'ouverture. */
-.service-category {
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  margin-bottom: 10px;
-  overflow: hidden;
-  background: var(--card);
+   d'administration des prestations) : chaque categorie est un bouton
+   "menu burger" qui ouvre une feuille avec ses prestations, meme principe
+   que le bouton "Filtres" du planning (js/pages/planning.js). Bouton
+   natif <button>, deja accessible au clavier sans ARIA supplementaire, et
+   qui ne recharge jamais la page a l'ouverture. */
+.service-category-menu {
+  display: grid;
+  gap: 8px;
 }
 
-.service-category summary {
-  padding: 13px 14px;
-  font-weight: 750;
-  cursor: pointer;
-  list-style: none;
+.service-category-burger {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  width: 100%;
+  text-align: left;
+  font-weight: 750;
   /* Cible tactile confortable au doigt, meme sur un petit telephone. */
+  min-height: 48px;
+}
+
+.service-category-back {
+  display: inline-flex;
+  margin-bottom: 12px;
   min-height: 44px;
 }
 
-.service-category summary::-webkit-details-marker {
-  display: none;
-}
-
-.service-category summary::after {
-  content: "+";
-  font-weight: 800;
-  color: var(--muted);
-  flex: 0 0 auto;
-}
-
-.service-category[open] summary::after {
-  content: "\2212";
+.service-category-title {
+  margin: 0 0 10px;
 }
 
 .service-category-list {
-  padding: 0 12px 12px;
   display: grid;
   gap: 8px;
 }
