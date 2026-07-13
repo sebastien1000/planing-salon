@@ -39,14 +39,16 @@
 
   function buildDefault() {
     return {
-      // Le mot de passe n'est plus stocke ici : il vit uniquement dans
-      // Supabase Auth (hache cote serveur). L'email ci-dessous doit
-      // correspondre a un compte Supabase reel pour pouvoir se connecter.
-      users: [
-        { id: "u1", login: "Julie", name: "Julie", role: "collab", color: "#f4b5c5", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true },
-        { id: "u2", login: "Marion", name: "Marion", role: "collab", color: "#b7dbef", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true },
-        { id: "u0", login: "admin", name: "Administration", role: "admin", color: "#d9c2a3", rooms: null, prestations: null, phone: "", email: "", photo: null, active: true }
-      ],
+      // Les comptes (Julie/Marion/admin...) ne sont plus inventes ici : ils
+      // sont crees automatiquement a la premiere connexion de chacun, a
+      // partir de sa ligne Supabase "profiles" (voir js/core/auth.js,
+      // syncLocalUserFromRemoteProfile). Un utilisateur de demonstration
+      // fixe ici (avec un id/email factices) créait un doublon a chaque
+      // fois que le localStorage etait recree (cache vide, stockage
+      // efface...) : la vraie fiche Supabase ne correspondait jamais a
+      // cette fiche locale fantome (id/email differents), donc une
+      // deuxieme fiche etait ajoutee au lieu d'etre reutilisee.
+      users: [],
       prestations: [
         { id: "p1", name: "Pose gel", cat: "ongles", duration: 120, price: 45 },
         { id: "p2", name: "Remplissage gel", cat: "ongles", duration: 90, price: 38 },
@@ -60,18 +62,10 @@
       // Clientes et rendez-vous ne sont plus stockes ici : ils vivent dans
       // Supabase (voir supabase/schema.sql et js/core/supabase-data.js),
       // avec droits verifies cote serveur.
-      absences: [
-        {
-          id: "a1",
-          collab: "Julie",
-          startDate: utils.today(1),
-          startTime: "09:00",
-          endDate: utils.today(1),
-          endTime: "12:00",
-          category: "indisponibilite",
-          notes: "Indisponible"
-        }
-      ],
+      // Absences : idem, plus d'absence de demonstration fixe ici - elle
+      // revenait a chaque reinitialisation du localStorage (date "demain"
+      // recalculee a chaque fois, donc jamais vraiment "supprimee").
+      absences: [],
       holidays: []
     };
   }
@@ -142,6 +136,23 @@
     delete safe.clients;
     delete safe.reservations;
     delete safe.photos;
+    // Migration : retire les anciennes fiches de demonstration (Julie/
+    // Marion/admin fixes avec id "u0"/"u1"/"u2" et email vide) qu'un ancien
+    // buildDefault() recreait a chaque reinitialisation du localStorage.
+    // Repere uniquement a ces id fixes + email vide : un vrai compte
+    // synchronise depuis Supabase a toujours un id (uuid) et un email reels,
+    // donc ce filtre ne touche jamais une fiche reelle.
+    var LEGACY_DEMO_USER_IDS = { u0: true, u1: true, u2: true };
+    safe.users = safe.users.filter(function (user) {
+      return !(LEGACY_DEMO_USER_IDS[user.id] && !user.email);
+    });
+    // Meme migration pour l'ancienne absence de demonstration fixe (id
+    // "a1", jamais genere par utils.uid("a") qui produit toujours 8
+    // caracteres) : sans ca elle "revenait" a chaque reinitialisation du
+    // localStorage, avec une date recalculee a "demain" a chaque fois.
+    safe.absences = safe.absences.filter(function (absence) {
+      return absence.id !== "a1";
+    });
     return safe;
   }
 
