@@ -209,17 +209,15 @@ create policy "clients_select_admin_or_linked"
     or collab_has_reservation_for_client(clients.id)
   );
 
--- Une collaboratrice ne peut creer une cliente que sans proprietaire (null,
--- cas courant : cliente pas encore liee) ou pour elle-meme ; seul l'admin
--- peut creer directement une fiche rattachee a une autre collaboratrice.
+-- N'importe quelle collaboratrice connectee peut creer une fiche cliente
+-- rattachee a N'IMPORTE QUELLE collaboratrice : necessaire pour pouvoir
+-- prendre un rendez-vous au nom d'une autre collaboratrice (voir plus bas,
+-- reservations_insert_authenticated). La modification d'une fiche
+-- existante reste, elle, limitee (voir clients_update_admin_or_linked).
 drop policy if exists "clients_insert_authenticated" on clients;
 create policy "clients_insert_authenticated"
   on clients for insert
-  with check (
-    is_admin()
-    or collab_id is null
-    or collab_id = auth.uid()
-  );
+  with check (auth.uid() is not null);
 
 -- "with check" ajoute en plus du "using" existant : avant, une collaboratrice
 -- pouvait modifier une fiche cliente qui lui appartenait (using) puis en
@@ -238,10 +236,16 @@ create policy "reservations_select_authenticated"
   on reservations for select
   using (auth.uid() is not null);
 
+-- N'importe quelle collaboratrice connectee peut prendre un rendez-vous
+-- pour N'IMPORTE QUELLE collaboratrice (pas seulement l'admin, pas
+-- seulement elle-meme) : demande explicitement pour la prise de RDV. La
+-- modification/l'annulation d'un rendez-vous deja cree reste, elle,
+-- reservee a l'admin ou a la collaboratrice concernee (policy juste en
+-- dessous, inchangee).
 drop policy if exists "reservations_insert_admin_or_own" on reservations;
-create policy "reservations_insert_admin_or_own"
+create policy "reservations_insert_authenticated"
   on reservations for insert
-  with check (is_admin() or collab_id = auth.uid());
+  with check (auth.uid() is not null);
 
 drop policy if exists "reservations_update_admin_or_own" on reservations;
 create policy "reservations_update_admin_or_own"

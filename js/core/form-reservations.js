@@ -176,7 +176,6 @@
     );
 
     var isAdmin = auth.isAdmin(state.user);
-    var lockOwnCollab = !isAdmin;
     // Photo figee sur le rendez-vous si deja enregistree (reservation.price) ;
     // pour un ancien rendez-vous sans photo figee, on retombe sur
     // l'ancien catalogue local (findPrestationPrice) le temps de la
@@ -201,8 +200,8 @@
       "</div>",
       '<p class="tiny">Si la cliente n est pas dans la liste, remplissez son nom/telephone : sa fiche sera creee automatiquement (ou reutilisee si elle existe deja).</p>',
       '<div class="grid2">',
-      '  <div><label for="fCollab">Collaboratrice</label><select id="fCollab" class="field"' +
-        (lockOwnCollab ? ' disabled' : '') + '>' + collabOptions + "</select></div>",
+      '  <div><label for="fCollab">Collaboratrice</label><select id="fCollab" class="field">' +
+        collabOptions + "</select></div>",
       "  <div>",
       '    <label for="fPrestButton">Prestation</label>',
       '    <button id="fPrestButton" class="secondary" type="button" style="width:100%;text-align:left"' +
@@ -360,7 +359,7 @@
     ui.byId("fClientName").value = client.name;
     ui.byId("fClientPhone").value = client.phone || "";
     ui.byId("fClientEmail").value = client.email || "";
-    ui.byId("fCollab").value = auth.isAdmin(state.user) && habitualCollab ? habitualCollab : state.user.name;
+    ui.byId("fCollab").value = habitualCollab || state.user.name;
     refreshCollabRestrictedFields();
     updateReservationRoom();
 
@@ -420,7 +419,7 @@
       return;
     }
 
-    var chosenCollab = auth.isAdmin(state.user) ? ui.byId("fCollab").value : state.user.name;
+    var chosenCollab = ui.byId("fCollab").value;
     var selectedClientId = ui.byId("fClient").value;
     var prestationButton = ui.byId("fPrestButton");
     var prestationName = prestationButton.textContent.trim();
@@ -625,9 +624,9 @@
     base.setDate(base.getDate() + Number(client.frequency || 21));
 
     var nextDate = utils.iso(base);
-    var lockOwnCollab = !auth.isAdmin(state.user);
+    var isAdmin = auth.isAdmin(state.user);
     var habitualCollab = client.collabId ? supabaseData.resolveCollabName(state.profiles, client.collabId) : "";
-    var proposalCollab = lockOwnCollab ? state.user.name : (habitualCollab || reservation.collab);
+    var proposalCollab = habitualCollab || reservation.collab || state.user.name;
     var room = domain.roomFor(state.db, proposalCollab, client.prestation);
 
     ui.showSheet([
@@ -639,7 +638,7 @@
       '<label for="pDate">Date</label><input id="pDate" class="field" type="date" value="' + nextDate + '">',
       '<label for="pTime">Heure</label><input id="pTime" class="field" type="time" value="' + reservation.time + '">',
       '<label for="pCollab">Collaboratrice</label>',
-      '<select id="pCollab" class="field"' + (lockOwnCollab ? ' disabled' : '') + '>' + state.db.users
+      '<select id="pCollab" class="field">' + state.db.users
         .filter(function (user) {
           return user.role === "collab" && (user.active !== false || user.name === proposalCollab);
         })
@@ -659,7 +658,7 @@
       '  <div><label for="pRoom">Salle</label><input id="pRoom" class="field" readonly value="' + utils.escapeHtml(room) + '"></div>',
       "</div>",
       '<label for="pPrice">Prix (EUR)</label><input id="pPrice" class="field" type="number" min="0" step="0.5"' +
-        (lockOwnCollab ? " readonly" : "") + ' value="0">',
+        (isAdmin ? "" : " readonly") + ' value="0">',
       '<div id="pEndTimePreview" class="tiny"></div>',
       '<div id="proposalMsg"></div>',
       '<div class="row" style="margin-top:14px">',
@@ -770,7 +769,7 @@
   function saveProposal(clientId) {
     var state = formState.state;
     var client = utils.findById(state.clients, clientId);
-    var chosenCollab = auth.isAdmin(state.user) ? ui.byId("pCollab").value : state.user.name;
+    var chosenCollab = ui.byId("pCollab").value;
     var prestationButton = ui.byId("pPrestButton");
     var prestationName = prestationButton.textContent.trim();
 
@@ -847,7 +846,7 @@
   function suggestProposalSlots() {
     var state = formState.state;
     var times = ["09:00", "11:00", "14:00", "16:00"];
-    var chosenCollab = auth.isAdmin(state.user) ? ui.byId("pCollab").value : state.user.name;
+    var chosenCollab = ui.byId("pCollab").value;
     var date = ui.byId("pDate").value;
 
     ui.byId("proposalMsg").innerHTML = '<p class="tiny">Verification des creneaux...</p>';
