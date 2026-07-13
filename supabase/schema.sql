@@ -181,6 +181,24 @@ create policy "profiles_update_self_or_admin"
     or exists (select 1 from profiles p where p.id = auth.uid() and p.role = 'admin')
   );
 
+-- Fonction SECURITY DEFINER (meme principe que is_admin()) : necessaire
+-- car "authenticated" n'a pas le droit de lire "reservations" directement
+-- (voir revoke en section 9, plus bas) - tout le monde doit passer par la
+-- vue reservations_public qui masque les donnees privees. Sans cette
+-- fonction, la policy clients ci-dessous echouerait avec une erreur de
+-- permission des que Postgres evalue cette branche (403 cote application).
+create or replace function collab_has_reservation_for_client(client_uuid uuid)
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select exists (
+    select 1 from reservations r
+    where r.client_id = client_uuid and r.collab_id = auth.uid()
+  );
+$$;
+
 -- clients
 drop policy if exists "clients_select_admin_or_linked" on clients;
 create policy "clients_select_admin_or_linked"
@@ -188,10 +206,7 @@ create policy "clients_select_admin_or_linked"
   using (
     is_admin()
     or collab_id = auth.uid()
-    or exists (
-      select 1 from reservations r
-      where r.client_id = clients.id and r.collab_id = auth.uid()
-    )
+    or collab_has_reservation_for_client(clients.id)
   );
 
 -- Une collaboratrice ne peut creer une cliente que sans proprietaire (null,
