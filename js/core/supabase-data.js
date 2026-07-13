@@ -168,6 +168,23 @@
     });
   }
 
+  // Meme principe, mais pour retirer une prestation du catalogue general
+  // (toutes collaboratrices confondues) : on verifie qu'aucune
+  // collaboratrice ne l'utilise et qu'aucun rendez-vous n'y fait reference
+  // avant de proposer une suppression definitive (voir js/core/form-services.js).
+  function countServiceUsage(serviceId) {
+    return Promise.all([
+      unwrap(client().from("collaborator_services").select("id").eq("service_id", serviceId)),
+      unwrap(client().from("reservations_public").select("id").eq("service_id", serviceId))
+    ]).then(function (results) {
+      return { collaboratorServices: results[0].length, reservations: results[1].length };
+    });
+  }
+
+  function deleteService(serviceId) {
+    return unwrap(client().from("services").delete().eq("id", serviceId).select());
+  }
+
   // ---- Clientes ----
   // Meme principe que pour les rendez-vous : la table stocke collab_id
   // (uuid), l'app manipule collabId ; le nom du collaborateur se resout au
@@ -385,8 +402,10 @@
 
   window.SalonSupabaseData = {
     countReservationsForService: countReservationsForService,
+    countServiceUsage: countServiceUsage,
     createReservation: createReservation,
     deleteCollaboratorService: deleteCollaboratorService,
+    deleteService: deleteService,
     findOrCreateClient: findOrCreateClient,
     listAllReservations: listAllReservations,
     listClients: listClients,

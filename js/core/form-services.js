@@ -300,6 +300,62 @@
         }
       });
     });
+
+    ui.byId("sheetBox").querySelectorAll("[data-delete-service]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var service = utils.findById(catalog.services, button.dataset.deleteService);
+        if (service) {
+          confirmDeleteCatalogService(service, containerId);
+        }
+      });
+    });
+  }
+
+  // Retire une prestation du catalogue general (toutes collaboratrices
+  // confondues) - pas seulement le tarif d'une collaboratrice (voir
+  // confirmDeleteCollaboratorService plus bas pour ce cas). Si elle est
+  // deja utilisee (au moins une collaboratrice l'a tarifee, ou au moins un
+  // rendez-vous y fait reference), on la desactive au lieu de la
+  // supprimer, pour ne jamais casser l'historique des anciens rendez-vous.
+  function confirmDeleteCatalogService(service, containerId) {
+    supabaseData.countServiceUsage(service.id).then(function (usage) {
+      var totalUsage = usage.collaboratorServices + usage.reservations;
+
+      if (totalUsage > 0) {
+        if (!window.confirm(
+          "Cette prestation est utilisee par " + usage.collaboratorServices +
+          " collaboratrice(s) et " + usage.reservations + " rendez-vous. " +
+          "Impossible de la supprimer sans casser leur historique : voulez-vous la retirer du catalogue (elle disparaitra du menu de tout le monde) a la place ?"
+        )) {
+          return;
+        }
+
+        return supabaseData.upsertService({
+          id: service.id,
+          categoryId: service.categoryId,
+          name: service.name,
+          active: false,
+          displayOrder: service.displayOrder
+        }).then(function () {
+          catalogCache = null;
+          ui.closeSheet();
+          renderAdminServicesBody(containerId);
+        });
+      }
+
+      if (!window.confirm("Supprimer definitivement cette prestation du catalogue ?")) {
+        return;
+      }
+
+      return supabaseData.deleteService(service.id).then(function () {
+        catalogCache = null;
+        ui.closeSheet();
+        renderAdminServicesBody(containerId);
+      });
+    }).catch(function (error) {
+      window.alert("Impossible de verifier l utilisation de cette prestation, reessayez.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   function renderAdminServiceRow(service, entry) {
@@ -321,8 +377,11 @@
       service.active === false ? '<div class="tiny">Prestation retiree du catalogue</div>' : "",
       '    <div class="row" style="margin-top:4px;flex-wrap:wrap;gap:6px">' + badges.join("") + "</div>",
       "  </div>",
-      '  <button class="secondary" type="button" data-manage-service="' + service.id + '">' +
+      '  <div class="row" style="gap:6px">',
+      '    <button class="secondary" type="button" data-manage-service="' + service.id + '">' +
         (isAssigned ? "Modifier" : "Ajouter") + "</button>",
+      '    <button class="secondary danger" type="button" data-delete-service="' + service.id + '">Supprimer</button>',
+      "  </div>",
       "</div>"
     ].join("");
   }
