@@ -20,7 +20,11 @@
   var db = data.loadDb();
   var view = sessionStorage.getItem("planning:view") || "day";
   var roomFilter = sessionStorage.getItem("planning:room") || "Toutes";
-  var collabFilter = sessionStorage.getItem("planning:collab") || "Toutes";
+  // Une collaboratrice ne voit par defaut que ses propres RDV (comptes,
+  // "RDV affiches"/"Termines"...) ; l'admin continue de tout voir par
+  // defaut. Un choix de filtre deja fait avant (sessionStorage) reste
+  // toujours prioritaire.
+  var collabFilter = sessionStorage.getItem("planning:collab") || (auth.isAdmin(user) ? "Toutes" : user.name);
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
   var showTypes = loadShowTypes();
   var roomOccupancyFilter = loadRoomOccupancyFilter();
