@@ -428,7 +428,7 @@ join (values
   ('ongles', 'Reconstruction pieds', 14),
   ('cils', 'Cil à cil', 1),
   ('cils', 'Volume russe', 2),
-  ('cils', 'Remplissage cils', 3),
+  ('cils', 'Remplissage cils à cils', 3),
   ('cils', 'Dépose cils', 4),
   ('sourcils', 'Restructuration', 1),
   ('sourcils', 'Teinture', 2),
