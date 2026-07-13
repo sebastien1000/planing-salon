@@ -426,7 +426,7 @@ join (values
   ('ongles', 'Semi-permanent pieds', 8),
   ('ongles', 'Renfort', 9),
   ('ongles', 'Reconstruction pieds', 14),
-  ('cils', 'Cil à cil', 1),
+  ('cils', 'Cils à cils', 1),
   ('cils', 'Volume russe', 2),
   ('cils', 'Remplissage cils à cils', 3),
   ('cils', 'Dépose cils', 4),
