@@ -343,6 +343,24 @@
     }
   }
 
+  // Une cliente peut desormais avoir plusieurs collaboratrices "habituelles"
+  // (client.collabIds) : si la personne connectee en fait partie, on la
+  // propose en priorite (probablement elle qui prend le rendez-vous),
+  // sinon la premiere de la liste.
+  function pickHabitualCollabName(state, client) {
+    var ids = client.collabIds && client.collabIds.length
+      ? client.collabIds
+      : (client.collabId ? [client.collabId] : []);
+
+    if (!ids.length) {
+      return "";
+    }
+
+    var myId = supabaseData.resolveCollabId(state.profiles, state.user.name);
+    var chosenId = ids.indexOf(myId) !== -1 ? myId : ids[0];
+    return supabaseData.resolveCollabName(state.profiles, chosenId);
+  }
+
   function fillClientHabit() {
     var state = formState.state;
     var clientId = ui.byId("fClient").value;
@@ -352,9 +370,7 @@
       return;
     }
 
-    var habitualCollab = client.collabId
-      ? supabaseData.resolveCollabName(state.profiles, client.collabId)
-      : "";
+    var habitualCollab = pickHabitualCollabName(state, client);
 
     ui.byId("fClientName").value = client.name;
     ui.byId("fClientPhone").value = client.phone || "";
@@ -490,7 +506,7 @@
             duration: draft.duration,
             frequency: 21,
             notes: draft.notes,
-            collabId: draft.collabId
+            collabIds: draft.collabId ? [draft.collabId] : []
           });
 
       return clientPromise.then(function (client) {
@@ -625,7 +641,7 @@
 
     var nextDate = utils.iso(base);
     var isAdmin = auth.isAdmin(state.user);
-    var habitualCollab = client.collabId ? supabaseData.resolveCollabName(state.profiles, client.collabId) : "";
+    var habitualCollab = pickHabitualCollabName(state, client);
     var proposalCollab = habitualCollab || reservation.collab || state.user.name;
     var room = domain.roomFor(state.db, proposalCollab, client.prestation);
 

@@ -198,7 +198,11 @@
       email: row.email,
       notes: row.notes,
       allergies: row.allergies,
+      // collabId (un seul id) reste renvoye pour compatibilite avec
+      // d'anciens appels, mais collabIds (plusieurs collaboratrices
+      // "principales" possibles) est desormais la valeur de reference.
       collabId: row.collab_id,
+      collabIds: row.collab_ids || [],
       prestation: row.prestation,
       duration: row.duration,
       frequency: row.frequency,
@@ -213,7 +217,13 @@
     if (input.email !== undefined) row.email = input.email || null;
     if (input.notes !== undefined) row.notes = input.notes || null;
     if (input.allergies !== undefined) row.allergies = input.allergies || null;
-    if (input.collabId !== undefined) row.collab_id = input.collabId || null;
+    if (input.collabIds !== undefined) {
+      row.collab_ids = input.collabIds || [];
+      row.collab_id = input.collabIds && input.collabIds.length ? input.collabIds[0] : null;
+    } else if (input.collabId !== undefined) {
+      row.collab_id = input.collabId || null;
+      row.collab_ids = input.collabId ? [input.collabId] : [];
+    }
     if (input.prestation !== undefined) row.prestation = input.prestation || null;
     if (input.duration !== undefined) row.duration = input.duration || null;
     if (input.frequency !== undefined) row.frequency = input.frequency || null;

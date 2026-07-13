@@ -6,17 +6,11 @@
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
-  // Miroir de la regle appliquee cote base (clients_update_admin_or_linked) :
-  // sert juste a adapter l'interface, la vraie protection reste dans
-  // PostgreSQL (RLS), pas ici.
-  function canManageClient(client) {
-    var state = formState.state;
-    if (auth.isAdmin(state.user)) {
-      return true;
-    }
-
-    var myId = supabaseData.resolveCollabId(state.profiles, state.user.name);
-    return !!client.collabId && client.collabId === myId;
+  // La fiche cliente est commune a toute l'equipe (clients_update_authenticated
+  // cote base) : toute collaboratrice connectee peut la consulter et la
+  // modifier, pas seulement l'admin ou sa collaboratrice habituelle.
+  function canManageClient() {
+    return true;
   }
 
   function historyRowHtml(reservation) {
@@ -76,7 +70,7 @@
           email: "",
           notes: "",
           allergies: "",
-          collabId: auth.isAdmin(state.user) ? null : supabaseData.resolveCollabId(state.profiles, state.user.name),
+          collabIds: auth.isAdmin(state.user) ? [] : [supabaseData.resolveCollabId(state.profiles, state.user.name)],
           prestation: state.db.prestations[0] ? state.db.prestations[0].name : "",
           duration: 90,
           frequency: 21
@@ -87,7 +81,7 @@
     }
 
     var manageable = canManageClient(client);
-    var habitualCollab = client.collabId ? supabaseData.resolveCollabName(state.profiles, client.collabId) : "";
+    var clientCollabIds = client.collabIds || (client.collabId ? [client.collabId] : []);
     var readonlyAttr = manageable ? "" : " readonly disabled";
 
     ui.showModal([
@@ -100,21 +94,20 @@
       '<label for="cName">Nom</label><input id="cName" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.name) + '">',
       '<label for="cPhone">Telephone</label><input id="cPhone" class="field" type="tel"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
       '<label for="cEmail">Email</label><input id="cEmail" class="field" type="email"' + readonlyAttr + ' value="' + utils.escapeHtml(client.email || "") + '">',
-      '<div class="grid2">',
-      '  <div><label for="cCollab">Collaboratrice habituelle</label><select id="cCollab" class="field"' + (auth.isAdmin(state.user) ? "" : " disabled") + '>' + state.db.users
+      '<label>Collaboratrices habituelles</label>',
+      '<div class="checkbox-group">' + state.db.users
         .filter(function (item) { return item.role === "collab"; })
         .map(function (item) {
-          var selected = item.name === habitualCollab ? " selected" : "";
-          return '<option value="' + utils.escapeHtml(item.name) + '"' + selected + ">" +
-            utils.escapeHtml(item.name) + "</option>";
-        }).join("") + "</select></div>",
-      '  <div><label for="cPrest">Prestation habituelle</label><select id="cPrest" class="field"' + (manageable ? "" : " disabled") + '>' + state.db.prestations
+          var checked = clientCollabIds.indexOf(item.id) !== -1 ? " checked" : "";
+          return '<label class="checkbox-line"><input type="checkbox" data-client-collab="' + item.id + '"' +
+            checked + (manageable ? "" : " disabled") + "> " + utils.escapeHtml(item.name) + "</label>";
+        }).join("") + "</div>",
+      '<label for="cPrest">Prestation habituelle</label><select id="cPrest" class="field"' + (manageable ? "" : " disabled") + '>' + state.db.prestations
         .map(function (prestation) {
           var selected = prestation.name === client.prestation ? " selected" : "";
           return '<option value="' + utils.escapeHtml(prestation.name) + '"' + selected + ">" +
             utils.escapeHtml(prestation.name) + "</option>";
-        }).join("") + "</select></div>",
-      "</div>",
+        }).join("") + "</select>",
       '<div class="grid2">',
       '  <div><label for="cDuration">Duree moyenne</label><input id="cDuration" class="field" type="number"' + readonlyAttr + ' value="' + (client.duration || 0) + '"></div>',
       '  <div><label for="cFreq">Frequence en jours</label><input id="cFreq" class="field" type="number"' + readonlyAttr + ' value="' + (client.frequency || 0) + '"></div>',
@@ -141,7 +134,6 @@
 
   function saveClient(clientId) {
     var state = formState.state;
-    var collabName = ui.byId("cCollab").value;
     var name = ui.byId("cName").value.trim();
 
     if (!name) {
@@ -149,13 +141,16 @@
       return;
     }
 
+    var collabIds = Array.prototype.slice.call(document.querySelectorAll("[data-client-collab]:checked"))
+      .map(function (checkbox) { return checkbox.dataset.clientCollab; });
+
     var client = {
       name: name,
       phone: ui.byId("cPhone").value.trim(),
       email: ui.byId("cEmail").value.trim(),
       notes: ui.byId("cNotes").value,
       allergies: ui.byId("cAllergies").value,
-      collabId: supabaseData.resolveCollabId(state.profiles, collabName),
+      collabIds: collabIds,
       prestation: ui.byId("cPrest").value,
       duration: Number(ui.byId("cDuration").value) || 0,
       frequency: Number(ui.byId("cFreq").value) || 0

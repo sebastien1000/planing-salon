@@ -58,6 +58,16 @@ create table if not exists clients (
 create unique index if not exists clients_phone_unique
   on clients (phone) where phone is not null and phone <> '';
 
+-- Plusieurs collaboratrices "principales" par fiche cliente (ex. Julie ET
+-- Marion) : collab_id (un seul id) reste conserve tel quel (aucune donnee
+-- supprimee), mais collab_ids (plusieurs id) est desormais la valeur de
+-- reference utilisee par l'application.
+alter table clients add column if not exists collab_ids uuid[] not null default '{}';
+
+update clients
+set collab_ids = array[collab_id]
+where collab_id is not null and collab_ids = '{}';
+
 -- 4. Table reservations (creee apres profiles et clients : cle etrangere sur les deux)
 create table if not exists reservations (
   id uuid primary key default gen_random_uuid(),
@@ -199,36 +209,26 @@ as $$
   );
 $$;
 
--- clients
+-- clients : fiche "commune" a toute l'equipe - n'importe quelle
+-- collaboratrice connectee peut voir, creer et modifier n'importe quelle
+-- fiche cliente (plus seulement les siennes ou celles liees a un de ses
+-- rendez-vous). collab_has_reservation_for_client() n'est donc plus
+-- utilisee ici, mais reste definie (utilisee ailleurs si besoin).
 drop policy if exists "clients_select_admin_or_linked" on clients;
-create policy "clients_select_admin_or_linked"
+create policy "clients_select_authenticated"
   on clients for select
-  using (
-    is_admin()
-    or collab_id = auth.uid()
-    or collab_has_reservation_for_client(clients.id)
-  );
+  using (auth.uid() is not null);
 
--- N'importe quelle collaboratrice connectee peut creer une fiche cliente
--- rattachee a N'IMPORTE QUELLE collaboratrice : necessaire pour pouvoir
--- prendre un rendez-vous au nom d'une autre collaboratrice (voir plus bas,
--- reservations_insert_authenticated). La modification d'une fiche
--- existante reste, elle, limitee (voir clients_update_admin_or_linked).
 drop policy if exists "clients_insert_authenticated" on clients;
 create policy "clients_insert_authenticated"
   on clients for insert
   with check (auth.uid() is not null);
 
--- "with check" ajoute en plus du "using" existant : avant, une collaboratrice
--- pouvait modifier une fiche cliente qui lui appartenait (using) puis en
--- profiter pour changer collab_id et la reassigner a quelqu'un d'autre,
--- aucune regle ne verifiant la ligne APRES modification. Desormais la ligne
--- doit encore lui appartenir (ou etre admin) une fois la modification faite.
 drop policy if exists "clients_update_admin_or_linked" on clients;
-create policy "clients_update_admin_or_linked"
+create policy "clients_update_authenticated"
   on clients for update
-  using (is_admin() or collab_id = auth.uid())
-  with check (is_admin() or collab_id = auth.uid());
+  using (auth.uid() is not null)
+  with check (auth.uid() is not null);
 
 -- reservations
 drop policy if exists "reservations_select_authenticated" on reservations;
