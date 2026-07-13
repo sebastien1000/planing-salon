@@ -85,6 +85,21 @@
     return local;
   }
 
+  // Cree/met a jour la fiche locale de CHAQUE compte Supabase, pas
+  // seulement celui qui se connecte : necessaire pour que la page Comptes
+  // (vue admin) liste tout le monde, meme une collaboratrice qui ne s'est
+  // jamais connectee sur cet appareil precis (chaque appareil a son propre
+  // stockage local, voir js/core/data.js).
+  function syncProfilesToLocal(profiles) {
+    return (profiles || []).reduce(function (synced, remoteProfile) {
+      var role = normalizeRole(remoteProfile.role);
+      if (role) {
+        synced.push(syncLocalUserFromRemoteProfile(remoteProfile, role));
+      }
+      return synced;
+    }, []);
+  }
+
   // Le mot de passe n'est plus verifie ici : Supabase Auth compare le mot
   // de passe (jamais en clair, jamais hache par ce fichier) et renvoie une
   // vraie session si c'est correct. Le resultat n'est plus juste un profil
@@ -221,6 +236,7 @@
     login: login,
     logout: logout,
     requestPasswordReset: requestPasswordReset,
-    requireAuth: requireAuth
+    requireAuth: requireAuth,
+    syncProfilesToLocal: syncProfilesToLocal
   };
 }());

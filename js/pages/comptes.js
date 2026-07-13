@@ -320,8 +320,20 @@
   }
 
   function render() {
-    supabaseData.listAllReservations().then(function (list) {
-      reservations = list;
+    // L'admin doit voir tous les comptes, pas seulement ceux qui se sont
+    // deja connectes sur cet appareil (chaque appareil a son propre
+    // stockage local) : on recupere donc la vraie liste Supabase et on met
+    // a jour la fiche locale de chacun avant d'afficher quoi que ce soit.
+    var profilesPromise = auth.isAdmin(user) ? supabaseData.listProfiles() : Promise.resolve(null);
+
+    Promise.all([supabaseData.listAllReservations(), profilesPromise]).then(function (results) {
+      reservations = results[0];
+      var profiles = results[1];
+
+      if (profiles) {
+        auth.syncProfilesToLocal(profiles);
+        db = data.loadDb();
+      }
 
       forms.configure({
         db: db,
