@@ -42,6 +42,10 @@
   }
 
   function reservationPrice(reservation) {
+    if (reservation.price != null) {
+      return reservation.price;
+    }
+
     var prestation = db.prestations.find(function (item) {
       return item.name === reservation.prestation;
     });

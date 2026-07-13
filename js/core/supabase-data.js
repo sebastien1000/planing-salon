@@ -39,6 +39,135 @@
     return match ? match.name : "";
   }
 
+  // ---- Prestations par collaboratrice (categories / services / tarifs) ----
+  // Centralise ici tous les appels Supabase lies aux prestations, pour ne
+  // pas eparpiller des ".from('services')..." dans les fichiers d'affichage
+  // (js/core/form-services.js, js/core/form-reservations.js).
+
+  function mapServiceCategoryRow(row) {
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      icon: row.icon,
+      displayOrder: row.display_order,
+      active: row.active
+    };
+  }
+
+  // includeInactive : necessaire pour l'ecran d'administration (pouvoir
+  // reactiver une categorie desactivee) ; le menu de creation de rendez-vous
+  // n'a lui besoin que des categories actives.
+  function listServiceCategories(includeInactive) {
+    var query = client().from("service_categories").select("*").order("display_order");
+    if (!includeInactive) {
+      query = query.eq("active", true);
+    }
+    return unwrap(query).then(function (rows) {
+      return rows.map(mapServiceCategoryRow);
+    });
+  }
+
+  function mapServiceRow(row) {
+    return {
+      id: row.id,
+      categoryId: row.category_id,
+      name: row.name,
+      description: row.description,
+      active: row.active,
+      displayOrder: row.display_order
+    };
+  }
+
+  function listServices(includeInactive) {
+    var query = client().from("services").select("*").order("display_order");
+    if (!includeInactive) {
+      query = query.eq("active", true);
+    }
+    return unwrap(query).then(function (rows) {
+      return rows.map(mapServiceRow);
+    });
+  }
+
+  // Admin uniquement (impose aussi cote base par la policy "services_write_admin").
+  function upsertService(service) {
+    var row = {
+      category_id: service.categoryId,
+      name: service.name,
+      description: service.description || null,
+      active: service.active !== false,
+      display_order: service.displayOrder || 0
+    };
+    if (service.id) {
+      row.id = service.id;
+    }
+    return unwrap(client().from("services").upsert(row).select().single()).then(mapServiceRow);
+  }
+
+  function mapCollaboratorServiceRow(row) {
+    return {
+      id: row.id,
+      collaboratorId: row.collaborator_id,
+      serviceId: row.service_id,
+      price: row.price,
+      duration: row.duration_minutes,
+      active: row.active,
+      customName: row.custom_name,
+      notes: row.notes
+    };
+  }
+
+  // Sans collaboratorId : l'admin recupere les prestations de tout le monde
+  // (necessaire pour l'ecran d'administration). Avec collaboratorId : une
+  // seule collaboratrice (ses propres prestations, ou celles choisies par
+  // l'admin pour le menu de creation de rendez-vous).
+  function listCollaboratorServices(collaboratorId) {
+    var query = client().from("collaborator_services").select("*");
+    if (collaboratorId) {
+      query = query.eq("collaborator_id", collaboratorId);
+    }
+    return unwrap(query).then(function (rows) {
+      return rows.map(mapCollaboratorServiceRow);
+    });
+  }
+
+  function upsertCollaboratorService(entry) {
+    var row = {
+      collaborator_id: entry.collaboratorId,
+      service_id: entry.serviceId,
+      price: entry.price,
+      duration_minutes: entry.duration,
+      active: entry.active !== false,
+      custom_name: entry.customName || null,
+      notes: entry.notes || null
+    };
+    if (entry.id) {
+      row.id = entry.id;
+    }
+    return unwrap(
+      client().from("collaborator_services").upsert(row, { onConflict: "collaborator_id,service_id" }).select().single()
+    ).then(mapCollaboratorServiceRow);
+  }
+
+  // Prestation deja utilisee dans des rendez-vous : on desactive plutot que
+  // de supprimer (voir js/core/form-services.js), donc cette fonction ne
+  // sert que pour une prestation jamais utilisee.
+  function deleteCollaboratorService(id) {
+    return unwrap(client().from("collaborator_services").delete().eq("id", id).select());
+  }
+
+  // Avant de proposer une suppression definitive, on verifie qu'aucun
+  // rendez-vous (passe ou futur) ne pointe encore vers cette prestation
+  // pour cette collaboratrice - sinon on desactive au lieu de supprimer
+  // (voir js/core/form-services.js).
+  function countReservationsForService(collabId, serviceId) {
+    return unwrap(
+      client().from("reservations_public").select("id").eq("collab_id", collabId).eq("service_id", serviceId)
+    ).then(function (rows) {
+      return rows.length;
+    });
+  }
+
   // ---- Clientes ----
   // Meme principe que pour les rendez-vous : la table stocke collab_id
   // (uuid), l'app manipule collabId ; le nom du collaborateur se resout au
@@ -174,6 +303,11 @@
       collabId: row.collab_id,
       room: row.room,
       prestation: row.prestation,
+      serviceId: row.service_id,
+      // Photo figee au moment du RDV : ne jamais recalculer depuis le
+      // catalogue courant, sinon un changement de tarif changerait aussi
+      // le prix des rendez-vous deja passes.
+      price: row.price,
       date: row.date,
       time: String(row.time || "").slice(0, 5),
       duration: row.duration,
@@ -190,6 +324,8 @@
       collab_id: reservation.collabId,
       room: reservation.room,
       prestation: reservation.prestation,
+      service_id: reservation.serviceId || null,
+      price: reservation.price != null ? reservation.price : null,
       date: reservation.date,
       time: reservation.time,
       duration: reservation.duration,
@@ -248,17 +384,24 @@
   }
 
   window.SalonSupabaseData = {
+    countReservationsForService: countReservationsForService,
     createReservation: createReservation,
+    deleteCollaboratorService: deleteCollaboratorService,
     findOrCreateClient: findOrCreateClient,
     listAllReservations: listAllReservations,
     listClients: listClients,
+    listCollaboratorServices: listCollaboratorServices,
     listProfiles: listProfiles,
     listReservationsForClient: listReservationsForClient,
     listReservationsForDates: listReservationsForDates,
+    listServiceCategories: listServiceCategories,
+    listServices: listServices,
     resolveCollabId: resolveCollabId,
     resolveCollabName: resolveCollabName,
     updateClient: updateClient,
     updateReservation: updateReservation,
-    upsertProfile: upsertProfile
+    upsertCollaboratorService: upsertCollaboratorService,
+    upsertProfile: upsertProfile,
+    upsertService: upsertService
   };
 }());

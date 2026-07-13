@@ -876,6 +876,89 @@ label {
   min-width: 0;
 }
 
+/* Menu de prestations par categorie (choix d'une prestation, ecran
+   d'administration des prestations) : accordeon natif <details>/<summary>,
+   deja accessible au clavier et lisible par un lecteur d'ecran sans ARIA
+   supplementaire, et qui ne recharge jamais la page a l'ouverture. */
+.service-category {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.service-category summary {
+  padding: 13px 14px;
+  font-weight: 750;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  /* Cible tactile confortable au doigt, meme sur un petit telephone. */
+  min-height: 44px;
+}
+
+.service-category summary::-webkit-details-marker {
+  display: none;
+}
+
+.service-category summary::after {
+  content: "+";
+  font-weight: 800;
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+
+.service-category[open] summary::after {
+  content: "\2212";
+}
+
+.service-category-list {
+  padding: 0 12px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.service-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  min-height: 48px;
+  width: 100%;
+}
+
+.service-option--selected {
+  border-color: var(--pink);
+  background: var(--pink-2);
+}
+
+.service-option-name {
+  font-weight: 700;
+}
+
+.service-option-meta {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.service-admin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.service-admin-row:last-child {
+  border-bottom: none;
+}
+
 @media (min-width: 700px) {
   .login-screen {
     padding: 32px 24px;

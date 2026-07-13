@@ -6,6 +6,7 @@
   var prestations = window.SalonPrestationForms;
   var absences = window.SalonAbsenceForms;
   var holidays = window.SalonHolidayForms;
+  var services = window.SalonServiceForms;
 
   window.SalonForms = {
     absenceCard: absences.absenceCard,
@@ -28,7 +29,10 @@
     openPrestationForm: prestations.openPrestationForm,
     openProfileForm: accounts.openProfileForm,
     openReservation: reservations.openReservation,
+    loadCollaboratorServiceEntries: services.loadCollaboratorEntries,
+    openServicePickerSheet: services.openServicePickerSheet,
     prestationCard: prestations.prestationCard,
+    renderServicesSection: services.renderServicesSection,
     reservationCard: reservations.reservationCard,
     saveAbsence: absences.saveAbsence,
     saveHoliday: holidays.saveHoliday,

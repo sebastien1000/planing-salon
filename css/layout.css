@@ -112,6 +112,11 @@ main {
   padding: 22px 22px calc(22px + env(safe-area-inset-bottom, 0px));
 }
 
+.service-picker-sheet {
+  max-width: 480px;
+  min-height: 60dvh;
+}
+
 .modal-head {
   display: flex;
   justify-content: space-between;

@@ -101,6 +101,13 @@
       '    <div class="cards" style="margin-top:12px">' + db.prestations.map(forms.prestationCard).join("") + "</div>",
       "  </div>",
       '  <div class="card">',
+      "    <h3>" + (auth.isAdmin(user) ? "Prestations par collaboratrice" : "Mes prestations") + "</h3>",
+      '    <div class="tiny">' + (auth.isAdmin(user)
+        ? "Chaque collaboratrice a son propre tarif et sa propre duree pour chaque prestation."
+        : "Vos tarifs et durees, definis par l administrateur.") + "</div>",
+      '    <div id="servicesSection" style="margin-top:12px"></div>',
+      "  </div>",
+      '  <div class="card">',
       '    <div class="row">',
       '      <div class="grow"><h3>Mes absences</h3></div>',
       '      <button id="addAbsenceButton" class="primary" type="button">+ Ajouter</button>',
@@ -121,6 +128,7 @@
     ].join(""));
 
     bindActions();
+    forms.renderServicesSection("servicesSection", user);
   }
 
   render();

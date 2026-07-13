@@ -3,6 +3,7 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var formState = window.SalonFormState;
+  var services = window.SalonServiceForms;
   var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
@@ -124,7 +125,9 @@
           client: "",
           clientId: "",
           collab: auth.isAdmin(state.user) ? defaultCollabName(state) : state.user.name,
-          prestation: state.db.prestations[0].name,
+          prestation: "",
+          serviceId: null,
+          price: null,
           date: state.selectedDate,
           time: "09:00",
           duration: 90,
@@ -166,16 +169,19 @@
           utils.escapeHtml(label) + "</option>";
       }).join("");
 
-    var prestationOptions = buildPrestationOptionsHtml(state, reservation.collab, reservation.prestation);
     var roomOptions = buildRoomOptionsHtml(
       state,
       reservation.collab,
       reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation)
     );
 
-    var room = reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation);
-    var lockOwnCollab = !auth.isAdmin(state.user);
-    var price = findPrestationPrice(reservation.prestation);
+    var isAdmin = auth.isAdmin(state.user);
+    var lockOwnCollab = !isAdmin;
+    // Photo figee sur le rendez-vous si deja enregistree (reservation.price) ;
+    // pour un ancien rendez-vous sans photo figee, on retombe sur
+    // l'ancien catalogue local (findPrestationPrice) le temps de la
+    // migration progressive (voir js/core/data.js).
+    var price = reservation.price != null ? reservation.price : findPrestationPrice(reservation.prestation);
 
     return [
       '<div class="modal-head">',
@@ -197,7 +203,13 @@
       '<div class="grid2">',
       '  <div><label for="fCollab">Collaboratrice</label><select id="fCollab" class="field"' +
         (lockOwnCollab ? ' disabled' : '') + '>' + collabOptions + "</select></div>",
-      '  <div><label for="fPrest">Prestation</label><select id="fPrest" class="field">' + prestationOptions + "</select></div>",
+      "  <div>",
+      '    <label for="fPrestButton">Prestation</label>',
+      '    <button id="fPrestButton" class="secondary" type="button" style="width:100%;text-align:left"' +
+        ' data-entry-id="" data-service-id="' + utils.escapeHtml(reservation.serviceId || "") + '">' +
+        utils.escapeHtml(reservation.prestation || "Choisir une prestation") +
+        "</button>",
+      "  </div>",
       "</div>",
       '<div class="grid2">',
       '  <div><label for="fDate">Date</label><input id="fDate" class="field" type="date" value="' + reservation.date + '"></div>',
@@ -207,7 +219,9 @@
       '  <div><label for="fDuration">Duree min</label><input id="fDuration" class="field" type="number" value="' + reservation.duration + '"></div>',
       '  <div><label for="fRoom">Salle</label><select id="fRoom" class="field">' + roomOptions + "</select></div>",
       "</div>",
-      '<label for="fPrice">Prix</label><input id="fPrice" class="field" readonly value="' + price + ' EUR">',
+      '<div id="fEndTimePreview" class="tiny"></div>',
+      '<label for="fPrice">Prix (EUR)</label><input id="fPrice" class="field" type="number" min="0" step="0.5"' +
+        (isAdmin ? "" : " readonly") + ' value="' + price + '">',
       '<label for="fStatus">Statut</label>',
       '<select id="fStatus" class="field">' + data.STATUS.map(function (status) {
         var selected = status[0] === reservation.status ? " selected" : "";
@@ -235,15 +249,43 @@
     }).join("");
   }
 
-  function buildPrestationOptionsHtml(state, collabName, selectedPrestation) {
-    var user = utils.findByName(state.db.users, collabName);
-    return state.db.prestations.filter(function (prestation) {
-      return domain.isPrestationAllowedForUser(user, prestation.name);
-    }).map(function (prestation) {
-      var selected = prestation.name === selectedPrestation ? " selected" : "";
-      return '<option value="' + utils.escapeHtml(prestation.name) + '"' + selected + ">" +
-        utils.escapeHtml(prestation.name) + "</option>";
-    }).join("");
+  // Applique la prestation choisie dans le menu par categorie (voir
+  // js/core/form-services.js) : remplit automatiquement le prix, la duree
+  // et l'heure de fin estimee, comme demande.
+  function applyServiceSelection(entry) {
+    var button = ui.byId("fPrestButton");
+    button.dataset.entryId = entry.id;
+    button.dataset.serviceId = entry.serviceId;
+    button.textContent = entry.name;
+    ui.byId("fDuration").value = entry.duration;
+    ui.byId("fPrice").value = entry.price;
+    updateEndTimePreview();
+  }
+
+  function updateEndTimePreview() {
+    var preview = ui.byId("fEndTimePreview");
+    if (!preview) {
+      return;
+    }
+
+    var time = ui.byId("fTime").value;
+    var duration = Number(ui.byId("fDuration").value) || 0;
+    preview.textContent = time && duration
+      ? "Fin estimee : " + domain.addMinutes(time, duration)
+      : "";
+  }
+
+  function openPrestationPicker() {
+    var state = formState.state;
+    var collabId = supabaseData.resolveCollabId(state.profiles, ui.byId("fCollab").value);
+
+    if (!collabId) {
+      window.alert("Choisissez d abord une collaboratrice.");
+      return;
+    }
+
+    var currentEntryId = ui.byId("fPrestButton").dataset.entryId || "";
+    services.openServicePickerSheet(collabId, currentEntryId, applyServiceSelection);
   }
 
   function bindReservationForm(reservationId) {
@@ -252,7 +294,6 @@
     var cancelButton = ui.byId("modalCancelReservationButton");
     var clientField = ui.byId("fClient");
     var collabField = ui.byId("fCollab");
-    var prestationField = ui.byId("fPrest");
 
     closeButton.addEventListener("click", ui.closeModal);
     saveButton.addEventListener("click", function () {
@@ -269,43 +310,38 @@
     clientField.addEventListener("change", fillClientHabit);
     collabField.addEventListener("change", function () {
       refreshCollabRestrictedFields();
-      updateReservationRoom(false);
+      updateReservationRoom();
     });
-    prestationField.addEventListener("change", function () {
-      updateReservationRoom(true);
-    });
+    ui.byId("fPrestButton").addEventListener("click", openPrestationPicker);
+    ui.byId("fTime").addEventListener("change", updateEndTimePreview);
+    ui.byId("fDuration").addEventListener("input", updateEndTimePreview);
 
-    updateReservationRoom(false);
-    updateReservationMeta();
+    updateReservationRoom();
+    updateEndTimePreview();
   }
 
+  // Chaque collaboratrice a son propre catalogue de prestations actives :
+  // changer de collaboratrice invalide donc la prestation deja choisie.
   function refreshCollabRestrictedFields() {
     var state = formState.state;
-    var collab = ui.byId("fCollab").value;
-    var currentPrestation = ui.byId("fPrest").value;
-    var currentRoom = ui.byId("fRoom").value;
-
-    ui.byId("fPrest").innerHTML = buildPrestationOptionsHtml(state, collab, currentPrestation);
-    ui.byId("fRoom").innerHTML = buildRoomOptionsHtml(state, collab, currentRoom);
+    var button = ui.byId("fPrestButton");
+    button.dataset.entryId = "";
+    button.dataset.serviceId = "";
+    button.textContent = "Choisir une prestation";
+    ui.byId("fRoom").innerHTML = buildRoomOptionsHtml(state, ui.byId("fCollab").value, ui.byId("fRoom").value);
   }
 
-  function updateReservationRoom(updateDuration) {
+  // La salle par defaut reste calculee depuis l'ancien catalogue local
+  // (categorie ongles/noire/baby/exterieur) le temps de la migration : pour
+  // une toute nouvelle prestation, ou si la collaboratrice n'a pas de salle
+  // fixe attribuee, la liste deroulante reste utilisable manuellement.
+  function updateReservationRoom() {
     var state = formState.state;
     var collab = ui.byId("fCollab").value;
-    var prestation = ui.byId("fPrest").value;
-    ui.byId("fRoom").value = domain.roomFor(state.db, collab, prestation);
-
-    if (updateDuration) {
-      var found = state.db.prestations.find(function (item) {
-        return item.name === prestation;
-      });
-
-      if (found) {
-        ui.byId("fDuration").value = found.duration;
-      }
+    var room = domain.roomFor(state.db, collab, ui.byId("fPrestButton").textContent);
+    if (room) {
+      ui.byId("fRoom").value = room;
     }
-
-    updateReservationMeta();
   }
 
   function fillClientHabit() {
@@ -326,13 +362,32 @@
     ui.byId("fClientEmail").value = client.email || "";
     ui.byId("fCollab").value = auth.isAdmin(state.user) && habitualCollab ? habitualCollab : state.user.name;
     refreshCollabRestrictedFields();
-    ui.byId("fPrest").value = client.prestation || ui.byId("fPrest").value;
-    ui.byId("fDuration").value = client.duration || ui.byId("fDuration").value;
-    updateReservationRoom(false);
-  }
+    updateReservationRoom();
 
-  function updateReservationMeta() {
-    ui.byId("fPrice").value = findPrestationPrice(ui.byId("fPrest").value) + " EUR";
+    if (client.duration) {
+      ui.byId("fDuration").value = client.duration;
+      updateEndTimePreview();
+    }
+
+    if (!client.prestation) {
+      return;
+    }
+
+    var collabId = supabaseData.resolveCollabId(state.profiles, ui.byId("fCollab").value);
+    if (!collabId) {
+      return;
+    }
+
+    services.loadCollaboratorServiceEntries(collabId).then(function (entries) {
+      var stillSameCollab = supabaseData.resolveCollabId(state.profiles, ui.byId("fCollab").value) === collabId;
+      var match = entries.find(function (entry) {
+        return entry.active && entry.serviceActive && entry.name === client.prestation;
+      });
+
+      if (stillSameCollab && match) {
+        applyServiceSelection(match);
+      }
+    }).catch(function () {});
   }
 
   function findPrestationPrice(prestationName) {
@@ -367,16 +422,38 @@
 
     var chosenCollab = auth.isAdmin(state.user) ? ui.byId("fCollab").value : state.user.name;
     var selectedClientId = ui.byId("fClient").value;
+    var prestationButton = ui.byId("fPrestButton");
+    var prestationName = prestationButton.textContent.trim();
+
+    if (!prestationName || prestationName === "Choisir une prestation") {
+      showSaveError("reservationMsg", "Choisissez une prestation.");
+      return;
+    }
+
+    var price = Number(ui.byId("fPrice").value);
+    if (!(price >= 0)) {
+      showSaveError("reservationMsg", "Le prix ne peut pas etre negatif.");
+      return;
+    }
+
+    var duration = Number(ui.byId("fDuration").value) || 0;
+    if (duration <= 0) {
+      showSaveError("reservationMsg", "La duree doit etre superieure a 0.");
+      return;
+    }
+
     var draft = {
       id: reservationId || "",
       client: ui.byId("fClientName").value.trim() || "Cliente",
       clientId: selectedClientId,
       collab: chosenCollab,
       collabId: supabaseData.resolveCollabId(state.profiles, chosenCollab),
-      prestation: ui.byId("fPrest").value,
+      prestation: prestationName,
+      serviceId: prestationButton.dataset.serviceId || null,
+      price: price,
       date: ui.byId("fDate").value,
       time: ui.byId("fTime").value,
-      duration: Number(ui.byId("fDuration").value) || 0,
+      duration: duration,
       room: ui.byId("fRoom").value,
       status: ui.byId("fStatus").value,
       notes: ui.byId("fNotes").value
@@ -572,16 +649,18 @@
           return '<option value="' + utils.escapeHtml(user.name) + '"' + selected + ">" +
             utils.escapeHtml(label) + "</option>";
         }).join("") + "</select>",
-      '<label for="pPrest">Prestation</label>',
-      '<select id="pPrest" class="field">' + state.db.prestations.map(function (prestation) {
-        var selected = prestation.name === client.prestation ? " selected" : "";
-        return '<option value="' + utils.escapeHtml(prestation.name) + '"' + selected + ">" +
-          utils.escapeHtml(prestation.name) + "</option>";
-      }).join("") + "</select>",
+      "  <div>",
+      '    <label for="pPrestButton">Prestation</label>',
+      '    <button id="pPrestButton" class="secondary" type="button" style="width:100%;text-align:left"' +
+        ' data-entry-id="" data-service-id="">Choisir une prestation</button>',
+      "  </div>",
       '<div class="grid2">',
       '  <div><label for="pDuration">Duree</label><input id="pDuration" class="field" type="number" value="' + client.duration + '"></div>',
       '  <div><label for="pRoom">Salle</label><input id="pRoom" class="field" readonly value="' + utils.escapeHtml(room) + '"></div>',
       "</div>",
+      '<label for="pPrice">Prix (EUR)</label><input id="pPrice" class="field" type="number" min="0" step="0.5"' +
+        (lockOwnCollab ? " readonly" : "") + ' value="0">',
+      '<div id="pEndTimePreview" class="tiny"></div>',
       '<div id="proposalMsg"></div>',
       '<div class="row" style="margin-top:14px">',
       '  <button id="saveProposalButton" class="primary grow" type="button">Valider</button>',
@@ -590,30 +669,101 @@
     ].join(""));
 
     ui.byId("closeSheetButton").addEventListener("click", ui.closeSheet);
-    ui.byId("pCollab").addEventListener("change", updateProposalRoom);
-    ui.byId("pPrest").addEventListener("change", function () {
-      updateProposalRoom(true);
+    ui.byId("pCollab").addEventListener("change", function () {
+      resetProposalPrestation();
+      updateProposalRoom();
     });
+    ui.byId("pPrestButton").addEventListener("click", openProposalPrestationPicker);
+    ui.byId("pTime").addEventListener("change", updateProposalEndTimePreview);
+    ui.byId("pDuration").addEventListener("input", updateProposalEndTimePreview);
     ui.byId("saveProposalButton").addEventListener("click", function () {
       saveProposal(client.id);
     });
     ui.byId("suggestProposalButton").addEventListener("click", suggestProposalSlots);
+
+    updateProposalEndTimePreview();
+    preselectProposalPrestation(proposalCollab, client.prestation);
   }
 
-  function updateProposalRoom(updateDuration) {
-    var state = formState.state;
-    var collab = ui.byId("pCollab").value;
-    var prestation = ui.byId("pPrest").value;
-    ui.byId("pRoom").value = domain.roomFor(state.db, collab, prestation);
+  // Essaie de pre-selectionner automatiquement la prestation habituelle de
+  // la cliente (client.prestation, un simple texte) si elle correspond a
+  // une prestation active configuree pour cette collaboratrice. Si aucune
+  // correspondance n'est trouvee (prestation renommee/retiree du catalogue
+  // de cette collaboratrice), le bouton reste sur "Choisir une prestation"
+  // - la collaboratrice doit alors choisir manuellement, sans erreur JS.
+  function preselectProposalPrestation(collabName, prestationName) {
+    if (!prestationName) {
+      return;
+    }
 
-    if (updateDuration) {
-      var found = state.db.prestations.find(function (item) {
-        return item.name === prestation;
+    var state = formState.state;
+    var collabId = supabaseData.resolveCollabId(state.profiles, collabName);
+    if (!collabId) {
+      return;
+    }
+
+    services.loadCollaboratorServiceEntries(collabId).then(function (entries) {
+      var stillSameCollab = ui.byId("pCollab") &&
+        supabaseData.resolveCollabId(state.profiles, ui.byId("pCollab").value) === collabId;
+      var match = entries.find(function (entry) {
+        return entry.active && entry.serviceActive && entry.name === prestationName;
       });
 
-      if (found) {
-        ui.byId("pDuration").value = found.duration;
+      if (stillSameCollab && match) {
+        applyProposalServiceSelection(match);
       }
+    }).catch(function () {});
+  }
+
+  function applyProposalServiceSelection(entry) {
+    var button = ui.byId("pPrestButton");
+    button.dataset.entryId = entry.id;
+    button.dataset.serviceId = entry.serviceId;
+    button.textContent = entry.name;
+    ui.byId("pDuration").value = entry.duration;
+    ui.byId("pPrice").value = entry.price;
+    updateProposalEndTimePreview();
+  }
+
+  function resetProposalPrestation() {
+    var button = ui.byId("pPrestButton");
+    button.dataset.entryId = "";
+    button.dataset.serviceId = "";
+    button.textContent = "Choisir une prestation";
+  }
+
+  function openProposalPrestationPicker() {
+    var state = formState.state;
+    var collabId = supabaseData.resolveCollabId(state.profiles, ui.byId("pCollab").value);
+
+    if (!collabId) {
+      window.alert("Choisissez d abord une collaboratrice.");
+      return;
+    }
+
+    var currentEntryId = ui.byId("pPrestButton").dataset.entryId || "";
+    services.openServicePickerSheet(collabId, currentEntryId, applyProposalServiceSelection);
+  }
+
+  function updateProposalEndTimePreview() {
+    var preview = ui.byId("pEndTimePreview");
+    if (!preview) {
+      return;
+    }
+
+    var time = ui.byId("pTime").value;
+    var duration = Number(ui.byId("pDuration").value) || 0;
+    preview.textContent = time && duration
+      ? "Fin estimee : " + domain.addMinutes(time, duration)
+      : "";
+  }
+
+  function updateProposalRoom() {
+    var state = formState.state;
+    var collab = ui.byId("pCollab").value;
+    var room = domain.roomFor(state.db, collab, ui.byId("pPrestButton").textContent);
+    if (room) {
+      ui.byId("pRoom").value = room;
     }
   }
 
@@ -621,16 +771,38 @@
     var state = formState.state;
     var client = utils.findById(state.clients, clientId);
     var chosenCollab = auth.isAdmin(state.user) ? ui.byId("pCollab").value : state.user.name;
+    var prestationButton = ui.byId("pPrestButton");
+    var prestationName = prestationButton.textContent.trim();
+
+    if (!prestationName || prestationName === "Choisir une prestation") {
+      showSaveError("proposalMsg", "Choisissez une prestation.");
+      return;
+    }
+
+    var price = Number(ui.byId("pPrice").value);
+    if (!(price >= 0)) {
+      showSaveError("proposalMsg", "Le prix ne peut pas etre negatif.");
+      return;
+    }
+
+    var duration = Number(ui.byId("pDuration").value) || 0;
+    if (duration <= 0) {
+      showSaveError("proposalMsg", "La duree doit etre superieure a 0.");
+      return;
+    }
+
     var draft = {
       id: "",
       client: client.name,
       clientId: client.id,
       collab: chosenCollab,
       collabId: supabaseData.resolveCollabId(state.profiles, chosenCollab),
-      prestation: ui.byId("pPrest").value,
+      prestation: prestationName,
+      serviceId: prestationButton.dataset.serviceId || null,
+      price: price,
       date: ui.byId("pDate").value,
       time: ui.byId("pTime").value,
-      duration: Number(ui.byId("pDuration").value) || 0,
+      duration: duration,
       room: ui.byId("pRoom").value,
       status: "pre",
       notes: "Prochain RDV valide"

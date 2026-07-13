@@ -185,10 +185,10 @@
       return reservation.collab === account.name && reservation.status === "done";
     });
     var totalRevenue = totalDone.reduce(function (sum, reservation) {
-      var prestation = db.prestations.find(function (item) {
-        return item.name === reservation.prestation;
-      });
-      return sum + (prestation ? prestation.price : 0) + (reservation.supplement || 0);
+      var basePrice = reservation.price != null
+        ? reservation.price
+        : (db.prestations.find(function (item) { return item.name === reservation.prestation; }) || {}).price || 0;
+      return sum + basePrice + (reservation.supplement || 0);
     }, 0);
     var upcoming = reservations.filter(function (reservation) {
       return reservation.collab === account.name && reservation.status === "pre";

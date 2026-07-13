@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v31-audit-skills";
+const CACHE_NAME = "salon-mvp-v32-collaborator-services";
 
 const APP_ASSETS = [
   "./",
@@ -31,6 +31,7 @@ const APP_ASSETS = [
   "./js/core/form-clients.js",
   "./js/core/form-accounts.js",
   "./js/core/form-prestations.js",
+  "./js/core/form-services.js",
   "./js/core/form-absences.js",
   "./js/core/form-holidays.js",
   "./js/core/forms.js",

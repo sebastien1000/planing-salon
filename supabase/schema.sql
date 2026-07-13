@@ -233,6 +233,205 @@ create policy "reservations_update_admin_or_own"
   on reservations for update
   using (is_admin() or collab_id = auth.uid());
 
+-- 7bis. Prestations par collaboratrice (tarif/duree propres a chacune)
+--
+-- Avant : "prestations" etait une liste globale partagee (localStorage),
+-- meme prix/duree pour tout le monde. Desormais :
+--   - service_categories : les grandes familles (Ongles, Cils, ...)
+--   - services            : le catalogue general des prestations possibles
+--                            (pas de prix ici : juste le nom/la categorie)
+--   - collaborator_services : le lien entre une collaboratrice et un
+--                            service, avec SON tarif et SA duree a elle
+--
+-- Fonction reutilisable pour tenir updated_at a jour automatiquement.
+create or replace function set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create table if not exists service_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  slug text not null unique,
+  icon text,
+  display_order integer not null default 0,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists set_updated_at on service_categories;
+create trigger set_updated_at
+  before update on service_categories
+  for each row execute function set_updated_at();
+
+create table if not exists services (
+  id uuid primary key default gen_random_uuid(),
+  category_id uuid references service_categories(id) on delete set null,
+  name text not null,
+  description text,
+  active boolean not null default true,
+  display_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (category_id, name)
+);
+
+create index if not exists services_category_id_idx on services (category_id);
+
+drop trigger if exists set_updated_at on services;
+create trigger set_updated_at
+  before update on services
+  for each row execute function set_updated_at();
+
+create table if not exists collaborator_services (
+  id uuid primary key default gen_random_uuid(),
+  collaborator_id uuid not null references profiles(id) on delete cascade,
+  service_id uuid not null references services(id) on delete cascade,
+  price numeric not null,
+  duration_minutes integer not null,
+  active boolean not null default true,
+  custom_name text,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (collaborator_id, service_id),
+  constraint collaborator_services_price_check check (price >= 0),
+  constraint collaborator_services_duration_check check (duration_minutes > 0)
+);
+
+create index if not exists collaborator_services_collaborator_id_idx on collaborator_services (collaborator_id);
+create index if not exists collaborator_services_service_id_idx on collaborator_services (service_id);
+
+drop trigger if exists set_updated_at on collaborator_services;
+create trigger set_updated_at
+  before update on collaborator_services
+  for each row execute function set_updated_at();
+
+-- Photo figee du service/tarif au moment du rendez-vous : si le tarif
+-- change plus tard, les rendez-vous deja enregistres doivent garder
+-- l'ancien prix. La colonne "prestation" (texte) existante joue deja ce
+-- role pour le nom ; il manquait l'equivalent pour le prix et un lien
+-- structure vers le service.
+alter table reservations add column if not exists service_id uuid references services(id) on delete set null;
+alter table reservations add column if not exists price numeric;
+
+do $$
+begin
+  alter table reservations
+    add constraint reservations_price_check
+    check (price is null or price >= 0) not valid;
+exception
+  when duplicate_object then null;
+end $$;
+
+alter table service_categories enable row level security;
+alter table services enable row level security;
+alter table collaborator_services enable row level security;
+
+-- Categories/services : lecture pour tout utilisateur connecte (necessaire
+-- pour construire le menu de prestations), ecriture reservee a l'admin.
+drop policy if exists "service_categories_select_authenticated" on service_categories;
+create policy "service_categories_select_authenticated"
+  on service_categories for select
+  using (auth.uid() is not null);
+
+drop policy if exists "service_categories_write_admin" on service_categories;
+create policy "service_categories_write_admin"
+  on service_categories for all
+  using (is_admin())
+  with check (is_admin());
+
+drop policy if exists "services_select_authenticated" on services;
+create policy "services_select_authenticated"
+  on services for select
+  using (auth.uid() is not null);
+
+drop policy if exists "services_write_admin" on services;
+create policy "services_write_admin"
+  on services for all
+  using (is_admin())
+  with check (is_admin());
+
+-- collaborator_services : l'admin voit/gere tout ; chaque collaboratrice ne
+-- voit et ne modifie QUE ses propres tarifs/durees, jamais ceux d'une autre.
+drop policy if exists "collaborator_services_select_admin_or_own" on collaborator_services;
+create policy "collaborator_services_select_admin_or_own"
+  on collaborator_services for select
+  using (is_admin() or collaborator_id = auth.uid());
+
+drop policy if exists "collaborator_services_insert_admin_or_own" on collaborator_services;
+create policy "collaborator_services_insert_admin_or_own"
+  on collaborator_services for insert
+  with check (is_admin() or collaborator_id = auth.uid());
+
+drop policy if exists "collaborator_services_update_admin_or_own" on collaborator_services;
+create policy "collaborator_services_update_admin_or_own"
+  on collaborator_services for update
+  using (is_admin() or collaborator_id = auth.uid())
+  with check (is_admin() or collaborator_id = auth.uid());
+
+drop policy if exists "collaborator_services_delete_admin_or_own" on collaborator_services;
+create policy "collaborator_services_delete_admin_or_own"
+  on collaborator_services for delete
+  using (is_admin() or collaborator_id = auth.uid());
+
+-- Catalogue de depart (categories + prestations), pour ne pas repartir
+-- d'une page blanche. Aucun tarif ici : chaque collaboratrice (ou l'admin
+-- pour elle) doit definir son propre prix/sa propre duree ensuite via
+-- l'interface "Prestations". Idempotent grace a "on conflict do nothing"
+-- (slug unique pour les categories, (category_id, name) unique pour les
+-- services).
+insert into service_categories (name, slug, display_order) values
+  ('Ongles', 'ongles', 1),
+  ('Cils', 'cils', 2),
+  ('Sourcils', 'sourcils', 3),
+  ('Epilation', 'epilation', 4),
+  ('Tatouage', 'tatouage', 5),
+  ('Baby Spa', 'baby-spa', 6),
+  ('Autres', 'autres', 7)
+on conflict (slug) do nothing;
+
+insert into services (category_id, name, display_order)
+select c.id, s.name, s.display_order
+from service_categories c
+join (values
+  ('ongles', 'Pose naturelle', 1),
+  ('ongles', 'Pose gel', 2),
+  ('ongles', 'Pose complete chablon', 3),
+  ('ongles', 'Remplissage', 4),
+  ('ongles', 'Depose', 5),
+  ('ongles', 'Depose avec nouvelle pose', 6),
+  ('ongles', 'Semi-permanent mains', 7),
+  ('ongles', 'Semi-permanent pieds', 8),
+  ('ongles', 'Renforcement sur ongles naturels', 9),
+  ('ongles', 'Reparation d''un ongle', 10),
+  ('ongles', 'Nail art', 11),
+  ('ongles', 'French', 12),
+  ('ongles', 'Baby-boomer', 13),
+  ('cils', 'Cil a cil', 1),
+  ('cils', 'Volume russe', 2),
+  ('cils', 'Remplissage cils', 3),
+  ('cils', 'Depose cils', 4),
+  ('sourcils', 'Restructuration', 1),
+  ('sourcils', 'Teinture', 2),
+  ('sourcils', 'Brow lift', 3),
+  ('epilation', 'Sourcils', 1),
+  ('epilation', 'Levre', 2),
+  ('epilation', 'Visage', 3),
+  ('epilation', 'Jambes', 4),
+  ('tatouage', 'Tatouage', 1),
+  ('baby-spa', 'Baby Spa', 1),
+  ('autres', 'Prestation personnalisee', 1),
+  ('autres', 'Prestation exterieure', 2)
+) as s(category_slug, name, display_order) on s.category_slug = c.slug
+on conflict (category_id, name) do nothing;
+
 -- 8. Vue reservations_public
 -- L'app ne doit jamais lire la table brute (elle contient le vrai nom de
 -- cliente et les notes privees) : seule cette vue, qui masque ces colonnes
@@ -250,6 +449,8 @@ select
   p.name as collab_name,
   r.room,
   r.prestation,
+  r.service_id,
+  r.price,
   r.date,
   r.time,
   r.duration,

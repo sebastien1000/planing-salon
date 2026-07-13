@@ -315,9 +315,15 @@
           dates.includes(reservation.date);
       })
       .map(function (reservation) {
-        var prestation = db.prestations.find(function (item) {
-          return item.name === reservation.prestation;
-        });
+        // Photo figee au moment du rendez-vous (reservation.price) si
+        // disponible : le prix affiche ne doit jamais changer si le tarif
+        // de la prestation est modifie plus tard. Pour un ancien
+        // rendez-vous enregistre avant cette colonne, on retombe sur
+        // l'ancien catalogue local le temps de la migration progressive.
+        var basePrice = reservation.price != null
+          ? reservation.price
+          : (db.prestations.find(function (item) { return item.name === reservation.prestation; }) || {}).price || 0;
+
         return {
           id: reservation.id,
           client: reservation.client,
@@ -325,7 +331,7 @@
           date: reservation.date,
           time: reservation.time,
           supplement: reservation.supplement || 0,
-          price: (prestation ? prestation.price : 0) + (reservation.supplement || 0)
+          price: basePrice + (reservation.supplement || 0)
         };
       })
       .sort(function (a, b) {
