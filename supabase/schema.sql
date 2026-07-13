@@ -416,7 +416,7 @@ insert into services (category_id, name, display_order)
 select c.id, s.name, s.display_order
 from service_categories c
 join (values
-  ('ongles', 'Pose naturelle', 1),
+  ('ongles', 'Pose ongles naturels', 1),
   ('ongles', 'Pose gel', 2),
   ('ongles', 'Pose complete chablon', 3),
   ('ongles', 'Remplissage', 4),
