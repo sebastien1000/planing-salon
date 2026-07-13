@@ -30,10 +30,6 @@
   }
 
   function bindActions() {
-    ui.byId("addPrestationButton").addEventListener("click", function () {
-      forms.openPrestationForm();
-    });
-
     ui.byId("addAbsenceButton").addEventListener("click", function () {
       forms.openAbsenceForm();
     });
@@ -44,8 +40,6 @@
     if (teamAbsenceList) {
       forms.bindAbsenceCardActions(teamAbsenceList);
     }
-
-    forms.bindPrestationActions(document);
   }
 
   function showLoadError(error) {
@@ -90,16 +84,6 @@
     ui.setMain([
       '<div class="cards">',
       '  <div class="card"><h3>Notifications internes</h3><p>' + waiting + ' cliente(s) sans prochain RDV valide.</p></div>',
-      '  <div class="card">',
-      '    <div class="row">',
-      '      <div class="grow">',
-      "        <h3>Prestations et prix</h3>",
-      '        <div class="tiny">Bloc centralise pour les prestations.</div>',
-      "      </div>",
-      '      <button id="addPrestationButton" class="primary" type="button">+ Ajouter</button>',
-      "    </div>",
-      '    <div class="cards" style="margin-top:12px">' + db.prestations.map(forms.prestationCard).join("") + "</div>",
-      "  </div>",
       '  <div class="card">',
       "    <h3>" + (auth.isAdmin(user) ? "Prestations par collaboratrice" : "Mes prestations") + "</h3>",
       '    <div class="tiny">' + (auth.isAdmin(user)
