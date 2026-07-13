@@ -429,6 +429,7 @@ join (values
   ('ongles', 'Nail art', 11),
   ('ongles', 'French', 12),
   ('ongles', 'Baby-boomer', 13),
+  ('ongles', 'Reconstruction pieds', 14),
   ('cils', 'Cil à cil', 1),
   ('cils', 'Volume russe', 2),
   ('cils', 'Remplissage cils', 3),
