@@ -406,15 +406,36 @@
     throw error;
   }
 
+  function generateId() {
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+      var r = (Math.random() * 16) | 0;
+      var v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  // Pas de .select() apres insert/update : la table reservations a son
+  // SELECT revoque pour authenticated (lecture masquee uniquement via la
+  // vue reservations_public), donc PostgREST ne peut pas relire la ligne
+  // pour construire la reponse (403). On reconstruit la valeur localement.
   function createReservation(reservation) {
-    return unwrap(client().from("reservations").insert(toReservationRow(reservation)).select().single())
-      .then(mapReservationRow)
+    var row = toReservationRow(reservation);
+    row.id = generateId();
+    return unwrap(client().from("reservations").insert(row))
+      .then(function () {
+        return Object.assign({}, reservation, { id: row.id });
+      })
       .catch(markSlotTakenError);
   }
 
   function updateReservation(id, reservation) {
-    return unwrap(client().from("reservations").update(toReservationRow(reservation)).eq("id", id).select().single())
-      .then(mapReservationRow)
+    return unwrap(client().from("reservations").update(toReservationRow(reservation)).eq("id", id))
+      .then(function () {
+        return Object.assign({}, reservation, { id: id });
+      })
       .catch(markSlotTakenError);
   }
 

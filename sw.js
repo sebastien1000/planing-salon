@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v33-services-burger-menu";
+const CACHE_NAME = "salon-mvp-v34-fix-reservation-403";
 
 const APP_ASSETS = [
   "./",
