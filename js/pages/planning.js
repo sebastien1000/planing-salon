@@ -18,7 +18,10 @@
   }
 
   var db = data.loadDb();
-  var view = sessionStorage.getItem("planning:view") || "day";
+  // Marion prefere ouvrir le planning directement sur la vue mois plutot
+  // que jour ; un choix de vue deja fait avant (sessionStorage) reste
+  // toujours prioritaire.
+  var view = sessionStorage.getItem("planning:view") || (user.name === "Marion" ? "month" : "day");
   var roomFilter = sessionStorage.getItem("planning:room") || "Toutes";
   // Une collaboratrice ne voit par defaut que ses propres RDV (comptes,
   // "RDV affiches"/"Termines"...) ; l'admin continue de tout voir par
