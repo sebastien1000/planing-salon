@@ -561,7 +561,7 @@
       });
   }
 
-  function setReservationStatus(reservationId, status, supplement) {
+  function setReservationStatus(reservationId, status, supplement, price) {
     var state = formState.state;
     var reservation = utils.findById(state.reservations, reservationId);
 
@@ -577,6 +577,9 @@
     var patch = Object.assign({}, reservation, { status: status });
     if (status === "done") {
       patch.supplement = Number(supplement) || 0;
+      if (price != null) {
+        patch.price = price;
+      }
     }
 
     supabaseData.updateReservation(reservationId, patch).then(function (updated) {
@@ -604,11 +607,22 @@
       return;
     }
 
+    // Photo figee sur le rendez-vous si deja enregistree (reservation.price) ;
+    // meme repli que buildReservationForm pour un ancien RDV sans photo figee.
+    var originalPrice = reservation.price != null ? reservation.price : findPrestationPrice(reservation.prestation);
+
     ui.showSheet([
       '<div class="modal-head">',
       "  <h3>Terminer le RDV</h3>",
       '  <button id="closeSupplementButton" class="x" type="button">x</button>',
       "</div>",
+      '<label for="fDonePrice">Prix (EUR)</label>',
+      '<input id="fDonePrice" class="field" type="number" min="0" step="0.5" value="' + originalPrice + '">',
+      '<div class="row" style="margin:8px 0 14px">',
+      '  <button id="loyaltyDiscountButton" class="secondary grow" type="button">-10% fidelite</button>',
+      '  <button id="loyaltyFreeButton" class="secondary grow" type="button">Offert</button>',
+      "</div>",
+      '<p class="tiny">Carte de fidelite : 10% de reduction ou une prestation offerte tous les 10 passages.</p>',
       '<p class="tiny">Ajoute un supplement si besoin, il sera compte dans la recette.</p>',
       '<label for="fSupplement">Supplement (EUR)</label>',
       '<input id="fSupplement" class="field" type="number" min="0" step="0.5" placeholder="0" value="' +
@@ -619,10 +633,23 @@
     ].join(""));
 
     ui.byId("closeSupplementButton").addEventListener("click", ui.closeSheet);
+    ui.byId("loyaltyDiscountButton").addEventListener("click", function () {
+      ui.byId("fDonePrice").value = Math.round(originalPrice * 0.9 * 100) / 100;
+    });
+    ui.byId("loyaltyFreeButton").addEventListener("click", function () {
+      ui.byId("fDonePrice").value = 0;
+    });
     ui.byId("validateSupplementButton").addEventListener("click", function () {
       var supplement = Number(ui.byId("fSupplement").value) || 0;
+      var price = Number(ui.byId("fDonePrice").value);
+
+      if (!(price >= 0)) {
+        window.alert("Le prix ne peut pas etre negatif.");
+        return;
+      }
+
       ui.closeSheet();
-      setReservationStatus(reservationId, "done", supplement);
+      setReservationStatus(reservationId, "done", supplement, price);
     });
   }
 
