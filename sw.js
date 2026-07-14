@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v39-tablet-wide-planning";
+const CACHE_NAME = "salon-mvp-v40-remove-dead-prestation-form";
 
 const APP_ASSETS = [
   "./",
@@ -30,7 +30,6 @@ const APP_ASSETS = [
   "./js/core/form-reservations.js",
   "./js/core/form-clients.js",
   "./js/core/form-accounts.js",
-  "./js/core/form-prestations.js",
   "./js/core/form-services.js",
   "./js/core/form-absences.js",
   "./js/core/form-holidays.js",
