@@ -104,13 +104,8 @@
       .replace(/'/g, "&#39;");
   }
 
-  function boolAttr(condition, name) {
-    return condition ? " " + name : "";
-  }
-
   window.SalonUtils = {
     addDays: addDays,
-    boolAttr: boolAttr,
     dateObj: dateObj,
     escapeHtml: escapeHtml,
     findById: findById,

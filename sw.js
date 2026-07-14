@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v40-remove-dead-prestation-form";
+const CACHE_NAME = "salon-mvp-v41-clean-dead-code";
 
 const APP_ASSETS = [
   "./",

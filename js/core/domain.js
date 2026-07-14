@@ -87,35 +87,6 @@
     return null;
   }
 
-  function catLabel(cat) {
-    return {
-      ongles: "Ongles",
-      noire: "Salle Noire",
-      baby: "Baby Spa",
-      outside: "Exterieur"
-    }[cat] || cat;
-  }
-
-  function previewRoomForCat(cat) {
-    if (cat === "ongles") {
-      return "Salle Ongles (ou salle secondaire si occupee)";
-    }
-
-    if (cat === "noire") {
-      return "Salle Noire";
-    }
-
-    if (cat === "baby") {
-      return "Baby Spa";
-    }
-
-    if (cat === "outside") {
-      return "Exterieur";
-    }
-
-    return "A definir";
-  }
-
   function periodStamp(date, time) {
     return date + "T" + (time || "00:00");
   }
@@ -126,14 +97,6 @@
     var rangeStart = periodStamp(range.startDate, range.startTime || "00:00");
     var rangeEnd = periodStamp(range.endDate || range.startDate, range.endTime || "23:59");
     return slotStart < rangeEnd && slotEnd > rangeStart;
-  }
-
-  function rangesOverlap(rangeA, rangeB) {
-    var startA = periodStamp(rangeA.startDate, rangeA.startTime || "00:00");
-    var endA = periodStamp(rangeA.endDate || rangeA.startDate, rangeA.endTime || "23:59");
-    var startB = periodStamp(rangeB.startDate, rangeB.startTime || "00:00");
-    var endB = periodStamp(rangeB.endDate || rangeB.startDate, rangeB.endTime || "23:59");
-    return startA < endB && endA > startB;
   }
 
   function periodCoversDate(period, date) {
@@ -374,7 +337,6 @@
 
   window.SalonDomain = {
     assignmentError: assignmentError,
-    catLabel: catLabel,
     conflict: conflict,
     conflictDetails: conflictDetails,
     countFor: countFor,
@@ -389,8 +351,6 @@
     isRoomAllowedForUser: isRoomAllowedForUser,
     normalizeStatus: normalizeStatus,
     periodCoversDate: periodCoversDate,
-    previewRoomForCat: previewRoomForCat,
-    rangesOverlap: rangesOverlap,
     renameCollaborator: renameCollaborator,
     revenueFor: revenueFor,
     roomFor: roomFor,
