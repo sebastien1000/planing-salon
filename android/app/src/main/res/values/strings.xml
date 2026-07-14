@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Planning Salon</string>
-    <string name="title_activity_main">Planning Salon</string>
+    <string name="app_name">Salon</string>
+    <string name="title_activity_main">Salon</string>
     <string name="package_name">fr.planningsalon.app</string>
     <string name="custom_url_scheme">fr.planningsalon.app</string>
 </resources>
