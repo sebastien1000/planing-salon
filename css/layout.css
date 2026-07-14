@@ -147,10 +147,19 @@ main {
     max-width: min(96vw, 1400px);
   }
 
-  .tabs,
   .modal,
   .sheet {
     position: absolute;
+  }
+
+  /* La barre d'onglets reste fixed (ancree au viewport, toujours visible
+     a l'ecran) meme sur tablette, au lieu de passer en absolute : en
+     absolute elle se positionnait par rapport a .phone (dont la hauteur
+     suit le contenu), donc elle finissait tout en bas de la page et
+     n'etait plus visible sans scroller jusqu'au bout. On elargit juste
+     sa largeur pour suivre celle de .phone une fois agrandi. */
+  .tabs {
+    max-width: min(96vw, 1400px);
   }
 
   .modal-box {
