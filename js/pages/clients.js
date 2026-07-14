@@ -35,6 +35,39 @@
     return supabaseData.resolveCollabName(profiles, client.collabId);
   }
 
+  function clientCollabIds(client) {
+    return client.collabIds && client.collabIds.length
+      ? client.collabIds
+      : (client.collabId ? [client.collabId] : []);
+  }
+
+  function countClientsFor(collabId) {
+    return clients.filter(function (client) {
+      return clientCollabIds(client).indexOf(collabId) !== -1;
+    }).length;
+  }
+
+  // Chaque collaboratrice voit son propre compteur ; l'admin voit celui
+  // de chacune (Julie, Marion, ...).
+  function counterHtml() {
+    var auth = window.SalonAuth;
+
+    if (!auth.isAdmin(user)) {
+      var myId = supabaseData.resolveCollabId(profiles, user.name);
+      return myId
+        ? '<div class="chips"><span class="badge">Mes clientes : ' + countClientsFor(myId) + "</span></div>"
+        : "";
+    }
+
+    var badges = profiles
+      .filter(function (profile) { return profile.role === "collab"; })
+      .map(function (profile) {
+        return '<span class="badge">' + utils.escapeHtml(profile.name) + " : " + countClientsFor(profile.id) + "</span>";
+      }).join("");
+
+    return badges ? '<div class="chips">' + badges + "</div>" : "";
+  }
+
   function clientCard(client) {
     var collab = collabLabel(client);
 
@@ -76,6 +109,7 @@
 
       var content = [
         '<button id="addClientButton" class="primary list-actions" type="button">Ajouter cliente</button>',
+        counterHtml(),
         '<div class="cards">',
         clients.length
           ? clients.map(clientCard).join("")
