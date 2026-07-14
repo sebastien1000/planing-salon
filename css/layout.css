@@ -136,6 +136,31 @@ main {
   pointer-events: auto;
 }
 
+/* Sur mobile (<700px), l'appli occupe tout l'ecran de l'appareil au lieu
+   du cadre "carte telephone" (coins arrondis, bordure, ombre, hauteur
+   fixe 720px) prevu pour l'apercu desktop. Ce cadre fixe s'adaptait mal
+   d'un telephone a l'autre (ex. Galaxy S24 vs S24 Ultra, hauteurs et
+   zones sures differentes) : 100dvh suit la hauteur reelle de l'ecran,
+   et le padding-top de .top suit la vraie hauteur de la barre de statut
+   (env(safe-area-inset-top)) au lieu d'un espace fixe devine a l'oeil.
+   La page de connexion (.login-shell) garde son propre habillage carte
+   (voir pages.css) et n'est pas concernee. */
+@media (max-width: 699px) {
+  .phone:not(.login-shell) {
+    max-width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    padding-top: 0;
+  }
+
+  .top {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  }
+}
+
 @media (min-width: 700px) {
   .phone {
     min-height: 720px;
