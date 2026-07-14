@@ -29,6 +29,7 @@
   ];
 
   var ABSENCE_CATEGORIES = [
+    ["vacances", "Vacances"],
     ["maladie", "Maladie"],
     ["rdv_perso", "Rendez-vous personnel"],
     ["formation", "Formation"],
