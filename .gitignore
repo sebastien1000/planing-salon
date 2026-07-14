@@ -13,3 +13,10 @@ tmp/
 
 # Logs
 *.log
+
+# Claude Code local settings
+.claude/
+
+# Android / Capacitor
+node_modules/
+www/

@@ -3,9 +3,40 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var formState = window.SalonFormState;
+  var services = window.SalonServiceForms;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
   var ENABLE_CONFLICT_ASSISTANT = true;
+
+  // Assemble un objet ayant la forme attendue par domain.js (conflits,
+  // restrictions salle/prestation) a partir de l'etat courant : les
+  // collaborateurs/prestations/absences/conges restent dans localStorage,
+  // les clientes/rendez-vous viennent de Supabase. reservationsOverride
+  // permet de remplacer state.reservations (qui ne contient que les dates
+  // deja chargees par la vue planning courante) par une liste fraiche.
+  function buildVirtualDb(state, reservationsOverride) {
+    return {
+      users: state.db.users,
+      prestations: state.db.prestations,
+      absences: state.db.absences,
+      holidays: state.db.holidays,
+      reservations: reservationsOverride || state.reservations,
+      clients: state.clients
+    };
+  }
+
+  // state.reservations ne couvre que les dates deja affichees dans le
+  // planning (jour/semaine/mois courant) : verifier un conflit avec ces
+  // seules donnees peut annoncer a tort un creneau libre pour une date hors
+  // de cette vue. On interroge donc Supabase pour la date exacte du
+  // rendez-vous a chaque verification, la contrainte PostgreSQL restant de
+  // toute facon le dernier rempart en cas d'ecart.
+  function freshVirtualDbForDate(state, date) {
+    return supabaseData.listReservationsForDates([date]).then(function (list) {
+      return buildVirtualDb(state, list);
+    });
+  }
 
   function reservationCard(reservation) {
     var state = formState.state;
@@ -13,6 +44,8 @@
     var canSee = auth.canSeeReservation(state.user, reservation);
     var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
     var subtitle = canSee ? reservation.prestation : "Detail prive";
+    var collabUser = utils.findByName(state.db.users, reservation.collab);
+    var borderStyle = collabUser && collabUser.color ? ' style="border-left-color:' + utils.escapeHtml(collabUser.color) + '"' : "";
     var cardClassName = [
       "card",
       "appointment",
@@ -31,13 +64,13 @@
     }
 
     return [
-      '<div class="' + cardClassName + '">',
+      '<div class="' + cardClassName + '"' + borderStyle + '>',
       "  <div class=\"row\">",
       '    <div class="grow">',
       "      <b>" + utils.escapeHtml(title) + "</b>",
       '      <div class="tiny">' + utils.escapeHtml(subtitle) + "</div>",
       "    </div>",
-      '    <span class="badge status-' + reservation.status + '">' +
+      '    <span class="badge status-' + utils.escapeHtml(reservation.status) + '">' +
         utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</span>",
       "  </div>",
       '  <div class="meta">',
@@ -78,16 +111,23 @@
     });
   }
 
+  function defaultCollabName(state) {
+    var firstCollab = state.db.users.find(function (user) { return user.role === "collab" && user.active !== false; });
+    return firstCollab ? firstCollab.name : "";
+  }
+
   function openReservation(reservationId) {
     var state = formState.state;
     var reservation = reservationId
-      ? utils.findById(state.db.reservations, reservationId)
+      ? utils.findById(state.reservations, reservationId)
       : {
           id: "",
           client: "",
           clientId: "",
-          collab: auth.isAdmin(state.user) ? "Julie" : state.user.name,
-          prestation: state.db.prestations[0].name,
+          collab: auth.isAdmin(state.user) ? defaultCollabName(state) : state.user.name,
+          prestation: "",
+          serviceId: null,
+          price: null,
           date: state.selectedDate,
           time: "09:00",
           duration: 90,
@@ -112,52 +152,63 @@
   function buildReservationForm(reservation, reservationId) {
     var state = formState.state;
     var client = findReservationClient(reservation);
-    var clientOptions = state.db.clients.map(function (client) {
+    var clientOptions = state.clients.map(function (client) {
       var selected = client.id === reservation.clientId ? " selected" : "";
       return '<option value="' + client.id + '"' + selected + '>' +
         utils.escapeHtml(client.name) + "</option>";
     }).join("");
 
     var collabOptions = state.db.users
-      .filter(function (user) { return user.role === "collab"; })
+      .filter(function (user) {
+        return user.role === "collab" && (user.active !== false || user.name === reservation.collab);
+      })
       .map(function (user) {
         var selected = user.name === reservation.collab ? " selected" : "";
+        var label = user.active === false ? user.name + " (inactif)" : user.name;
         return '<option value="' + utils.escapeHtml(user.name) + '"' + selected + ">" +
-          utils.escapeHtml(user.name) + "</option>";
+          utils.escapeHtml(label) + "</option>";
       }).join("");
 
-    var prestationOptions = state.db.prestations.map(function (prestation) {
-      var selected = prestation.name === reservation.prestation ? " selected" : "";
-      return '<option value="' + utils.escapeHtml(prestation.name) + '"' + selected + ">" +
-        utils.escapeHtml(prestation.name) + "</option>";
-    }).join("");
-    var roomOptions = data.ROOMS.map(function (room) {
-      var selected = room === (reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation))
-        ? " selected" : "";
-      return '<option value="' + utils.escapeHtml(room) + '"' + selected + ">" + utils.escapeHtml(room) + "</option>";
-    }).join("");
+    var roomOptions = buildRoomOptionsHtml(
+      state,
+      reservation.collab,
+      reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation)
+    );
 
-    var room = reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation);
-    var lockOwnCollab = !auth.isAdmin(state.user);
-    var price = findPrestationPrice(reservation.prestation);
+    var isAdmin = auth.isAdmin(state.user);
+    // Photo figee sur le rendez-vous si deja enregistree (reservation.price) ;
+    // pour un ancien rendez-vous sans photo figee, on retombe sur
+    // l'ancien catalogue local (findPrestationPrice) le temps de la
+    // migration progressive (voir js/core/data.js).
+    var price = reservation.price != null ? reservation.price : findPrestationPrice(reservation.prestation);
 
     return [
       '<div class="modal-head">',
       "  <h3>" + (reservationId ? "Modifier" : "Ajouter") + " un RDV</h3>",
       '  <button id="closeModalButton" class="x" type="button">x</button>',
       "</div>",
-      '<label for="fClient">Cliente</label>',
+      '<label for="fClient">Cliente existante</label>',
       '<select id="fClient" class="field">',
       '  <option value="">Nouvelle / libre</option>',
       clientOptions,
       "</select>",
       '<input id="fClientName" class="field" placeholder="Nom cliente" value="' +
         utils.escapeHtml(reservation.client) + '">',
-      '<label for="fClientPhone">Telephone cliente</label><input id="fClientPhone" class="field" readonly value="' + utils.escapeHtml(client ? client.phone : "") + '">',
       '<div class="grid2">',
-      '  <div><label for="fCollab">Collaboratrice</label><select id="fCollab" class="field"' +
-        (lockOwnCollab ? ' disabled' : '') + '>' + collabOptions + "</select></div>",
-      '  <div><label for="fPrest">Prestation</label><select id="fPrest" class="field">' + prestationOptions + "</select></div>",
+      '  <div><label for="fClientPhone">Telephone</label><input id="fClientPhone" class="field" placeholder="Telephone" value="' + utils.escapeHtml(client ? client.phone || "" : "") + '"></div>',
+      '  <div><label for="fClientEmail">Email</label><input id="fClientEmail" class="field" type="email" placeholder="Email (facultatif)" value="' + utils.escapeHtml(client ? client.email || "" : "") + '"></div>',
+      "</div>",
+      '<p class="tiny">Si la cliente n est pas dans la liste, remplissez son nom/telephone : sa fiche sera creee automatiquement (ou reutilisee si elle existe deja).</p>',
+      '<div class="grid2">',
+      '  <div><label for="fCollab">Collaboratrice</label><select id="fCollab" class="field">' +
+        collabOptions + "</select></div>",
+      "  <div>",
+      '    <label for="fPrestButton">Prestation</label>',
+      '    <button id="fPrestButton" class="secondary" type="button" style="width:100%;text-align:left"' +
+        ' data-entry-id="" data-service-id="' + utils.escapeHtml(reservation.serviceId || "") + '">' +
+        utils.escapeHtml(reservation.prestation || "Choisir une prestation") +
+        "</button>",
+      "  </div>",
       "</div>",
       '<div class="grid2">',
       '  <div><label for="fDate">Date</label><input id="fDate" class="field" type="date" value="' + reservation.date + '"></div>',
@@ -167,13 +218,15 @@
       '  <div><label for="fDuration">Duree min</label><input id="fDuration" class="field" type="number" value="' + reservation.duration + '"></div>',
       '  <div><label for="fRoom">Salle</label><select id="fRoom" class="field">' + roomOptions + "</select></div>",
       "</div>",
-      '<label for="fPrice">Prix</label><input id="fPrice" class="field" readonly value="' + price + ' EUR">',
+      '<div id="fEndTimePreview" class="tiny"></div>',
+      '<label for="fPrice">Prix (EUR)</label><input id="fPrice" class="field" type="number" min="0" step="0.5"' +
+        (isAdmin ? "" : " readonly") + ' value="' + price + '">',
       '<label for="fStatus">Statut</label>',
       '<select id="fStatus" class="field">' + data.STATUS.map(function (status) {
         var selected = status[0] === reservation.status ? " selected" : "";
         return '<option value="' + status[0] + '"' + selected + ">" + status[1] + "</option>";
       }).join("") + "</select>",
-      '<label for="fNotes">Notes privees</label>',
+      '<label for="fNotes">Notes privees / commentaire</label>',
       '<textarea id="fNotes" class="field">' + utils.escapeHtml(reservation.notes || "") + "</textarea>",
       '<div class="reservation-submit-zone">',
       '  <div id="reservationMsg" class="reservation-msg-inline"></div>',
@@ -185,13 +238,61 @@
     ].join("");
   }
 
+  function buildRoomOptionsHtml(state, collabName, selectedRoom) {
+    var user = utils.findByName(state.db.users, collabName);
+    return data.ROOMS.filter(function (room) {
+      return domain.isRoomAllowedForUser(user, room);
+    }).map(function (room) {
+      var selected = room === selectedRoom ? " selected" : "";
+      return '<option value="' + utils.escapeHtml(room) + '"' + selected + ">" + utils.escapeHtml(room) + "</option>";
+    }).join("");
+  }
+
+  // Applique la prestation choisie dans le menu par categorie (voir
+  // js/core/form-services.js) : remplit automatiquement le prix, la duree
+  // et l'heure de fin estimee, comme demande.
+  function applyServiceSelection(entry) {
+    var button = ui.byId("fPrestButton");
+    button.dataset.entryId = entry.id;
+    button.dataset.serviceId = entry.serviceId;
+    button.textContent = entry.name;
+    ui.byId("fDuration").value = entry.duration;
+    ui.byId("fPrice").value = entry.price;
+    updateEndTimePreview();
+  }
+
+  function updateEndTimePreview() {
+    var preview = ui.byId("fEndTimePreview");
+    if (!preview) {
+      return;
+    }
+
+    var time = ui.byId("fTime").value;
+    var duration = Number(ui.byId("fDuration").value) || 0;
+    preview.textContent = time && duration
+      ? "Fin estimee : " + domain.addMinutes(time, duration)
+      : "";
+  }
+
+  function openPrestationPicker() {
+    var state = formState.state;
+    var collabId = supabaseData.resolveCollabId(state.profiles, ui.byId("fCollab").value);
+
+    if (!collabId) {
+      window.alert("Choisissez d abord une collaboratrice.");
+      return;
+    }
+
+    var currentEntryId = ui.byId("fPrestButton").dataset.entryId || "";
+    services.openServicePickerSheet(collabId, currentEntryId, applyServiceSelection);
+  }
+
   function bindReservationForm(reservationId) {
     var closeButton = ui.byId("closeModalButton");
     var saveButton = ui.byId("saveReservationButton");
     var cancelButton = ui.byId("modalCancelReservationButton");
     var clientField = ui.byId("fClient");
     var collabField = ui.byId("fCollab");
-    var prestationField = ui.byId("fPrest");
 
     closeButton.addEventListener("click", ui.closeModal);
     saveButton.addEventListener("click", function () {
@@ -206,53 +307,102 @@
     }
 
     clientField.addEventListener("change", fillClientHabit);
-    collabField.addEventListener("change", updateReservationRoom);
-    prestationField.addEventListener("change", function () {
-      updateReservationRoom(true);
+    collabField.addEventListener("change", function () {
+      refreshCollabRestrictedFields();
+      updateReservationRoom();
     });
+    ui.byId("fPrestButton").addEventListener("click", openPrestationPicker);
+    ui.byId("fTime").addEventListener("change", updateEndTimePreview);
+    ui.byId("fDuration").addEventListener("input", updateEndTimePreview);
 
-    updateReservationRoom(false);
-    updateReservationMeta();
+    updateReservationRoom();
+    updateEndTimePreview();
   }
 
-  function updateReservationRoom(updateDuration) {
+  // Chaque collaboratrice a son propre catalogue de prestations actives :
+  // changer de collaboratrice invalide donc la prestation deja choisie.
+  function refreshCollabRestrictedFields() {
+    var state = formState.state;
+    var button = ui.byId("fPrestButton");
+    button.dataset.entryId = "";
+    button.dataset.serviceId = "";
+    button.textContent = "Choisir une prestation";
+    ui.byId("fRoom").innerHTML = buildRoomOptionsHtml(state, ui.byId("fCollab").value, ui.byId("fRoom").value);
+  }
+
+  // La salle par defaut reste calculee depuis l'ancien catalogue local
+  // (categorie ongles/noire/baby/exterieur) le temps de la migration : pour
+  // une toute nouvelle prestation, ou si la collaboratrice n'a pas de salle
+  // fixe attribuee, la liste deroulante reste utilisable manuellement.
+  function updateReservationRoom() {
     var state = formState.state;
     var collab = ui.byId("fCollab").value;
-    var prestation = ui.byId("fPrest").value;
-    ui.byId("fRoom").value = domain.roomFor(state.db, collab, prestation);
+    var room = domain.roomFor(state.db, collab, ui.byId("fPrestButton").textContent);
+    if (room) {
+      ui.byId("fRoom").value = room;
+    }
+  }
 
-    if (updateDuration) {
-      var found = state.db.prestations.find(function (item) {
-        return item.name === prestation;
-      });
+  // Une cliente peut desormais avoir plusieurs collaboratrices "habituelles"
+  // (client.collabIds) : si la personne connectee en fait partie, on la
+  // propose en priorite (probablement elle qui prend le rendez-vous),
+  // sinon la premiere de la liste.
+  function pickHabitualCollabName(state, client) {
+    var ids = client.collabIds && client.collabIds.length
+      ? client.collabIds
+      : (client.collabId ? [client.collabId] : []);
 
-      if (found) {
-        ui.byId("fDuration").value = found.duration;
-      }
+    if (!ids.length) {
+      return "";
     }
 
-    updateReservationMeta();
+    var myId = supabaseData.resolveCollabId(state.profiles, state.user.name);
+    var chosenId = ids.indexOf(myId) !== -1 ? myId : ids[0];
+    return supabaseData.resolveCollabName(state.profiles, chosenId);
   }
 
   function fillClientHabit() {
     var state = formState.state;
     var clientId = ui.byId("fClient").value;
-    var client = utils.findById(state.db.clients, clientId);
+    var client = utils.findById(state.clients, clientId);
 
     if (!client) {
       return;
     }
 
+    var habitualCollab = pickHabitualCollabName(state, client);
+
     ui.byId("fClientName").value = client.name;
     ui.byId("fClientPhone").value = client.phone || "";
-    ui.byId("fCollab").value = auth.isAdmin(state.user) ? client.collab : state.user.name;
-    ui.byId("fPrest").value = client.prestation;
-    ui.byId("fDuration").value = client.duration;
-    updateReservationRoom(false);
-  }
+    ui.byId("fClientEmail").value = client.email || "";
+    ui.byId("fCollab").value = habitualCollab || state.user.name;
+    refreshCollabRestrictedFields();
+    updateReservationRoom();
 
-  function updateReservationMeta() {
-    ui.byId("fPrice").value = findPrestationPrice(ui.byId("fPrest").value) + " EUR";
+    if (client.duration) {
+      ui.byId("fDuration").value = client.duration;
+      updateEndTimePreview();
+    }
+
+    if (!client.prestation) {
+      return;
+    }
+
+    var collabId = supabaseData.resolveCollabId(state.profiles, ui.byId("fCollab").value);
+    if (!collabId) {
+      return;
+    }
+
+    services.loadCollaboratorServiceEntries(collabId).then(function (entries) {
+      var stillSameCollab = supabaseData.resolveCollabId(state.profiles, ui.byId("fCollab").value) === collabId;
+      var match = entries.find(function (entry) {
+        return entry.active && entry.serviceActive && entry.name === client.prestation;
+      });
+
+      if (stillSameCollab && match) {
+        applyServiceSelection(match);
+      }
+    }).catch(function () {});
   }
 
   function findPrestationPrice(prestationName) {
@@ -265,64 +415,128 @@
 
   function findReservationClient(reservation) {
     var state = formState.state;
-    return state.db.clients.find(function (item) {
+    return state.clients.find(function (item) {
       return item.id === reservation.clientId || item.name === reservation.client;
     }) || null;
+  }
+
+  function showSaveError(targetId, message) {
+    ui.showAlert(targetId, message);
   }
 
   function saveReservation(reservationId) {
     var state = formState.state;
     var currentReservation = reservationId
-      ? utils.findById(state.db.reservations, reservationId)
+      ? utils.findById(state.reservations, reservationId)
       : null;
-    var chosenCollab = auth.isAdmin(state.user) ? ui.byId("fCollab").value : state.user.name;
-    var reservation = {
-      id: reservationId || utils.uid("r"),
+
+    if (currentReservation && !canManageReservation(currentReservation)) {
+      showSaveError("reservationMsg", "Modification refusee pour cette collaboratrice.");
+      return;
+    }
+
+    var chosenCollab = ui.byId("fCollab").value;
+    var selectedClientId = ui.byId("fClient").value;
+    var prestationButton = ui.byId("fPrestButton");
+    var prestationName = prestationButton.textContent.trim();
+
+    if (!prestationName || prestationName === "Choisir une prestation") {
+      showSaveError("reservationMsg", "Choisissez une prestation.");
+      return;
+    }
+
+    var price = Number(ui.byId("fPrice").value);
+    if (!(price >= 0)) {
+      showSaveError("reservationMsg", "Le prix ne peut pas etre negatif.");
+      return;
+    }
+
+    var duration = Number(ui.byId("fDuration").value) || 0;
+    if (duration <= 0) {
+      showSaveError("reservationMsg", "La duree doit etre superieure a 0.");
+      return;
+    }
+
+    var draft = {
+      id: reservationId || "",
       client: ui.byId("fClientName").value.trim() || "Cliente",
-      clientId: ui.byId("fClient").value,
+      clientId: selectedClientId,
       collab: chosenCollab,
-      prestation: ui.byId("fPrest").value,
+      collabId: supabaseData.resolveCollabId(state.profiles, chosenCollab),
+      prestation: prestationName,
+      serviceId: prestationButton.dataset.serviceId || null,
+      price: price,
       date: ui.byId("fDate").value,
       time: ui.byId("fTime").value,
-      duration: Number(ui.byId("fDuration").value) || 0,
+      duration: duration,
       room: ui.byId("fRoom").value,
       status: ui.byId("fStatus").value,
       notes: ui.byId("fNotes").value
     };
 
-    if (currentReservation && !canManageReservation(currentReservation)) {
-      ui.byId("reservationMsg").innerHTML = '<div class="alert reservation-alert-box">Modification refusee pour cette collaboratrice.</div>';
+    var assignmentError = domain.assignmentError(buildVirtualDb(state), draft);
+    if (assignmentError) {
+      showSaveError("reservationMsg", assignmentError);
       return;
     }
 
-    var conflict = domain.conflictDetails(state.db, reservation, reservationId || null);
-    if (conflict) {
-      ui.byId("reservationMsg").innerHTML = ENABLE_CONFLICT_ASSISTANT
-        ? '<div class="alert reservation-alert-box">Creneau deja pris. Choisissez un autre horaire.</div>'
-        : '<div class="alert">' + utils.escapeHtml(conflict.message) + "</div>";
-      if (ENABLE_CONFLICT_ASSISTANT) {
-        showConflictPopup(reservation, conflict, reservationId || null);
+    var saveButton = ui.byId("saveReservationButton");
+    saveButton.disabled = true;
+
+    freshVirtualDbForDate(state, draft.date).then(function (virtualDb) {
+      var conflict = domain.conflictDetails(virtualDb, draft, reservationId || null);
+      if (conflict) {
+        saveButton.disabled = false;
+        ui.byId("reservationMsg").innerHTML = ENABLE_CONFLICT_ASSISTANT
+          ? '<div class="alert reservation-alert-box">Creneau deja pris. Choisissez un autre horaire.</div>'
+          : '<div class="alert">' + utils.escapeHtml(conflict.message) + "</div>";
+        if (ENABLE_CONFLICT_ASSISTANT) {
+          showConflictPopup(draft, conflict, reservationId || null);
+        }
+        return null;
       }
-      return;
-    }
 
-    if (reservationId) {
-      Object.assign(
-        utils.findById(state.db.reservations, reservationId),
-        reservation
-      );
-    } else {
-      state.db.reservations.push(reservation);
-    }
+      var clientPromise = selectedClientId
+        ? Promise.resolve(utils.findById(state.clients, selectedClientId))
+        : supabaseData.findOrCreateClient({
+            name: draft.client,
+            phone: ui.byId("fClientPhone").value.trim(),
+            email: ui.byId("fClientEmail").value.trim(),
+            prestation: draft.prestation,
+            duration: draft.duration,
+            frequency: 21,
+            notes: draft.notes,
+            collabIds: draft.collabId ? [draft.collabId] : []
+          });
 
-    state.selectedDate = reservation.date;
-    ui.closeModal();
-    formState.saveAndRefresh();
+      return clientPromise.then(function (client) {
+        draft.clientId = client.id;
+        draft.client = client.name;
+
+        return reservationId
+          ? supabaseData.updateReservation(reservationId, draft)
+          : supabaseData.createReservation(draft);
+      }).then(function () {
+        state.selectedDate = draft.date;
+        ui.closeModal();
+        state.refresh();
+      });
+    }).catch(function (error) {
+      saveButton.disabled = false;
+
+      if (error && error.isSlotTaken) {
+        showSaveError("reservationMsg", "Ce creneau vient d etre pris pour cette salle. Choisissez un autre horaire.");
+        return;
+      }
+
+      showSaveError("reservationMsg", "Impossible d'enregistrer ce rendez-vous, reessayez.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   function cancelReservation(reservationId) {
     var state = formState.state;
-    var reservation = utils.findById(state.db.reservations, reservationId);
+    var reservation = utils.findById(state.reservations, reservationId);
 
     if (!reservation) {
       return;
@@ -337,13 +551,19 @@
       return;
     }
 
-    reservation.status = "cancel";
-    formState.saveAndRefresh();
+    supabaseData.updateReservation(reservationId, Object.assign({}, reservation, { status: "cancel" }))
+      .then(function () {
+        state.refresh();
+      })
+      .catch(function (error) {
+        window.alert("Impossible d'annuler ce rendez-vous, reessayez.");
+        window.console && window.console.error && window.console.error(error);
+      });
   }
 
-  function setReservationStatus(reservationId, status, supplement) {
+  function setReservationStatus(reservationId, status, supplement, price) {
     var state = formState.state;
-    var reservation = utils.findById(state.db.reservations, reservationId);
+    var reservation = utils.findById(state.reservations, reservationId);
 
     if (!reservation) {
       return;
@@ -354,23 +574,29 @@
       return;
     }
 
-    reservation.status = status;
-
+    var patch = Object.assign({}, reservation, { status: status });
     if (status === "done") {
-      reservation.supplement = Number(supplement) || 0;
+      patch.supplement = Number(supplement) || 0;
+      if (price != null) {
+        patch.price = price;
+      }
     }
 
-    data.saveDb(state.db);
-    state.refresh();
+    supabaseData.updateReservation(reservationId, patch).then(function (updated) {
+      state.refresh();
 
-    if (status === "done") {
-      openProposal(reservation);
-    }
+      if (status === "done") {
+        openProposal(updated);
+      }
+    }).catch(function (error) {
+      window.alert("Impossible de mettre a jour ce rendez-vous, reessayez.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   function openSupplementSheet(reservationId) {
     var state = formState.state;
-    var reservation = utils.findById(state.db.reservations, reservationId);
+    var reservation = utils.findById(state.reservations, reservationId);
 
     if (!reservation) {
       return;
@@ -380,12 +606,23 @@
       window.alert("Vous ne pouvez pas modifier un rendez-vous d'une autre collaboratrice.");
       return;
     }
+
+    // Photo figee sur le rendez-vous si deja enregistree (reservation.price) ;
+    // meme repli que buildReservationForm pour un ancien RDV sans photo figee.
+    var originalPrice = reservation.price != null ? reservation.price : findPrestationPrice(reservation.prestation);
 
     ui.showSheet([
       '<div class="modal-head">',
       "  <h3>Terminer le RDV</h3>",
       '  <button id="closeSupplementButton" class="x" type="button">x</button>',
       "</div>",
+      '<label for="fDonePrice">Prix (EUR)</label>',
+      '<input id="fDonePrice" class="field" type="number" min="0" step="0.5" value="' + originalPrice + '">',
+      '<div class="row" style="margin:8px 0 14px">',
+      '  <button id="loyaltyDiscountButton" class="secondary grow" type="button">-10% fidelite</button>',
+      '  <button id="loyaltyFreeButton" class="secondary grow" type="button">Offert</button>',
+      "</div>",
+      '<p class="tiny">Carte de fidelite : 10% de reduction ou une prestation offerte tous les 10 passages.</p>',
       '<p class="tiny">Ajoute un supplement si besoin, il sera compte dans la recette.</p>',
       '<label for="fSupplement">Supplement (EUR)</label>',
       '<input id="fSupplement" class="field" type="number" min="0" step="0.5" placeholder="0" value="' +
@@ -396,16 +633,29 @@
     ].join(""));
 
     ui.byId("closeSupplementButton").addEventListener("click", ui.closeSheet);
+    ui.byId("loyaltyDiscountButton").addEventListener("click", function () {
+      ui.byId("fDonePrice").value = Math.round(originalPrice * 0.9 * 100) / 100;
+    });
+    ui.byId("loyaltyFreeButton").addEventListener("click", function () {
+      ui.byId("fDonePrice").value = 0;
+    });
     ui.byId("validateSupplementButton").addEventListener("click", function () {
       var supplement = Number(ui.byId("fSupplement").value) || 0;
+      var price = Number(ui.byId("fDonePrice").value);
+
+      if (!(price >= 0)) {
+        window.alert("Le prix ne peut pas etre negatif.");
+        return;
+      }
+
       ui.closeSheet();
-      setReservationStatus(reservationId, "done", supplement);
+      setReservationStatus(reservationId, "done", supplement, price);
     });
   }
 
   function openProposal(reservation) {
     var state = formState.state;
-    var client = state.db.clients.find(function (item) {
+    var client = state.clients.find(function (item) {
       return item.id === reservation.clientId || item.name === reservation.client;
     });
 
@@ -417,8 +667,9 @@
     base.setDate(base.getDate() + Number(client.frequency || 21));
 
     var nextDate = utils.iso(base);
-    var lockOwnCollab = !auth.isAdmin(state.user);
-    var proposalCollab = lockOwnCollab ? state.user.name : client.collab;
+    var isAdmin = auth.isAdmin(state.user);
+    var habitualCollab = pickHabitualCollabName(state, client);
+    var proposalCollab = habitualCollab || reservation.collab || state.user.name;
     var room = domain.roomFor(state.db, proposalCollab, client.prestation);
 
     ui.showSheet([
@@ -430,23 +681,28 @@
       '<label for="pDate">Date</label><input id="pDate" class="field" type="date" value="' + nextDate + '">',
       '<label for="pTime">Heure</label><input id="pTime" class="field" type="time" value="' + reservation.time + '">',
       '<label for="pCollab">Collaboratrice</label>',
-      '<select id="pCollab" class="field"' + (lockOwnCollab ? ' disabled' : '') + '>' + state.db.users
-        .filter(function (user) { return user.role === "collab"; })
+      '<select id="pCollab" class="field">' + state.db.users
+        .filter(function (user) {
+          return user.role === "collab" && (user.active !== false || user.name === proposalCollab);
+        })
         .map(function (user) {
           var selected = user.name === proposalCollab ? " selected" : "";
+          var label = user.active === false ? user.name + " (inactif)" : user.name;
           return '<option value="' + utils.escapeHtml(user.name) + '"' + selected + ">" +
-            utils.escapeHtml(user.name) + "</option>";
+            utils.escapeHtml(label) + "</option>";
         }).join("") + "</select>",
-      '<label for="pPrest">Prestation</label>',
-      '<select id="pPrest" class="field">' + state.db.prestations.map(function (prestation) {
-        var selected = prestation.name === client.prestation ? " selected" : "";
-        return '<option value="' + utils.escapeHtml(prestation.name) + '"' + selected + ">" +
-          utils.escapeHtml(prestation.name) + "</option>";
-      }).join("") + "</select>",
+      "  <div>",
+      '    <label for="pPrestButton">Prestation</label>',
+      '    <button id="pPrestButton" class="secondary" type="button" style="width:100%;text-align:left"' +
+        ' data-entry-id="" data-service-id="">Choisir une prestation</button>',
+      "  </div>",
       '<div class="grid2">',
       '  <div><label for="pDuration">Duree</label><input id="pDuration" class="field" type="number" value="' + client.duration + '"></div>',
       '  <div><label for="pRoom">Salle</label><input id="pRoom" class="field" readonly value="' + utils.escapeHtml(room) + '"></div>',
       "</div>",
+      '<label for="pPrice">Prix (EUR)</label><input id="pPrice" class="field" type="number" min="0" step="0.5"' +
+        (isAdmin ? "" : " readonly") + ' value="0">',
+      '<div id="pEndTimePreview" class="tiny"></div>',
       '<div id="proposalMsg"></div>',
       '<div class="row" style="margin-top:14px">',
       '  <button id="saveProposalButton" class="primary grow" type="button">Valider</button>',
@@ -455,95 +711,216 @@
     ].join(""));
 
     ui.byId("closeSheetButton").addEventListener("click", ui.closeSheet);
-    ui.byId("pCollab").addEventListener("change", updateProposalRoom);
-    ui.byId("pPrest").addEventListener("change", function () {
-      updateProposalRoom(true);
+    ui.byId("pCollab").addEventListener("change", function () {
+      resetProposalPrestation();
+      updateProposalRoom();
     });
+    ui.byId("pPrestButton").addEventListener("click", openProposalPrestationPicker);
+    ui.byId("pTime").addEventListener("change", updateProposalEndTimePreview);
+    ui.byId("pDuration").addEventListener("input", updateProposalEndTimePreview);
     ui.byId("saveProposalButton").addEventListener("click", function () {
       saveProposal(client.id);
     });
     ui.byId("suggestProposalButton").addEventListener("click", suggestProposalSlots);
+
+    updateProposalEndTimePreview();
+    preselectProposalPrestation(proposalCollab, client.prestation);
   }
 
-  function updateProposalRoom(updateDuration) {
-    var state = formState.state;
-    var collab = ui.byId("pCollab").value;
-    var prestation = ui.byId("pPrest").value;
-    ui.byId("pRoom").value = domain.roomFor(state.db, collab, prestation);
+  // Essaie de pre-selectionner automatiquement la prestation habituelle de
+  // la cliente (client.prestation, un simple texte) si elle correspond a
+  // une prestation active configuree pour cette collaboratrice. Si aucune
+  // correspondance n'est trouvee (prestation renommee/retiree du catalogue
+  // de cette collaboratrice), le bouton reste sur "Choisir une prestation"
+  // - la collaboratrice doit alors choisir manuellement, sans erreur JS.
+  function preselectProposalPrestation(collabName, prestationName) {
+    if (!prestationName) {
+      return;
+    }
 
-    if (updateDuration) {
-      var found = state.db.prestations.find(function (item) {
-        return item.name === prestation;
+    var state = formState.state;
+    var collabId = supabaseData.resolveCollabId(state.profiles, collabName);
+    if (!collabId) {
+      return;
+    }
+
+    services.loadCollaboratorServiceEntries(collabId).then(function (entries) {
+      var stillSameCollab = ui.byId("pCollab") &&
+        supabaseData.resolveCollabId(state.profiles, ui.byId("pCollab").value) === collabId;
+      var match = entries.find(function (entry) {
+        return entry.active && entry.serviceActive && entry.name === prestationName;
       });
 
-      if (found) {
-        ui.byId("pDuration").value = found.duration;
+      if (stillSameCollab && match) {
+        applyProposalServiceSelection(match);
       }
+    }).catch(function () {});
+  }
+
+  function applyProposalServiceSelection(entry) {
+    var button = ui.byId("pPrestButton");
+    button.dataset.entryId = entry.id;
+    button.dataset.serviceId = entry.serviceId;
+    button.textContent = entry.name;
+    ui.byId("pDuration").value = entry.duration;
+    ui.byId("pPrice").value = entry.price;
+    updateProposalEndTimePreview();
+  }
+
+  function resetProposalPrestation() {
+    var button = ui.byId("pPrestButton");
+    button.dataset.entryId = "";
+    button.dataset.serviceId = "";
+    button.textContent = "Choisir une prestation";
+  }
+
+  function openProposalPrestationPicker() {
+    var state = formState.state;
+    var collabId = supabaseData.resolveCollabId(state.profiles, ui.byId("pCollab").value);
+
+    if (!collabId) {
+      window.alert("Choisissez d abord une collaboratrice.");
+      return;
+    }
+
+    var currentEntryId = ui.byId("pPrestButton").dataset.entryId || "";
+    services.openServicePickerSheet(collabId, currentEntryId, applyProposalServiceSelection);
+  }
+
+  function updateProposalEndTimePreview() {
+    var preview = ui.byId("pEndTimePreview");
+    if (!preview) {
+      return;
+    }
+
+    var time = ui.byId("pTime").value;
+    var duration = Number(ui.byId("pDuration").value) || 0;
+    preview.textContent = time && duration
+      ? "Fin estimee : " + domain.addMinutes(time, duration)
+      : "";
+  }
+
+  function updateProposalRoom() {
+    var state = formState.state;
+    var collab = ui.byId("pCollab").value;
+    var room = domain.roomFor(state.db, collab, ui.byId("pPrestButton").textContent);
+    if (room) {
+      ui.byId("pRoom").value = room;
     }
   }
 
   function saveProposal(clientId) {
     var state = formState.state;
-    var client = utils.findById(state.db.clients, clientId);
-    var chosenCollab = auth.isAdmin(state.user) ? ui.byId("pCollab").value : state.user.name;
-    var reservation = {
-      id: utils.uid("r"),
+    var client = utils.findById(state.clients, clientId);
+    var chosenCollab = ui.byId("pCollab").value;
+    var prestationButton = ui.byId("pPrestButton");
+    var prestationName = prestationButton.textContent.trim();
+
+    if (!prestationName || prestationName === "Choisir une prestation") {
+      showSaveError("proposalMsg", "Choisissez une prestation.");
+      return;
+    }
+
+    var price = Number(ui.byId("pPrice").value);
+    if (!(price >= 0)) {
+      showSaveError("proposalMsg", "Le prix ne peut pas etre negatif.");
+      return;
+    }
+
+    var duration = Number(ui.byId("pDuration").value) || 0;
+    if (duration <= 0) {
+      showSaveError("proposalMsg", "La duree doit etre superieure a 0.");
+      return;
+    }
+
+    var draft = {
+      id: "",
       client: client.name,
       clientId: client.id,
       collab: chosenCollab,
-      prestation: ui.byId("pPrest").value,
+      collabId: supabaseData.resolveCollabId(state.profiles, chosenCollab),
+      prestation: prestationName,
+      serviceId: prestationButton.dataset.serviceId || null,
+      price: price,
       date: ui.byId("pDate").value,
       time: ui.byId("pTime").value,
-      duration: Number(ui.byId("pDuration").value) || 0,
+      duration: duration,
       room: ui.byId("pRoom").value,
       status: "pre",
       notes: "Prochain RDV valide"
     };
 
-    var error = domain.conflict(state.db, reservation, null);
-    if (error) {
-      ui.byId("proposalMsg").innerHTML = '<div class="alert">' + utils.escapeHtml(error) + "</div>";
+    var assignmentError = domain.assignmentError(buildVirtualDb(state), draft);
+    if (assignmentError) {
+      showSaveError("proposalMsg", assignmentError);
       return;
     }
 
-    state.db.reservations.push(reservation);
-    client.next = {
-      date: reservation.date,
-      time: reservation.time,
-      prestation: reservation.prestation
-    };
+    var saveButton = ui.byId("saveProposalButton");
+    saveButton.disabled = true;
 
-    ui.closeSheet();
-    formState.saveAndRefresh();
+    freshVirtualDbForDate(state, draft.date).then(function (virtualDb) {
+      var error = domain.conflict(virtualDb, draft, null);
+      if (error) {
+        saveButton.disabled = false;
+        showSaveError("proposalMsg", error);
+        return null;
+      }
+
+      return supabaseData.createReservation(draft).then(function () {
+        return supabaseData.updateClient(client.id, { nextDate: draft.date });
+      }).then(function () {
+        ui.closeSheet();
+        state.refresh();
+      });
+    }).catch(function (error) {
+      saveButton.disabled = false;
+
+      if (error && error.isSlotTaken) {
+        showSaveError("proposalMsg", "Ce creneau vient d etre pris. Choisissez-en un autre.");
+        return;
+      }
+
+      showSaveError("proposalMsg", "Impossible d'enregistrer ce rendez-vous, reessayez.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   function suggestProposalSlots() {
     var state = formState.state;
     var times = ["09:00", "11:00", "14:00", "16:00"];
-    var chosenCollab = auth.isAdmin(state.user) ? ui.byId("pCollab").value : state.user.name;
-    var html = ['<div class="success">Creneaux proposes :</div><div class="chips">'];
+    var chosenCollab = ui.byId("pCollab").value;
+    var date = ui.byId("pDate").value;
 
-    times.forEach(function (time) {
-      var reservation = {
-        date: ui.byId("pDate").value,
-        time: time,
-        duration: Number(ui.byId("pDuration").value) || 0,
-        room: ui.byId("pRoom").value,
-        collab: chosenCollab
-      };
+    ui.byId("proposalMsg").innerHTML = '<p class="tiny">Verification des creneaux...</p>';
 
-      if (!domain.conflict(state.db, reservation, null)) {
-        html.push('<button class="chip" type="button" data-slot="' + time + '">' + time + "</button>");
-      }
-    });
+    freshVirtualDbForDate(state, date).then(function (virtualDb) {
+      var html = ['<div class="success">Creneaux proposes :</div><div class="chips">'];
 
-    html.push("</div>");
-    ui.byId("proposalMsg").innerHTML = html.join("");
+      times.forEach(function (time) {
+        var reservation = {
+          date: date,
+          time: time,
+          duration: Number(ui.byId("pDuration").value) || 0,
+          room: ui.byId("pRoom").value,
+          collab: chosenCollab
+        };
 
-    ui.byId("proposalMsg").querySelectorAll("[data-slot]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        ui.byId("pTime").value = button.dataset.slot;
+        if (!domain.conflict(virtualDb, reservation, null)) {
+          html.push('<button class="chip" type="button" data-slot="' + time + '">' + time + "</button>");
+        }
       });
+
+      html.push("</div>");
+      ui.byId("proposalMsg").innerHTML = html.join("");
+
+      ui.byId("proposalMsg").querySelectorAll("[data-slot]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          ui.byId("pTime").value = button.dataset.slot;
+        });
+      });
+    }).catch(function () {
+      ui.showAlert("proposalMsg", "Impossible de verifier les creneaux, reessayez.");
     });
   }
 
@@ -602,32 +979,39 @@
     var state = formState.state;
     var root = ui.byId("conflictSlotSuggestions");
     var times = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00", "17:00"];
-    var available = [];
 
-    times.forEach(function (time) {
-      var testReservation = Object.assign({}, reservation, { time: time });
-      if (!domain.conflict(state.db, testReservation, ignoreId)) {
-        available.push(time);
-      }
-    });
+    root.innerHTML = '<p class="tiny">Verification des creneaux...</p>';
 
-    if (!available.length) {
-      root.innerHTML = '<div class="alert">Aucun autre creneau rapide disponible ce jour.</div>';
-      return;
-    }
+    freshVirtualDbForDate(state, reservation.date).then(function (virtualDb) {
+      var available = [];
 
-    root.innerHTML = [
-      '<div class="success">Creneaux disponibles :</div>',
-      '<div class="chips">' + available.map(function (time) {
-        return '<button class="chip" type="button" data-conflict-slot="' + time + '">' + time + "</button>";
-      }).join("") + "</div>"
-    ].join("");
-
-    root.querySelectorAll("[data-conflict-slot]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        ui.byId("fTime").value = button.dataset.conflictSlot;
-        ui.closeSheet();
+      times.forEach(function (time) {
+        var testReservation = Object.assign({}, reservation, { time: time });
+        if (!domain.conflict(virtualDb, testReservation, ignoreId)) {
+          available.push(time);
+        }
       });
+
+      if (!available.length) {
+        root.innerHTML = '<div class="alert">Aucun autre creneau rapide disponible ce jour.</div>';
+        return;
+      }
+
+      root.innerHTML = [
+        '<div class="success">Creneaux disponibles :</div>',
+        '<div class="chips">' + available.map(function (time) {
+          return '<button class="chip" type="button" data-conflict-slot="' + time + '">' + time + "</button>";
+        }).join("") + "</div>"
+      ].join("");
+
+      root.querySelectorAll("[data-conflict-slot]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          ui.byId("fTime").value = button.dataset.conflictSlot;
+          ui.closeSheet();
+        });
+      });
+    }).catch(function () {
+      root.innerHTML = '<div class="alert">Impossible de verifier les creneaux, reessayez.</div>';
     });
   }
 

@@ -6,7 +6,12 @@
     db: null,
     user: null,
     selectedDate: utils.today(),
-    refresh: function () {}
+    refresh: function () {},
+    // Clientes/rendez-vous/profils vivent desormais dans Supabase (pas dans
+    // db) : ces tableaux sont rafraichis par chaque page avant de rendre.
+    clients: [],
+    reservations: [],
+    profiles: []
   };
 
   function configure(options) {
@@ -14,6 +19,18 @@
     state.user = options.user;
     state.selectedDate = options.selectedDate || utils.today();
     state.refresh = options.refresh;
+
+    if (options.clients) {
+      state.clients = options.clients;
+    }
+
+    if (options.reservations) {
+      state.reservations = options.reservations;
+    }
+
+    if (options.profiles) {
+      state.profiles = options.profiles;
+    }
   }
 
   function saveAndRefresh() {

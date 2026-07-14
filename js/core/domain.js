@@ -2,6 +2,27 @@
   var utils = window.SalonUtils;
   var data = window.SalonData;
 
+  function roomStatus(reservations, isToday, nowTime) {
+    if (!reservations.length) {
+      return "libre";
+    }
+
+    if (isToday) {
+      var occupiedNow = reservations.some(function (item) {
+        var start = utils.mins(item.time);
+        var end = start + Number(item.duration || 0);
+        var now = utils.mins(nowTime);
+        return now >= start && now < end;
+      });
+
+      if (occupiedNow) {
+        return "occupee";
+      }
+    }
+
+    return "reservee";
+  }
+
   function getStatusLabel(status) {
     var normalized = normalizeStatus(status);
     var pair = data.STATUS.find(function (item) {
@@ -20,8 +41,13 @@
       return "";
     }
 
+    var user = utils.findByName(db.users, collab);
+    if (user && user.rooms && user.rooms.length) {
+      return user.rooms[0];
+    }
+
     if (prestation.cat === "ongles") {
-      return collab === "Marion" ? "Salle Ongles 2" : "Salle Ongles";
+      return "Salle Ongles";
     }
 
     if (prestation.cat === "baby") {
@@ -35,36 +61,65 @@
     return "Exterieur";
   }
 
-  function catLabel(cat) {
-    return {
-      ongles: "Ongles",
-      noire: "Salle Noire",
-      baby: "Baby Spa",
-      outside: "Exterieur"
-    }[cat] || cat;
+  function isRoomAllowedForUser(user, room) {
+    return !user || user.rooms == null || user.rooms.indexOf(room) !== -1;
   }
 
-  function previewRoomForCat(cat) {
-    if (cat === "ongles") {
-      return "Salle Ongles pour Julie / Salle Ongles 2 pour Marion";
+  function isPrestationAllowedForUser(user, prestationName) {
+    return !user || user.prestations == null || user.prestations.indexOf(prestationName) !== -1;
+  }
+
+  function assignmentError(db, reservation) {
+    var user = utils.findByName(db.users, reservation.collab);
+
+    if (!user) {
+      return null;
     }
 
-    if (cat === "noire") {
-      return "Salle Noire";
+    if (reservation.room && !isRoomAllowedForUser(user, reservation.room)) {
+      return reservation.collab + " ne peut pas utiliser la salle " + reservation.room + ".";
     }
 
-    if (cat === "baby") {
-      return "Baby Spa";
+    if (reservation.prestation && !isPrestationAllowedForUser(user, reservation.prestation)) {
+      return reservation.collab + " ne peut pas proposer la prestation " + reservation.prestation + ".";
     }
 
-    if (cat === "outside") {
-      return "Exterieur";
-    }
+    return null;
+  }
 
-    return "A definir";
+  function periodStamp(date, time) {
+    return date + "T" + (time || "00:00");
+  }
+
+  function slotOverlapsRange(date, time, duration, range) {
+    var slotStart = periodStamp(date, time);
+    var slotEnd = periodStamp(date, addMinutes(time, duration));
+    var rangeStart = periodStamp(range.startDate, range.startTime || "00:00");
+    var rangeEnd = periodStamp(range.endDate || range.startDate, range.endTime || "23:59");
+    return slotStart < rangeEnd && slotEnd > rangeStart;
+  }
+
+  function periodCoversDate(period, date) {
+    return date >= period.startDate && date <= (period.endDate || period.startDate);
+  }
+
+  function findBlockingPeriod(list, collab, date, time, duration, ignoreId) {
+    return list.find(function (item) {
+      return item.id !== ignoreId &&
+        item.collab === collab &&
+        slotOverlapsRange(date, time, duration, item);
+    });
   }
 
   function buildConflictPayload(type, reservation, item, message) {
+    var isPeriod = item && item.startDate;
+    var periodTime = isPeriod ? item.startTime || "00:00" : null;
+    var periodDuration = isPeriod
+      ? (item.startDate === item.endDate
+        ? Math.max(0, utils.mins(item.endTime || "23:59") - utils.mins(periodTime))
+        : (24 * 60 - utils.mins(periodTime)))
+      : null;
+
     return {
       type: type,
       message: message,
@@ -73,9 +128,9 @@
         client: item.client || "",
         collab: item.collab || "",
         room: item.room || "",
-        date: item.date || reservation.date,
-        time: item.time || reservation.time,
-        duration: Number(item.duration || 0)
+        date: item.date || item.startDate || reservation.date,
+        time: item.time || periodTime || reservation.time,
+        duration: Number(isPeriod ? periodDuration : item.duration || 0)
       } : null
     };
   }
@@ -83,6 +138,7 @@
   function conflictDetails(db, reservation, ignoreId) {
     var roomConflict;
     var collabConflict;
+    var holidayConflict;
     var absenceConflict;
 
     roomConflict = db.reservations.find(function (item) {
@@ -119,11 +175,32 @@
       );
     }
 
-    absenceConflict = db.absences.find(function (item) {
-      return item.date === reservation.date &&
-        item.collab === reservation.collab &&
-        utils.overlaps(item.time, item.duration, reservation.time, reservation.duration);
-    });
+    holidayConflict = findBlockingPeriod(
+      db.holidays,
+      reservation.collab,
+      reservation.date,
+      reservation.time,
+      reservation.duration,
+      ignoreId
+    );
+
+    if (holidayConflict) {
+      return buildConflictPayload(
+        "holiday",
+        reservation,
+        holidayConflict,
+        "Conflit : " + reservation.collab + " est en conge sur ce creneau."
+      );
+    }
+
+    absenceConflict = findBlockingPeriod(
+      db.absences,
+      reservation.collab,
+      reservation.date,
+      reservation.time,
+      reservation.duration,
+      ignoreId
+    );
 
     if (absenceConflict) {
       return buildConflictPayload(
@@ -201,9 +278,15 @@
           dates.includes(reservation.date);
       })
       .map(function (reservation) {
-        var prestation = db.prestations.find(function (item) {
-          return item.name === reservation.prestation;
-        });
+        // Photo figee au moment du rendez-vous (reservation.price) si
+        // disponible : le prix affiche ne doit jamais changer si le tarif
+        // de la prestation est modifie plus tard. Pour un ancien
+        // rendez-vous enregistre avant cette colonne, on retombe sur
+        // l'ancien catalogue local le temps de la migration progressive.
+        var basePrice = reservation.price != null
+          ? reservation.price
+          : (db.prestations.find(function (item) { return item.name === reservation.prestation; }) || {}).price || 0;
+
         return {
           id: reservation.id,
           client: reservation.client,
@@ -211,7 +294,7 @@
           date: reservation.date,
           time: reservation.time,
           supplement: reservation.supplement || 0,
-          price: (prestation ? prestation.price : 0) + (reservation.supplement || 0)
+          price: basePrice + (reservation.supplement || 0)
         };
       })
       .sort(function (a, b) {
@@ -235,42 +318,44 @@
     }).length;
   }
 
+  // Clientes/rendez-vous n'ont plus besoin d'etre parcourus ici : Supabase
+  // les relie a un collaborateur par id (collab_id), pas par nom - un
+  // renommage n'y touche donc rien, le nom affiche vient de profiles.name.
   function renameCollaborator(db, oldName, newName) {
-    db.clients.forEach(function (client) {
-      if (client.collab === oldName) {
-        client.collab = newName;
-      }
-    });
-
-    db.reservations.forEach(function (reservation) {
-      if (reservation.collab === oldName) {
-        reservation.collab = newName;
-      }
-    });
-
     db.absences.forEach(function (absence) {
       if (absence.collab === oldName) {
         absence.collab = newName;
       }
     });
+
+    db.holidays.forEach(function (holiday) {
+      if (holiday.collab === oldName) {
+        holiday.collab = newName;
+      }
+    });
   }
 
   window.SalonDomain = {
-    catLabel: catLabel,
+    assignmentError: assignmentError,
     conflict: conflict,
     conflictDetails: conflictDetails,
     countFor: countFor,
     datesForRange: datesForRange,
     doneReservationsFor: doneReservationsFor,
+    findBlockingPeriod: findBlockingPeriod,
     fullDateLabel: fullDateLabel,
     getStatusLabel: getStatusLabel,
     isCancelled: isCancelled,
     isActiveReservation: isActiveReservation,
+    isPrestationAllowedForUser: isPrestationAllowedForUser,
+    isRoomAllowedForUser: isRoomAllowedForUser,
     normalizeStatus: normalizeStatus,
-    previewRoomForCat: previewRoomForCat,
+    periodCoversDate: periodCoversDate,
     renameCollaborator: renameCollaborator,
     revenueFor: revenueFor,
     roomFor: roomFor,
+    roomStatus: roomStatus,
+    slotOverlapsRange: slotOverlapsRange,
     addMinutes: addMinutes
   };
 }());

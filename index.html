@@ -29,11 +29,11 @@
           </div>
         </div>
 
-        <div class="panel stack login-card">
+        <div id="loginPanel" class="panel stack login-card">
           <div id="loginMsg" class="alert hidden"></div>
 
-          <label for="loginUser">Identifiant</label>
-          <input id="loginUser" class="field" autocomplete="username" placeholder="Identifiant">
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" class="field" type="email" autocomplete="username" placeholder="vous@exemple.com">
 
           <label for="loginPass">Mot de passe</label>
           <input
@@ -46,18 +46,27 @@
 
           <button id="loginSubmit" class="primary login-submit" type="button">Connexion</button>
           <button id="forgotPassword" class="ghost ghost-link" type="button">Mot de passe oublie ?</button>
+        </div>
 
-          <div class="login-demo-row">
-            <button class="secondary grow" type="button" data-demo-user="Julie">Demo Julie</button>
-            <button class="secondary grow" type="button" data-demo-user="Marion">Demo Marion</button>
-          </div>
+        <div id="forgotPanel" class="panel stack login-card hidden">
+          <div id="forgotMsg" class="alert hidden"></div>
+          <p class="tiny">Entrez votre email, un lien de reinitialisation vous sera envoye si un compte existe.</p>
+
+          <label for="forgotEmail">Email</label>
+          <input id="forgotEmail" class="field" type="email" autocomplete="username" placeholder="vous@exemple.com">
+
+          <button id="forgotSubmit" class="primary login-submit" type="button">Envoyer le lien</button>
+          <button id="backToLogin" class="ghost ghost-link" type="button">Retour a la connexion</button>
         </div>
       </section>
     </div>
   </div>
 
+  <script src="https://unpkg.com/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
   <script src="js/core/utils.js"></script>
   <script src="js/core/data.js"></script>
+  <script src="js/core/supabase-client.js"></script>
+  <script src="js/core/supabase-data.js"></script>
   <script src="js/core/auth.js"></script>
   <script src="js/pages/login.js"></script>
 </body>

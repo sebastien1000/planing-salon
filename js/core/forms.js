@@ -3,24 +3,37 @@
   var reservations = window.SalonReservationForms;
   var clients = window.SalonClientForms;
   var accounts = window.SalonAccountForms;
-  var prestations = window.SalonPrestationForms;
-  var misc = window.SalonMiscForms;
+  var absences = window.SalonAbsenceForms;
+  var holidays = window.SalonHolidayForms;
+  var services = window.SalonServiceForms;
 
   window.SalonForms = {
-    bindPhotoInput: misc.bindPhotoInput,
-    bindPrestationActions: prestations.bindPrestationActions,
+    absenceCard: absences.absenceCard,
+    bindAbsenceCardActions: absences.bindAbsenceCardActions,
+    bindHolidayCardActions: holidays.bindHolidayCardActions,
     bindReservationCardActions: reservations.bindReservationCardActions,
     cancelReservation: reservations.cancelReservation,
+    canManageAbsence: absences.canManageAbsence,
     configure: formState.configure,
-    openAbsenceForm: misc.openAbsenceForm,
+    deleteAbsence: absences.deleteAbsence,
+    deleteAccount: accounts.deleteAccount,
+    deleteHoliday: holidays.deleteHoliday,
+    holidayCard: holidays.holidayCard,
+    holidaysForCollab: holidays.holidaysForCollab,
+    openAbsenceForm: absences.openAbsenceForm,
+    openAddAccountForm: accounts.openAddAccountForm,
     openClientForm: clients.openClientForm,
-    openPrestationForm: prestations.openPrestationForm,
+    openHolidayForm: holidays.openHolidayForm,
     openProfileForm: accounts.openProfileForm,
     openReservation: reservations.openReservation,
-    prestationCard: prestations.prestationCard,
+    loadCollaboratorServiceEntries: services.loadCollaboratorEntries,
+    openServicePickerSheet: services.openServicePickerSheet,
+    renderServicesSection: services.renderServicesSection,
     reservationCard: reservations.reservationCard,
-    resetLink: accounts.resetLink,
-    resetPassword: accounts.resetPassword,
-    setReservationStatus: reservations.setReservationStatus
+    saveAbsence: absences.saveAbsence,
+    saveHoliday: holidays.saveHoliday,
+    sendPasswordReset: accounts.sendPasswordReset,
+    setReservationStatus: reservations.setReservationStatus,
+    toggleAccountActive: accounts.toggleAccountActive
   };
 }());

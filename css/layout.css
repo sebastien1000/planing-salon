@@ -56,7 +56,7 @@
 main {
   width: 100%;
   max-width: 100%;
-  padding: 12px 14px 92px;
+  padding: 12px 14px calc(92px + env(safe-area-inset-bottom, 0px));
   overflow-x: hidden;
 }
 
@@ -95,14 +95,26 @@ main {
   overflow: auto;
   background: var(--bg);
   border-radius: 28px 28px 0 0;
-  padding: 18px;
+  /* Les boutons de validation vivent en bas de ce panneau : sur Android
+     (barre de navigation systeme / geste), sans cette marge ils passent
+     sous les boutons du telephone. env() vaut 0 sur PC/desktop, donc pas
+     de decalage inutile ailleurs. */
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -20px 45px rgba(46, 18, 30, 0.25);
 }
 
 .conflict-sheet-box {
   max-width: 520px;
   min-height: 70dvh;
-  padding: 22px;
+  /* Ecrase le padding de .modal-box : garde le meme reflexe safe-area,
+     sinon les boutons "Choisir un autre creneau"/"Fermer" repassent sous
+     la barre de navigation Android. */
+  padding: 22px 22px calc(22px + env(safe-area-inset-bottom, 0px));
+}
+
+.service-picker-sheet {
+  max-width: 480px;
+  min-height: 60dvh;
 }
 
 .modal-head {
@@ -127,6 +139,12 @@ main {
 @media (min-width: 700px) {
   .phone {
     min-height: 720px;
+  }
+
+  /* Toutes les pages profitent de tout l'ecran sur tablette au lieu de
+     rester coincees dans le cadre "telephone" etroit (480px). */
+  .phone {
+    max-width: min(96vw, 1400px);
   }
 
   .tabs,

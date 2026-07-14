@@ -1,89 +1,215 @@
 (function () {
   var auth = window.SalonAuth;
+  var domain = window.SalonDomain;
   var formState = window.SalonFormState;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
+
+  // La fiche cliente est commune a toute l'equipe (clients_update_authenticated
+  // cote base) : toute collaboratrice connectee peut la consulter et la
+  // modifier, pas seulement l'admin ou sa collaboratrice habituelle.
+  function canManageClient() {
+    return true;
+  }
+
+  function historyRowHtml(reservation) {
+    return [
+      '<div class="row" style="justify-content:space-between">',
+      '  <div class="grow">',
+      "    <b>" + utils.escapeHtml(reservation.prestation || "") + "</b>",
+      '    <div class="tiny">' + utils.escapeHtml(reservation.date) + " " + utils.escapeHtml(reservation.time) +
+        " · " + utils.escapeHtml(reservation.collab) + "</div>",
+      "  </div>",
+      '  <span class="badge status-' + utils.escapeHtml(reservation.status) + '">' +
+        utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</span>",
+      "</div>"
+    ].join("");
+  }
+
+  function loadHistory(clientId) {
+    var container = ui.byId("clientHistory");
+    if (!container) {
+      return;
+    }
+
+    supabaseData.listReservationsForClient(clientId).then(function (list) {
+      if (!ui.byId("clientHistory")) {
+        return;
+      }
+
+      if (!list.length) {
+        container.innerHTML = '<p class="tiny">Aucun rendez-vous enregistre.</p>';
+        return;
+      }
+
+      var doneVisits = list.filter(function (item) { return item.status === "done"; });
+      var lastVisit = doneVisits.length ? doneVisits[doneVisits.length - 1] : null;
+
+      container.innerHTML = [
+        lastVisit
+          ? '<p class="tiny">Dernier rendez-vous termine : ' + utils.escapeHtml(lastVisit.date) + "</p>"
+          : '<p class="tiny">Aucun rendez-vous termine pour l instant.</p>',
+        list.map(historyRowHtml).join("")
+      ].join("");
+    }).catch(function () {
+      if (container) {
+        container.innerHTML = '<p class="tiny">Impossible de charger l historique.</p>';
+      }
+    });
+  }
 
   function openClientForm(clientId) {
     var state = formState.state;
     var client = clientId
-      ? utils.findById(state.db.clients, clientId)
+      ? utils.findById(state.clients, clientId)
       : {
           id: "",
           name: "",
           phone: "",
           email: "",
           notes: "",
-          collab: auth.isAdmin(state.user) ? "Julie" : state.user.name,
-          prestation: "Remplissage gel",
+          allergies: "",
+          collabIds: auth.isAdmin(state.user) ? [] : [supabaseData.resolveCollabId(state.profiles, state.user.name)],
+          prestation: state.db.prestations[0] ? state.db.prestations[0].name : "",
           duration: 90,
-          frequency: 21,
-          next: null
+          frequency: 21
         };
+
+    if (!client) {
+      return;
+    }
+
+    var manageable = canManageClient(client);
+    var clientCollabIds = client.collabIds || (client.collabId ? [client.collabId] : []);
+    var readonlyAttr = manageable ? "" : " readonly disabled";
 
     ui.showModal([
       '<div class="modal-head">',
       "  <h3>Fiche cliente</h3>",
       '  <button id="closeClientModal" class="x" type="button">x</button>',
       "</div>",
-      '<label for="cName">Nom</label><input id="cName" class="field" value="' + utils.escapeHtml(client.name) + '">',
-      '<label for="cPhone">Telephone</label><input id="cPhone" class="field" value="' + utils.escapeHtml(client.phone) + '">',
-      '<label for="cEmail">Email</label><input id="cEmail" class="field" value="' + utils.escapeHtml(client.email) + '">',
-      '<div class="grid2">',
-      '  <div><label for="cCollab">Collaboratrice</label><select id="cCollab" class="field">' + state.db.users
-        .filter(function (user) { return user.role === "collab"; })
-        .map(function (user) {
-          var selected = user.name === client.collab ? " selected" : "";
-          return '<option value="' + utils.escapeHtml(user.name) + '"' + selected + ">" +
-            utils.escapeHtml(user.name) + "</option>";
-        }).join("") + "</select></div>",
-      '  <div><label for="cPrest">Prestation</label><select id="cPrest" class="field">' + state.db.prestations
+      '<div id="clientMsg"></div>',
+      (!manageable ? '<div class="alert">Vous pouvez consulter cette fiche mais pas la modifier.</div>' : ""),
+      '<label for="cName">Nom</label><input id="cName" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.name) + '">',
+      '<label for="cPhone">Telephone</label><input id="cPhone" class="field" type="tel"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
+      '<label for="cEmail">Email</label><input id="cEmail" class="field" type="email"' + readonlyAttr + ' value="' + utils.escapeHtml(client.email || "") + '">',
+      '<label>Collaboratrices habituelles</label>',
+      '<div class="checkbox-group">' + state.db.users
+        .filter(function (item) { return item.role === "collab"; })
+        .map(function (item) {
+          var checked = clientCollabIds.indexOf(item.id) !== -1 ? " checked" : "";
+          return '<label class="checkbox-line"><input type="checkbox" data-client-collab="' + item.id + '"' +
+            checked + (manageable ? "" : " disabled") + "> " + utils.escapeHtml(item.name) + "</label>";
+        }).join("") + "</div>",
+      '<label for="cPrest">Prestation habituelle</label><select id="cPrest" class="field"' + (manageable ? "" : " disabled") + '>' + state.db.prestations
         .map(function (prestation) {
           var selected = prestation.name === client.prestation ? " selected" : "";
           return '<option value="' + utils.escapeHtml(prestation.name) + '"' + selected + ">" +
             utils.escapeHtml(prestation.name) + "</option>";
-        }).join("") + "</select></div>",
-      "</div>",
+        }).join("") + "</select>",
       '<div class="grid2">',
-      '  <div><label for="cDuration">Duree moyenne</label><input id="cDuration" class="field" type="number" value="' + client.duration + '"></div>',
-      '  <div><label for="cFreq">Frequence en jours</label><input id="cFreq" class="field" type="number" value="' + client.frequency + '"></div>',
+      '  <div><label for="cDuration">Duree moyenne</label><input id="cDuration" class="field" type="number"' + readonlyAttr + ' value="' + (client.duration || 0) + '"></div>',
+      '  <div><label for="cFreq">Frequence en jours</label><input id="cFreq" class="field" type="number"' + readonlyAttr + ' value="' + (client.frequency || 0) + '"></div>',
       "</div>",
-      '<label for="cNotes">Notes</label><textarea id="cNotes" class="field">' + utils.escapeHtml(client.notes || "") + "</textarea>",
-      '<button id="saveClientButton" class="primary" style="margin-top:14px;width:100%" type="button">Enregistrer</button>'
+      '<label for="cNotes">Notes / commentaires importants</label><textarea id="cNotes" class="field"' + readonlyAttr + '>' + utils.escapeHtml(client.notes || "") + "</textarea>",
+      '<label for="cAllergies">Allergies / precautions</label><textarea id="cAllergies" class="field"' + readonlyAttr + '>' + utils.escapeHtml(client.allergies || "") + "</textarea>",
+      clientId ? '<label>Historique des rendez-vous</label><div id="clientHistory" class="stack"><p class="tiny">Chargement...</p></div>' : "",
+      '<div class="row" style="margin-top:14px">',
+      manageable ? '  <button id="saveClientButton" class="primary grow" type="button">Enregistrer</button>' : "",
+      (manageable && clientId) ? '  <button id="deleteClientButton" class="secondary danger" type="button">Supprimer</button>' : "",
+      "</div>"
     ].join(""));
 
     ui.byId("closeClientModal").addEventListener("click", ui.closeModal);
-    ui.byId("saveClientButton").addEventListener("click", function () {
-      saveClient(clientId);
+
+    var saveButton = ui.byId("saveClientButton");
+    if (saveButton) {
+      saveButton.addEventListener("click", function () {
+        saveClient(clientId);
+      });
+    }
+
+    var deleteButton = ui.byId("deleteClientButton");
+    if (deleteButton) {
+      deleteButton.addEventListener("click", function () {
+        confirmDeleteClient(clientId);
+      });
+    }
+
+    if (clientId) {
+      loadHistory(clientId);
+    }
+  }
+
+  // Une fiche cliente ayant deja des rendez-vous ne peut pas etre
+  // supprimee (contrainte de cle etrangere cote base) : on le verifie
+  // d'abord pour afficher un message clair plutot qu'une erreur SQL brute.
+  function confirmDeleteClient(clientId) {
+    var state = formState.state;
+
+    supabaseData.listReservationsForClient(clientId).then(function (reservations) {
+      if (reservations.length > 0) {
+        window.alert(
+          "Impossible de supprimer : cette cliente a " + reservations.length +
+          " rendez-vous enregistre(s). Annulez-les ou reassignez-les d abord."
+        );
+        return;
+      }
+
+      if (!window.confirm("Supprimer definitivement cette fiche cliente ?")) {
+        return;
+      }
+
+      return supabaseData.deleteClient(clientId).then(function () {
+        ui.closeModal();
+        state.refresh();
+      });
+    }).catch(function (error) {
+      window.alert("Impossible de supprimer cette fiche, reessayez.");
+      window.console && window.console.error && window.console.error(error);
     });
   }
 
   function saveClient(clientId) {
     var state = formState.state;
-    var client = {
-      id: clientId || utils.uid("c"),
-      name: ui.byId("cName").value.trim(),
-      phone: ui.byId("cPhone").value,
-      email: ui.byId("cEmail").value,
-      notes: ui.byId("cNotes").value,
-      collab: ui.byId("cCollab").value,
-      prestation: ui.byId("cPrest").value,
-      duration: Number(ui.byId("cDuration").value) || 0,
-      frequency: Number(ui.byId("cFreq").value) || 0,
-      next: null
-    };
+    var name = ui.byId("cName").value.trim();
 
-    if (clientId) {
-      Object.assign(
-        utils.findById(state.db.clients, clientId),
-        client
-      );
-    } else {
-      state.db.clients.push(client);
+    if (!name) {
+      ui.showAlert("clientMsg", "Le nom est obligatoire.");
+      return;
     }
 
-    ui.closeModal();
-    formState.saveAndRefresh();
+    var collabIds = Array.prototype.slice.call(document.querySelectorAll("[data-client-collab]:checked"))
+      .map(function (checkbox) { return checkbox.dataset.clientCollab; });
+
+    var client = {
+      name: name,
+      phone: ui.byId("cPhone").value.trim(),
+      email: ui.byId("cEmail").value.trim(),
+      notes: ui.byId("cNotes").value,
+      allergies: ui.byId("cAllergies").value,
+      collabIds: collabIds,
+      prestation: ui.byId("cPrest").value,
+      duration: Number(ui.byId("cDuration").value) || 0,
+      frequency: Number(ui.byId("cFreq").value) || 0
+    };
+
+    var saveButton = ui.byId("saveClientButton");
+    saveButton.disabled = true;
+
+    var writePromise = clientId
+      ? supabaseData.updateClient(clientId, client)
+      : supabaseData.findOrCreateClient(client);
+
+    writePromise.then(function () {
+      ui.closeModal();
+      state.refresh();
+    }).catch(function (error) {
+      saveButton.disabled = false;
+      ui.showAlert("clientMsg", "Erreur, impossible d enregistrer cette fiche.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   window.SalonClientForms = {

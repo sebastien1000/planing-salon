@@ -11,11 +11,19 @@
   ];
   var PROFILE_IMAGES = {
     Julie: "assets/img/profiles/logojuliie.png",
-    Marion: "assets/img/profiles/logomarion.png"
+    Marion: "assets/img/profiles/logomarion.png",
+    Administration: "assets/img/profiles/adminlogo.png"
   };
 
   function byId(id) {
     return document.getElementById(id);
+  }
+
+  function showAlert(targetId, message) {
+    var target = byId(targetId);
+    if (target) {
+      target.innerHTML = '<div class="alert">' + utils.escapeHtml(message) + "</div>";
+    }
   }
 
   function html(tag, className, content) {
@@ -31,7 +39,7 @@
   function renderUserProfile(name, options) {
     var safeName = utils.escapeHtml(name || "");
     var config = options || {};
-    var imageSrc = profileImageSrc(name);
+    var imageSrc = config.photoSrc || profileImageSrc(name);
     var rootClassName = "profile-user" + (config.className ? " " + config.className : "");
     var avatarClassName = "profile-avatar" + (config.avatarClassName ? " " + config.avatarClassName : "");
     var nameClassName = "profile-name" + (config.nameClassName ? " " + config.nameClassName : "");
@@ -86,7 +94,8 @@
         renderUserProfile(user.name, {
           className: "profile-user-inline",
           avatarClassName: "profile-avatar-sm",
-          nameClassName: "profile-name-tiny"
+          nameClassName: "profile-name-tiny",
+          photoSrc: user.photo
         }) +
         "</div>",
       "      </div>",
@@ -100,7 +109,6 @@
       renderTabs(options.activePage),
       '  <div id="modal" class="modal hidden"><div id="modalBox" class="modal-box"></div></div>',
       '  <div id="sheet" class="sheet hidden"><div id="sheetBox" class="modal-box"></div></div>',
-      '  <input id="photoInput" class="hidden" type="file" accept="image/*" capture="environment">',
       "</div>"
     ].join("");
 
@@ -114,10 +122,6 @@
 
   function renderActions(actions) {
     var parts = ['<div class="app-actions">'];
-
-    if (actions.photo) {
-      parts.push('<button id="photoButton" class="photo-btn" type="button">Photo</button>');
-    }
 
     if (actions.fab) {
       parts.push('<button id="fabButton" class="fab" type="button">+</button>');
@@ -197,6 +201,8 @@
 
     bindTabs();
     registerServiceWorker();
+    bindBfcacheReload();
+    verifySupabaseSession();
 
     return user;
   }
@@ -207,6 +213,49 @@
     }
 
     navigator.serviceWorker.register("sw.js").catch(function () {});
+  }
+
+  // Cette appli navigue d'une page a l'autre en rechargement complet (pas
+  // de routeur cote client), mais le navigateur peut quand meme restaurer
+  // une page depuis le bfcache (retour arriere/avant) sans reexecuter son
+  // JavaScript : le planning/les clientes/etc. resteraient figes tels
+  // qu'ils etaient au moment de quitter la page, au lieu de refleter les
+  // donnees a jour. event.persisted signale ce cas ; on force alors un vrai
+  // rechargement pour relancer normalement le chargement des donnees.
+  var bfcacheReloadBound = false;
+
+  function bindBfcacheReload() {
+    if (bfcacheReloadBound) {
+      return;
+    }
+
+    bfcacheReloadBound = true;
+
+    window.addEventListener("pageshow", function (event) {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    });
+  }
+
+  // Verification de securite en tache de fond : requireAuth() ne regarde
+  // que la fiche locale (localStorage), pas la vraie session Supabase. Si
+  // cette session a expire ou a ete fermee ailleurs, chaque appel Supabase
+  // echouerait silencieusement (donnees qui ne se chargent jamais) sans
+  // que l'app ne le signale clairement. On verifie donc la vraie session et
+  // on deconnecte proprement si elle n'existe plus.
+  function verifySupabaseSession() {
+    var supabaseClient = window.SalonSupabaseClient;
+    if (!supabaseClient) {
+      return;
+    }
+
+    supabaseClient.auth.getSession().then(function (result) {
+      var session = result && result.data && result.data.session;
+      if (!session) {
+        auth.logout();
+      }
+    }).catch(function () {});
   }
 
   window.SalonUI = {
@@ -220,6 +269,7 @@
     renderUserProfile: renderUserProfile,
     registerServiceWorker: registerServiceWorker,
     setMain: setMain,
+    showAlert: showAlert,
     showModal: showModal,
     showSheet: showSheet
   };
