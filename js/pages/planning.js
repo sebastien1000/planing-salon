@@ -570,7 +570,18 @@
     window.console && window.console.error && window.console.error(error);
   }
 
+  // Sur tablette (et plus large), les vues mois/semaine profitent de tout
+  // l'ecran plutot que d'etre coincees dans le cadre "telephone" etroit ;
+  // la vue jour garde ce cadre (voir .phone--wide, css/layout.css).
+  function updateWideLayoutClass() {
+    var phone = document.querySelector(".phone");
+    if (phone) {
+      phone.classList.toggle("phone--wide", view === "month" || view === "week");
+    }
+  }
+
   function render() {
+    updateWideLayoutClass();
     var dates = visibleDates();
 
     return Promise.all([

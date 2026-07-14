@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v38-marion-month-view";
+const CACHE_NAME = "salon-mvp-v39-tablet-wide-planning";
 
 const APP_ASSETS = [
   "./",

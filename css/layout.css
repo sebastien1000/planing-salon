@@ -141,6 +141,13 @@ main {
     min-height: 720px;
   }
 
+  /* Vues mois/semaine du planning : profitent de tout l'ecran sur
+     tablette au lieu de rester coincees dans le cadre "telephone"
+     etroit (480px). La vue jour n'est pas concernee. */
+  .phone.phone--wide {
+    max-width: min(96vw, 1400px);
+  }
+
   .tabs,
   .modal,
   .sheet {
