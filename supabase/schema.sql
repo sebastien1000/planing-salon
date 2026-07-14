@@ -145,14 +145,27 @@ alter table clients enable row level security;
 alter table reservations enable row level security;
 
 -- 6. Fonctions SQL
+--
+-- set search_path = public : sans ca (audit securite), une reference non
+-- qualifiee a "profiles"/"reservations" a l'interieur d'une fonction
+-- SECURITY DEFINER pourrait en theorie etre detournee si un schema
+-- malveillant se glissait plus tot dans le search_path de la session.
 create or replace function is_admin()
 returns boolean
 language sql
 security definer
 stable
+set search_path = public
 as $$
   select exists (select 1 from profiles where id = auth.uid() and role = 'admin' and active);
 $$;
+
+-- Jamais appelable par un visiteur non connecte (anon) : Supabase accorde
+-- EXECUTE a anon/authenticated par defaut sur toute nouvelle fonction, ce
+-- qui exposerait sinon ce SECURITY DEFINER sans authentification via
+-- /rest/v1/rpc/is_admin.
+revoke execute on function is_admin() from public, anon;
+grant execute on function is_admin() to authenticated;
 
 -- 7. Policies (drop puis create, pour pouvoir relancer le script sans erreur)
 
@@ -203,12 +216,19 @@ returns boolean
 language sql
 security definer
 stable
+set search_path = public
 as $$
   select exists (
     select 1 from reservations r
     where r.client_id = client_uuid and r.collab_id = auth.uid()
   );
 $$;
+
+-- Meme raison que is_admin() ci-dessus : ne doit jamais etre appelable
+-- par anon (elle renverrait sinon une vraie info - une cliente a-t-elle
+-- un rendez-vous ? - sans aucune authentification).
+revoke execute on function collab_has_reservation_for_client(uuid) from public, anon;
+grant execute on function collab_has_reservation_for_client(uuid) to authenticated;
 
 -- clients : fiche "commune" a toute l'equipe - n'importe quelle
 -- collaboratrice connectee peut voir, creer et modifier n'importe quelle
@@ -287,6 +307,7 @@ create policy "reservations_update_admin_or_own"
 create or replace function set_updated_at()
 returns trigger
 language plpgsql
+set search_path = public
 as $$
 begin
   new.updated_at = now();
