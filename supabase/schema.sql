@@ -192,11 +192,12 @@ create policy "profiles_update_self_or_admin"
   );
 
 -- Fonction SECURITY DEFINER (meme principe que is_admin()) : necessaire
--- car "authenticated" n'a pas le droit de lire "reservations" directement
--- (voir revoke en section 9, plus bas) - tout le monde doit passer par la
--- vue reservations_public qui masque les donnees privees. Sans cette
--- fonction, la policy clients ci-dessous echouerait avec une erreur de
--- permission des que Postgres evalue cette branche (403 cote application).
+-- car la policy SELECT sur "reservations" (section reservations plus bas)
+-- ne laisse une collaboratrice voir que SES PROPRES rendez-vous - or ici
+-- on doit savoir si N'IMPORTE QUELLE collaboratrice a deja un rendez-vous
+-- avec cette cliente, y compris celles des autres. Sans cette fonction,
+-- la policy clients ci-dessous ne verrait jamais les rendez-vous des
+-- autres collaboratrices et bloquerait a tort l'acces a la fiche cliente.
 create or replace function collab_has_reservation_for_client(client_uuid uuid)
 returns boolean
 language sql
@@ -240,10 +241,21 @@ create policy "clients_delete_authenticated"
   using (auth.uid() is not null);
 
 -- reservations
+--
+-- Un UPDATE avec clause WHERE (et l'evaluation de la policy RLS USING)
+-- exige un droit SELECT sur les colonnes lues, meme sans RETURNING :
+-- cette policy doit donc rester au moins aussi restrictive que la policy
+-- UPDATE ci-dessous, sinon toute modification de rendez-vous echoue avec
+-- une erreur 403 (deja arrive : voir historique). Elle ne donne pas acces
+-- aux vrais noms clients des autres collaboratrices pour autant : la
+-- lecture "grand public" (planning partage) passe par la vue
+-- reservations_public, qui masque ces donnees et s'execute avec les
+-- privileges de son proprietaire (elle voit donc toutes les lignes,
+-- meme si cette policy-ci ne les donne pas en direct).
 drop policy if exists "reservations_select_authenticated" on reservations;
 create policy "reservations_select_authenticated"
   on reservations for select
-  using (auth.uid() is not null);
+  using (is_admin() or collab_id = auth.uid());
 
 -- N'importe quelle collaboratrice connectee peut prendre un rendez-vous
 -- pour N'IMPORTE QUELLE collaboratrice (pas seulement l'admin, pas
@@ -489,7 +501,15 @@ from reservations r
 join profiles p on p.id = r.collab_id;
 
 -- 9. Grants / revoke
-revoke select on reservations from authenticated;
+--
+-- Le SELECT direct sur reservations reste indispensable (Postgres l'exige
+-- pour evaluer la clause WHERE et la policy RLS USING de tout UPDATE,
+-- meme sans RETURNING) : on ne peut pas le revoquer entierement sans
+-- casser toute modification de rendez-vous. La confidentialite (masquer
+-- le vrai nom client/notes des autres collaboratrices) est assuree par la
+-- policy "reservations_select_authenticated" ci-dessus (restreinte a
+-- l'admin ou sa propre collaboratrice), pas par ce grant.
+grant select on reservations to authenticated;
 grant select on reservations_public to authenticated;
 -- Les insertions/modifications passent par la table reservations elle-meme
 -- (RLS ci-dessus), la vue sert uniquement a la lecture masquee.
