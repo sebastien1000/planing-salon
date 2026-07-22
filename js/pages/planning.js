@@ -32,6 +32,43 @@
   var showTypes = loadShowTypes();
   var roomOccupancyFilter = loadRoomOccupancyFilter();
 
+  // Revient sur la date du jour si "aujourd'hui" a change depuis la
+  // derniere fois que ce code a tourne (localStorage : survit a une
+  // fermeture complete de l'app, contrairement a sessionStorage). Necessaire
+  // car sur Android/Capacitor, la WebView n'est pas forcement rechargee
+  // quand l'app repasse en arriere-plan puis revient au premier plan : sans
+  // ce controle, selectedDate resterait bloque en memoire sur une date
+  // devenue perimee. Ne reinitialise jamais si l'utilisateur est toujours
+  // le meme jour (navigation active, y compris vers une date future
+  // volontairement choisie) : uniquement quand le jour civil a reellement
+  // change.
+  function resetSelectedDateIfNewDay() {
+    var lastKnownToday = localStorage.getItem("planning:lastKnownToday");
+    var currentToday = utils.today();
+
+    localStorage.setItem("planning:lastKnownToday", currentToday);
+
+    if (lastKnownToday && lastKnownToday !== currentToday) {
+      selectedDate = currentToday;
+      persistState();
+      return true;
+    }
+
+    return false;
+  }
+
+  resetSelectedDateIfNewDay();
+
+  // Couvre le retour au premier plan sans rechargement de page (app
+  // mise en arriere-plan puis reprise) : sur une simple navigation entre
+  // pages, le script se recharge de toute facon et l'appel ci-dessus
+  // suffit deja.
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && resetSelectedDateIfNewDay()) {
+      render();
+    }
+  });
+
   // Clientes/rendez-vous/profils viennent de Supabase, rafraichis a chaque
   // render() ; le reste (collaborateurs, prestations, absences, conges)
   // reste dans localStorage via db.
