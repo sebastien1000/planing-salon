@@ -477,38 +477,52 @@
     ].join("");
   }
 
+  function dayCardHtml(date) {
+    var dateReservations = filteredReservationsForDate(date);
+    var blocked = blockedPeriodsOnDate(date);
+
+    return [
+      '<div class="card">',
+      '  <div class="week-day-head">',
+      "    <h3>" + utils.fmtDate(date) + "</h3>",
+      '    <button class="secondary mini-action" type="button" data-add-date="' + date + '">+ RDV</button>',
+      "  </div>",
+      blocked.map(function (item) {
+        var visible = canSeeBlockedDetail(item.type, item.collab);
+        var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
+
+        return [
+          '<div class="card absence-slot">',
+          "  <b>" + utils.escapeHtml(title) + "</b>",
+          '  <div class="meta">',
+          '    <span class="badge">' + utils.escapeHtml(item.collab) + "</span>",
+          '    <span class="badge">' + utils.escapeHtml(item.startTime) + " - " + utils.escapeHtml(item.endTime) + "</span>",
+          (item.startDate !== item.endDate
+            ? '    <span class="badge">jusqu au ' + utils.escapeHtml(item.endDate) + "</span>"
+            : ""),
+          "  </div>",
+          (visible && item.notes ? '  <div class="tiny">' + utils.escapeHtml(item.notes) + "</div>" : ""),
+          "</div>"
+        ].join("");
+      }).join(""),
+      dateReservations.length ? dateReservations.map(forms.reservationCard).join("") : '<div class="empty">Aucune reservation</div>',
+      "</div>"
+    ].join("");
+  }
+
   function renderDays(dates) {
-    return '<div class="cards">' + dates.map(function (date) {
-      var dateReservations = filteredReservationsForDate(date);
-      var blocked = blockedPeriodsOnDate(date);
+    return '<div class="cards">' + dates.map(dayCardHtml).join("") + "</div>";
+  }
 
-      return [
-        '<div class="card">',
-        '  <div class="week-day-head">',
-        "    <h3>" + utils.fmtDate(date) + "</h3>",
-        '    <button class="secondary mini-action" type="button" data-add-date="' + date + '">+ RDV</button>',
-        "  </div>",
-        blocked.map(function (item) {
-          var visible = canSeeBlockedDetail(item.type, item.collab);
-          var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
-
-          return [
-            '<div class="card absence-slot">',
-            "  <b>" + utils.escapeHtml(title) + "</b>",
-            '  <div class="meta">',
-            '    <span class="badge">' + utils.escapeHtml(item.collab) + "</span>",
-            '    <span class="badge">' + utils.escapeHtml(item.startTime) + " - " + utils.escapeHtml(item.endTime) + "</span>",
-            (item.startDate !== item.endDate
-              ? '    <span class="badge">jusqu au ' + utils.escapeHtml(item.endDate) + "</span>"
-              : ""),
-            "  </div>",
-            (visible && item.notes ? '  <div class="tiny">' + utils.escapeHtml(item.notes) + "</div>" : ""),
-            "</div>"
-          ].join("");
-        }).join(""),
-        dateReservations.length ? dateReservations.map(forms.reservationCard).join("") : '<div class="empty">Aucune reservation</div>',
-        "</div>"
-      ].join("");
+  // Vue semaine : les 7 jours cote a cote sur une seule ligne horizontale
+  // (jamais empiles verticalement), avec defilement horizontal propre sur
+  // petit ecran si la largeur ne suffit pas (voir .week-grid/.week-col dans
+  // css/components.css). Reutilise dayCardHtml (meme contenu que la vue
+  // jour : blocages, RDV masques/hachures pour les autres collaboratrices)
+  // pour ne pas dupliquer cette logique.
+  function renderWeek(dates) {
+    return '<div class="week-grid">' + dates.map(function (date) {
+      return '<div class="week-col">' + dayCardHtml(date) + "</div>";
     }).join("") + "</div>";
   }
 
@@ -594,7 +608,7 @@
       });
 
       var content = renderHeader(filteredReservations(dates));
-      content += view === "month" ? renderMonth(dates) : renderDays(dates);
+      content += view === "month" ? renderMonth(dates) : (view === "week" ? renderWeek(dates) : renderDays(dates));
       ui.setMain(content);
       bindPlanningEvents();
     }).catch(showLoadError);
