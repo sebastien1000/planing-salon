@@ -43,7 +43,11 @@
     var isMine = reservation.collab === state.user.name;
     var canSee = auth.canSeeReservation(state.user, reservation);
     var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
-    var subtitle = canSee ? reservation.prestation : "Detail prive";
+    // La prestation reste visible meme quand le RDV appartient a une autre
+    // collaboratrice : seules les infos clientes (nom, tel, email, notes)
+    // sont confidentielles, pas la prestation/salle/heure/duree, qui
+    // servent a eviter une double reservation de salle.
+    var subtitle = reservation.prestation;
     var collabUser = utils.findByName(state.db.users, reservation.collab);
     var borderStyle = collabUser && collabUser.color ? ' style="border-left-color:' + utils.escapeHtml(collabUser.color) + '"' : "";
     var cardClassName = [

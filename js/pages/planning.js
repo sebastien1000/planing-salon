@@ -23,11 +23,15 @@
   // toujours prioritaire.
   var view = sessionStorage.getItem("planning:view") || (user.name === "Marion" ? "month" : "day");
   var roomFilter = sessionStorage.getItem("planning:room") || "Toutes";
-  // Une collaboratrice ne voit par defaut que ses propres RDV (comptes,
-  // "RDV affiches"/"Termines"...) ; l'admin continue de tout voir par
-  // defaut. Un choix de filtre deja fait avant (sessionStorage) reste
-  // toujours prioritaire.
-  var collabFilter = sessionStorage.getItem("planning:collab") || (auth.isAdmin(user) ? "Toutes" : user.name);
+  // Toutes les collaboratrices (et l'admin) voient par defaut TOUS les RDV
+  // (les siens en clair, ceux des autres hachures/anonymises via
+  // reservation.client masque par reservations_public + auth.canSeeReservation)
+  // : c'est necessaire pour reperer une salle deja prise et eviter une
+  // double reservation. Filtrer sur une seule collaboratrice reste possible
+  // via le menu "Filtres", mais n'est plus jamais le choix par defaut. Un
+  // choix de filtre deja fait avant (sessionStorage) reste toujours
+  // prioritaire.
+  var collabFilter = sessionStorage.getItem("planning:collab") || "Toutes";
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
   var showTypes = loadShowTypes();
   var roomOccupancyFilter = loadRoomOccupancyFilter();
@@ -182,9 +186,16 @@
     }
 
     return rooms.map(function (room) {
-      var roomReservations = roomReservationsForSelectedDate(room)
+      var allRoomReservations = roomReservationsForSelectedDate(room);
+      // Le badge Occupee/Libre doit toujours refleter l'occupation reelle de
+      // la salle (toutes collaboratrices confondues), meme si le filtre
+      // "Collaborateur" est reduit a une seule personne : sinon une salle
+      // deja prise par l'autre collaboratrice apparaitrait a tort "Libre"
+      // et exposerait au risque de double reservation que ce planning doit
+      // justement empecher.
+      var status = domain.roomStatus(allRoomReservations, isToday, nowTime);
+      var roomReservations = allRoomReservations
         .filter(function (item) { return matchesCollabFilter(item.collab); });
-      var status = domain.roomStatus(roomReservations, isToday, nowTime);
 
       var slotsHtml = roomReservations.map(function (reservation) {
         var canSee = auth.canSeeReservation(user, reservation);
