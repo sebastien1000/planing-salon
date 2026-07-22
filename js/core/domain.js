@@ -2,6 +2,21 @@
   var utils = window.SalonUtils;
   var data = window.SalonData;
 
+  // Timestamp reel (pas une comparaison de chaines) pour trier les
+  // rendez-vous chronologiquement : necessaire notamment autour du
+  // changement d'annee/mois, ou une comparaison purement textuelle de
+  // "date" et "time" separement resterait correcte ici (formats ISO
+  // zero-padded) mais serait fragile si l'un des deux champs changeait de
+  // format un jour.
+  function reservationTimestamp(reservation) {
+    var time = reservation && reservation.time ? reservation.time : "00:00";
+    return new Date((reservation && reservation.date) + "T" + time + ":00").getTime();
+  }
+
+  function compareReservationsByDateTime(a, b) {
+    return reservationTimestamp(a) - reservationTimestamp(b);
+  }
+
   function roomStatus(reservations, isToday, nowTime) {
     if (!reservations.length) {
       return "libre";
@@ -457,6 +472,7 @@
     revenueFor: revenueFor,
     roomFor: roomFor,
     roomStatus: roomStatus,
+    compareReservationsByDateTime: compareReservationsByDateTime,
     slotOverlapsRange: slotOverlapsRange,
     addMinutes: addMinutes
   };
