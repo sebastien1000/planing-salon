@@ -29,7 +29,6 @@
     loadCollaboratorServiceEntries: services.loadCollaboratorEntries,
     openServicePickerSheet: services.openServicePickerSheet,
     renderServicesSection: services.renderServicesSection,
-    reservationCard: reservations.reservationCard,
     saveAbsence: absences.saveAbsence,
     saveHoliday: holidays.saveHoliday,
     sendPasswordReset: accounts.sendPasswordReset,

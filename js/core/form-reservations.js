@@ -38,53 +38,6 @@
     });
   }
 
-  function reservationCard(reservation) {
-    var state = formState.state;
-    var isMine = reservation.collab === state.user.name;
-    var canSee = auth.canSeeReservation(state.user, reservation);
-    var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
-    var subtitle = canSee ? reservation.prestation : "Detail prive";
-    var collabUser = utils.findByName(state.db.users, reservation.collab);
-    var borderStyle = collabUser && collabUser.color ? ' style="border-left-color:' + utils.escapeHtml(collabUser.color) + '"' : "";
-    var cardClassName = [
-      "card",
-      "appointment",
-      "rsv",
-      isMine ? "appointment--mine" : "appointment--other"
-    ].join(" ");
-    var actions = "";
-
-    if (canSee) {
-      actions = [
-        '<button class="secondary grow" type="button" data-action="view-reservation" data-id="' + reservation.id + '">Voir</button>',
-        '<button class="secondary grow" type="button" data-action="reschedule-reservation" data-id="' + reservation.id + '">Decaler</button>',
-        '<button class="secondary grow" type="button" data-action="done-reservation" data-id="' + reservation.id + '">Terminer</button>',
-        '<button class="secondary danger" type="button" data-action="cancel-reservation" data-id="' + reservation.id + '">Annuler</button>'
-      ].join("");
-    }
-
-    return [
-      '<div class="' + cardClassName + '"' + borderStyle + '>',
-      "  <div class=\"row\">",
-      '    <div class="grow">',
-      "      <b>" + utils.escapeHtml(title) + "</b>",
-      '      <div class="tiny">' + utils.escapeHtml(subtitle) + "</div>",
-      "    </div>",
-      '    <span class="badge status-' + utils.escapeHtml(reservation.status) + '">' +
-        utils.escapeHtml(domain.getStatusLabel(reservation.status)) + "</span>",
-      "  </div>",
-      '  <div class="meta">',
-      '    <span class="badge">' + utils.escapeHtml(reservation.collab) + "</span>",
-      '    <span class="badge room">' + utils.escapeHtml(reservation.room) + "</span>",
-      '    <span class="badge">' + utils.escapeHtml(reservation.time) + "</span>",
-      '    <span class="badge">' + utils.escapeHtml(String(reservation.duration)) + " min</span>",
-      (reservation.supplement ? '    <span class="badge">+' + reservation.supplement + " EUR</span>" : ""),
-      "  </div>",
-      '  <div class="row rsv-actions">' + actions + "</div>",
-      "</div>"
-    ].join("");
-  }
-
   function bindReservationCardActions(root) {
     root.querySelectorAll("[data-action='view-reservation']").forEach(function (button) {
       button.addEventListener("click", function () {
@@ -232,6 +185,7 @@
       '  <div id="reservationMsg" class="reservation-msg-inline"></div>',
       '  <div class="row reservation-submit-row">',
       '    <button id="saveReservationButton" class="primary grow" type="button">Enregistrer</button>',
+      reservationId ? '    <button id="modalDoneReservationButton" class="secondary grow" type="button">Terminer</button>' : "",
       reservationId ? '    <button id="modalCancelReservationButton" class="secondary danger" type="button">Annuler</button>' : "",
       "  </div>",
       "</div>"
@@ -290,6 +244,7 @@
   function bindReservationForm(reservationId) {
     var closeButton = ui.byId("closeModalButton");
     var saveButton = ui.byId("saveReservationButton");
+    var doneButton = ui.byId("modalDoneReservationButton");
     var cancelButton = ui.byId("modalCancelReservationButton");
     var clientField = ui.byId("fClient");
     var collabField = ui.byId("fCollab");
@@ -298,6 +253,13 @@
     saveButton.addEventListener("click", function () {
       saveReservation(reservationId);
     });
+
+    if (doneButton) {
+      doneButton.addEventListener("click", function () {
+        ui.closeModal();
+        openSupplementSheet(reservationId);
+      });
+    }
 
     if (cancelButton) {
       cancelButton.addEventListener("click", function () {
@@ -1024,7 +986,6 @@
     bindReservationCardActions: bindReservationCardActions,
     cancelReservation: cancelReservation,
     openReservation: openReservation,
-    reservationCard: reservationCard,
     setReservationStatus: setReservationStatus
   };
 }());

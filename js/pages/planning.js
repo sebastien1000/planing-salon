@@ -477,6 +477,73 @@
     ].join("");
   }
 
+  // Hauteur en pixels d'une tranche de 30 min dans la grille horaire :
+  // assez grand pour qu'un RDV de 30 min (le minimum) reste lisible
+  // (heure + titre), la prestation ne s'ajoute qu'a partir d'1h pleine
+  // (voir showDetail plus bas), pour ne jamais rendre le texte illisible.
+  var GRID_SLOT_HEIGHT = 44;
+
+  function timeGridHtml(dateReservations) {
+    var range = domain.dayGridRange(dateReservations);
+    var slots = domain.dayGridSlots(range);
+    var slotMinutes = domain.DAY_GRID_SLOT_MINUTES;
+    var totalHeight = ((range.end - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
+    var laidOutReservations = domain.layoutDayGridEvents(dateReservations);
+
+    var timesHtml = slots.map(function (slot) {
+      var top = ((slot.minutes - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
+      var className = "grid-time " + (slot.isHour ? "grid-time-hour" : "grid-time-half");
+      return '<div class="' + className + '" style="top:' + top + 'px">' + slot.label + "</div>";
+    }).join("");
+
+    var eventsHtml = laidOutReservations.map(function (reservation) {
+      var start = utils.mins(reservation.time);
+      var top = ((start - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
+      var height = (Number(reservation.duration || 0) / slotMinutes) * GRID_SLOT_HEIGHT;
+      var columns = reservation._gridColumns || 1;
+      var column = reservation._gridColumn || 0;
+      var widthPct = 100 / columns;
+      var leftPct = widthPct * column;
+
+      var isMine = reservation.collab === user.name;
+      var canSee = auth.canSeeReservation(user, reservation);
+      // Seules les infos clientes (nom, tel, email, notes) sont
+      // confidentielles pour un RDV d'une autre collaboratrice : la
+      // prestation, elle, reste toujours visible (voir showPrestation).
+      var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
+      var endTime = domain.addMinutes(reservation.time, reservation.duration);
+      var collabUser = utils.findByName(db.users, reservation.collab);
+      var borderStyle = collabUser && collabUser.color
+        ? "border-left-color:" + utils.escapeHtml(collabUser.color) + ";"
+        : "";
+      // Sur un RDV masque, la prestation est l'une des seules informations
+      // que la regle metier autorise a montrer : elle reste donc toujours
+      // affichee, meme sur un creneau court. Sur un RDV "a soi", le detail
+      // complet est de toute facon a un clic (modale), donc la prestation
+      // ne s'ajoute que si la place le permet (>= 1h) pour rester lisible.
+      var showPrestation = !canSee || height >= GRID_SLOT_HEIGHT * 2;
+      var clickAttr = canSee ? ' data-action="view-reservation" data-id="' + reservation.id + '"' : "";
+
+      return [
+        '<div class="grid-event ' + (isMine ? "grid-event--mine" : "grid-event--other") + '"',
+        ' style="top:' + top + "px;height:" + Math.max(height, GRID_SLOT_HEIGHT) + "px;left:" + leftPct + "%;width:calc(" + widthPct + "% - 4px);" + borderStyle + '"',
+        clickAttr,
+        ">",
+        '  <div class="grid-event-time">' + utils.escapeHtml(reservation.time) + " - " + utils.escapeHtml(endTime) + " · " + utils.escapeHtml(reservation.room) + "</div>",
+        '  <div class="grid-event-title">' + utils.escapeHtml(title) + "</div>",
+        (showPrestation ? '  <div class="grid-event-sub">' + utils.escapeHtml(reservation.prestation) + "</div>" : ""),
+        "</div>"
+      ].join("");
+    }).join("");
+
+    return [
+      '<div class="time-grid" style="height:' + totalHeight + 'px">',
+      '  <div class="time-grid-times">' + timesHtml + "</div>",
+      '  <div class="time-grid-body">' + eventsHtml + "</div>",
+      "</div>"
+    ].join("");
+  }
+
   function dayCardHtml(date) {
     var dateReservations = filteredReservationsForDate(date);
     var blocked = blockedPeriodsOnDate(date);
@@ -505,7 +572,7 @@
           "</div>"
         ].join("");
       }).join(""),
-      dateReservations.length ? dateReservations.map(forms.reservationCard).join("") : '<div class="empty">Aucune reservation</div>',
+      timeGridHtml(dateReservations),
       "</div>"
     ].join("");
   }

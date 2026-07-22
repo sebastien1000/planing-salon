@@ -847,21 +847,9 @@ label {
   border-left: 7px solid var(--pink);
 }
 
-.appointment--mine,
-.appointment--other,
 .rsv-own-collab,
 .rsv-other-collab {
   isolation: isolate;
-}
-
-.appointment--other {
-  background: repeating-linear-gradient(
-    -45deg,
-    rgba(255, 255, 255, 0.92) 0px,
-    rgba(255, 255, 255, 0.92) 8px,
-    rgba(232, 167, 182, 0.28) 8px,
-    rgba(232, 167, 182, 0.28) 16px
-  ) !important;
 }
 
 .blocked-slot,
@@ -885,6 +873,109 @@ label {
     rgba(255, 255, 255, 0.7) 8px,
     rgba(255, 255, 255, 0.7) 16px
   );
+}
+
+/* Grille horaire jour/semaine (voir js/pages/planning.js:timeGridHtml) :
+   colonne des heures a gauche (heure pleine en gras, demi-heure discrete)
+   + zone des rendez-vous a droite, positionnes/dimensionnes en pixels
+   selon leur heure de debut et leur duree reelle (voir GRID_SLOT_HEIGHT). */
+.time-grid {
+  position: relative;
+  display: flex;
+  margin-top: 10px;
+}
+
+.time-grid-times {
+  position: relative;
+  flex: 0 0 46px;
+  width: 46px;
+}
+
+.time-grid-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 8px;
+  border-left: 1px solid var(--line);
+  /* Un trait toutes les 44px (= une tranche de 30 min, GRID_SLOT_HEIGHT) :
+     repere visuel des demi-heures sans multiplier les noeuds du DOM. */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--line) 0,
+    var(--line) 1px,
+    transparent 1px,
+    transparent 44px
+  );
+}
+
+.grid-time {
+  position: absolute;
+  left: 0;
+  right: 6px;
+  transform: translateY(-50%);
+  text-align: right;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.grid-time-hour {
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--ink);
+}
+
+.grid-time-half {
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.grid-event {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 10px;
+  border-left: 5px solid var(--pink);
+  background: #fff;
+  box-shadow: 0 3px 8px rgba(92, 44, 59, 0.12);
+  padding: 4px 6px;
+  font-size: 11px;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.grid-event--other {
+  cursor: default;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.92) 0px,
+    rgba(255, 255, 255, 0.92) 8px,
+    rgba(232, 167, 182, 0.28) 8px,
+    rgba(232, 167, 182, 0.28) 16px
+  ) !important;
+}
+
+.grid-event-time {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grid-event-title {
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grid-event-sub {
+  font-size: 10px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .room {
