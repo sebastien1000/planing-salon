@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v43-agenda-header-modal-top";
+const CACHE_NAME = "salon-mvp-v44-accents-today-reset";
 
 const APP_ASSETS = [
   "./",
