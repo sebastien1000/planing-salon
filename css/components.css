@@ -745,6 +745,34 @@ label {
   min-width: 0;
 }
 
+/* Vue semaine : 7 jours cote a cote sur une seule ligne, jamais empiles.
+   grid-auto-columns avec minmax() : chaque colonne ne descend jamais sous
+   220px (textes/boutons des cartes RDV restent lisibles) et se partage le
+   reste de la largeur disponible (1fr) quand il y en a assez (tablette
+   paysage, ordinateur - .phone s'elargit alors jusqu'a min(96vw, 1400px),
+   voir css/layout.css) ; sinon, le conteneur passe seul en defilement
+   horizontal (overflow-x) sans jamais faire passer un jour a la ligne.
+   Fonctionne a n'importe quelle largeur, sans media query. */
+.week-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.week-col {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.week-col .card {
+  margin-bottom: 10px;
+}
+
 .mini-action {
   padding: 7px 9px;
   font-size: 11px;
