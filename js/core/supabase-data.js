@@ -370,11 +370,21 @@
     };
   }
 
+  // Tri chronologique fiable (vraie date/heure, pas une comparaison de
+  // chaines) : le tri Supabase ci-dessous (date, puis heure) suffit deja
+  // dans l'immense majorite des cas, mais ce second tri cote JavaScript
+  // garantit l'ordre partout ou cette liste est ensuite affichee (jour,
+  // semaine, mois, recherche), meme si l'ordre renvoye par PostgREST
+  // changeait un jour (pagination, vue modifiee, etc.).
+  function sortReservationsByDateTime(reservations) {
+    return reservations.slice().sort(window.SalonDomain.compareReservationsByDateTime);
+  }
+
   function listReservationsForDates(dates) {
     return unwrap(
-      client().from("reservations_public").select("*").in("date", dates)
+      client().from("reservations_public").select("*").in("date", dates).order("date").order("time")
     ).then(function (rows) {
-      return rows.map(mapReservationRow);
+      return sortReservationsByDateTime(rows.map(mapReservationRow));
     });
   }
 
@@ -382,17 +392,19 @@
   // rendez-vous ancien ou a venir, comme le faisait la version localStorage.
   function listAllReservations() {
     return unwrap(
-      client().from("reservations_public").select("*").order("date", { ascending: false })
+      client().from("reservations_public").select("*").order("date", { ascending: false }).order("time", { ascending: false })
     ).then(function (rows) {
-      return rows.map(mapReservationRow);
+      return rows.map(mapReservationRow).sort(function (a, b) {
+        return window.SalonDomain.compareReservationsByDateTime(b, a);
+      });
     });
   }
 
   function listReservationsForClient(clientId) {
     return unwrap(
-      client().from("reservations_public").select("*").eq("client_id", clientId).order("date")
+      client().from("reservations_public").select("*").eq("client_id", clientId).order("date").order("time")
     ).then(function (rows) {
-      return rows.map(mapReservationRow);
+      return sortReservationsByDateTime(rows.map(mapReservationRow));
     });
   }
 
