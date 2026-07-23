@@ -171,9 +171,9 @@
       (user.active === false ? '<div class="alert">Ce compte est desactive.</div>' : ""),
       buildPhotoFieldHtml(user),
       '<label for="uName">Nom affiche</label><input id="uName" class="field" value="' + utils.escapeHtml(user.name) + '">',
-      '<label for="uPhone">Telephone</label><input id="uPhone" class="field" type="tel" value="' + utils.escapeHtml(user.phone || "") + '">',
+      '<label for="uPhone">Téléphone</label><input id="uPhone" class="field" type="tel" value="' + utils.escapeHtml(user.phone || "") + '">',
       '<label for="uEmail">Email</label><input id="uEmail" class="field" type="email" value="' + utils.escapeHtml(user.email || "") + '">',
-      '<button id="sendResetButton" class="secondary" style="width:100%;margin-bottom:14px" type="button">Envoyer un lien de reinitialisation</button>',
+      '<button id="sendResetButton" class="secondary" style="width:100%;margin-bottom:14px" type="button">Envoyer un lien de réinitialisation</button>',
       isAdminEditing ? buildAccountExtraFieldsHtml(user, isSelf) : "",
       '<div class="row" style="margin-top:14px">',
       '  <button id="saveProfileButton" class="primary grow" type="button">Enregistrer</button>',
@@ -340,10 +340,10 @@
       '<div id="addAccountMsg"></div>',
       '<label for="naName">Nom affiche</label><input id="naName" class="field" placeholder="Ex : Lea">',
       '<label for="naLogin">Identifiant de connexion</label><input id="naLogin" class="field" placeholder="Ex : Lea">',
-      '<label for="naPhone">Telephone (facultatif)</label><input id="naPhone" class="field">',
+      '<label for="naPhone">Téléphone (facultatif)</label><input id="naPhone" class="field">',
       '<label for="naEmail">Email</label><input id="naEmail" class="field" type="email" placeholder="obligatoire pour la connexion">',
       '<p class="tiny">Le mot de passe n est plus defini ici : creez le compte correspondant dans Supabase avec le meme email, ' +
-        'puis utilisez "Envoyer un lien de reinitialisation" pour que la personne choisisse son mot de passe.</p>',
+        'puis utilisez "Envoyer un lien de réinitialisation" pour que la personne choisisse son mot de passe.</p>',
       buildAccountExtraFieldsHtml(blankUser),
       '<button id="saveAddAccountButton" class="primary" style="width:100%;margin-top:14px" type="button">Ajouter</button>'
     ].join(""));
@@ -374,7 +374,7 @@
     });
 
     if (duplicate) {
-      ui.showAlert("addAccountMsg", "Cet identifiant existe deja.");
+      ui.showAlert("addAccountMsg", "Cet identifiant existe déjà.");
       return;
     }
 
@@ -461,7 +461,7 @@
     });
 
     if (hasUpcoming) {
-      window.alert("Impossible de supprimer : ce compte a des rendez-vous a venir. Annulez ou reassignez-les d abord.");
+      window.alert("Impossible de supprimer : ce compte a des rendez-vous à venir. Annulez ou réassignez-les d'abord.");
       return;
     }
 
@@ -493,7 +493,7 @@
     var user = utils.findById(state.db.users, userId);
 
     if (!user || !canManageAccount(userId)) {
-      window.alert("Vous ne pouvez pas demander une reinitialisation pour ce compte.");
+      window.alert("Vous ne pouvez pas demander une réinitialisation pour ce compte.");
       return;
     }
 
@@ -503,7 +503,7 @@
     }
 
     auth.requestPasswordReset(user.email).then(function () {
-      window.alert("Si un compte Supabase existe pour " + user.email + ", un lien de reinitialisation vient d etre envoye.");
+      window.alert("Si un compte Supabase existe pour " + user.email + ", un lien de réinitialisation vient d'être envoyé.");
     });
   }
 

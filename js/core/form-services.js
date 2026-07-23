@@ -176,7 +176,7 @@
     }).catch(function (error) {
       var body = ui.byId("servicePickerBody");
       if (body) {
-        body.innerHTML = '<div class="alert">Impossible de charger les prestations, reessayez.</div>';
+        body.innerHTML = '<div class="alert">Impossible de charger les prestations, réessayez.</div>';
       }
       window.console && window.console.error && window.console.error(error);
     });
@@ -242,7 +242,7 @@
       container.innerHTML = renderAdminServicesHtml(categoryGroups);
       bindAdminServicesActions(containerId, catalog, entryByServiceId, categoryGroups);
     }).catch(function (error) {
-      container.innerHTML = '<div class="alert">Impossible de charger les prestations, reessayez.</div>';
+      container.innerHTML = '<div class="alert">Impossible de charger les prestations, réessayez.</div>';
       window.console && window.console.error && window.console.error(error);
     });
   }
@@ -353,7 +353,7 @@
         renderAdminServicesBody(containerId);
       });
     }).catch(function (error) {
-      window.alert("Impossible de verifier l utilisation de cette prestation, reessayez.");
+      window.alert("Impossible de vérifier l'utilisation de cette prestation, réessayez.");
       window.console && window.console.error && window.console.error(error);
     });
   }
@@ -422,7 +422,7 @@
       "</div>",
       '<div id="catalogServiceMsg"></div>',
       '<label for="csName">Nom de la prestation</label><input id="csName" class="field" placeholder="Ex. Pose gel">',
-      '<label for="csCategory">Categorie</label><select id="csCategory" class="field">' + categoryOptions + "</select>",
+      '<label for="csCategory">Catégorie</label><select id="csCategory" class="field">' + categoryOptions + "</select>",
       '<div class="row" style="margin-top:14px">',
       '  <button id="saveCatalogServiceButton" class="primary grow" type="button">Ajouter au catalogue</button>',
       "</div>"
@@ -443,7 +443,7 @@
       });
 
       if (duplicate) {
-        ui.showAlert("catalogServiceMsg", "Cette prestation existe deja dans cette categorie.");
+        ui.showAlert("catalogServiceMsg", "Cette prestation existe déjà dans cette catégorie.");
         return;
       }
 
@@ -456,7 +456,7 @@
           });
         });
       }).catch(function (error) {
-        ui.showAlert("catalogServiceMsg", "Impossible d ajouter cette prestation, reessayez.");
+        ui.showAlert("catalogServiceMsg", "Impossible d'ajouter cette prestation, réessayez.");
         window.console && window.console.error && window.console.error(error);
       });
     });
@@ -497,12 +497,12 @@
       var duration = Number(ui.byId("seDuration").value);
 
       if (!(price >= 0)) {
-        ui.showAlert("serviceEntryMsg", "Le prix ne peut pas etre negatif.");
+        ui.showAlert("serviceEntryMsg", "Le prix ne peut pas être négatif.");
         return;
       }
 
       if (!duration || duration <= 0) {
-        ui.showAlert("serviceEntryMsg", "La duree doit etre superieure a 0.");
+        ui.showAlert("serviceEntryMsg", "La durée doit être supérieure à 0.");
         return;
       }
 
@@ -517,7 +517,7 @@
         ui.closeModal();
         renderAdminServicesBody(containerId);
       }).catch(function (error) {
-        ui.showAlert("serviceEntryMsg", "Impossible d enregistrer, reessayez.");
+        ui.showAlert("serviceEntryMsg", "Impossible d'enregistrer, réessayez.");
         window.console && window.console.error && window.console.error(error);
       });
     });
@@ -537,7 +537,7 @@
     supabaseData.countReservationsForService(adminState.selectedCollaboratorId, entry.serviceId).then(function (count) {
       if (count > 0) {
         if (!window.confirm(
-          "Cette prestation a deja " + count + " rendez-vous enregistre(s). " +
+          "Cette prestation a déjà " + count + " rendez-vous enregistré(s). " +
           "Impossible de la supprimer sans casser leur historique : voulez-vous la desactiver a la place ?"
         )) {
           return;
@@ -565,7 +565,7 @@
         renderAdminServicesBody(containerId);
       });
     }).catch(function (error) {
-      ui.showAlert("serviceEntryMsg", "Impossible de verifier l historique, reessayez.");
+      ui.showAlert("serviceEntryMsg", "Impossible de vérifier l'historique, réessayez.");
       window.console && window.console.error && window.console.error(error);
     });
   }
@@ -633,7 +633,7 @@
         });
       });
     }).catch(function (error) {
-      container.innerHTML = '<div class="alert">Impossible de charger vos prestations, reessayez.</div>';
+      container.innerHTML = '<div class="alert">Impossible de charger vos prestations, réessayez.</div>';
       window.console && window.console.error && window.console.error(error);
     });
   }

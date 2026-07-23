@@ -38,7 +38,7 @@
     "inactive": "Ce compte est desactive.",
     "bad-role": "Role inconnu ou non autorise pour ce compte.",
     "no-config": "Supabase n'est pas configure. Voir js/core/supabase-client.js.",
-    "error": "Erreur technique, reessayez."
+    "error": "Erreur technique, réessayez."
   };
 
   function submitLogin() {

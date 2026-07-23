@@ -148,10 +148,10 @@
       '<input id="fClientName" class="field" placeholder="Nom cliente" value="' +
         utils.escapeHtml(reservation.client) + '">',
       '<div class="grid2">',
-      '  <div><label for="fClientPhone">Telephone</label><input id="fClientPhone" class="field" placeholder="Telephone" value="' + utils.escapeHtml(client ? client.phone || "" : "") + '"></div>',
+      '  <div><label for="fClientPhone">Téléphone</label><input id="fClientPhone" class="field" placeholder="Téléphone" value="' + utils.escapeHtml(client ? client.phone || "" : "") + '"></div>',
       '  <div><label for="fClientEmail">Email</label><input id="fClientEmail" class="field" type="email" placeholder="Email (facultatif)" value="' + utils.escapeHtml(client ? client.email || "" : "") + '"></div>',
       "</div>",
-      '<p class="tiny">Si la cliente n est pas dans la liste, remplissez son nom/telephone : sa fiche sera creee automatiquement (ou reutilisee si elle existe deja).</p>',
+      '<p class="tiny">Si la cliente n\'est pas dans la liste, remplissez son nom/téléphone : sa fiche sera créée automatiquement (ou réutilisée si elle existe déjà).</p>',
       '<div class="grid2">',
       '  <div><label for="fCollab">Collaboratrice</label><select id="fCollab" class="field">' +
         collabOptions + "</select></div>",
@@ -409,13 +409,13 @@
 
     var price = Number(ui.byId("fPrice").value);
     if (!(price >= 0)) {
-      showSaveError("reservationMsg", "Le prix ne peut pas etre negatif.");
+      showSaveError("reservationMsg", "Le prix ne peut pas être négatif.");
       return;
     }
 
     var duration = Number(ui.byId("fDuration").value) || 0;
     if (duration <= 0) {
-      showSaveError("reservationMsg", "La duree doit etre superieure a 0.");
+      showSaveError("reservationMsg", "La durée doit être supérieure à 0.");
       return;
     }
 
@@ -450,7 +450,7 @@
       if (conflict) {
         saveButton.disabled = false;
         ui.byId("reservationMsg").innerHTML = ENABLE_CONFLICT_ASSISTANT
-          ? '<div class="alert reservation-alert-box">Creneau deja pris. Choisissez un autre horaire.</div>'
+          ? '<div class="alert reservation-alert-box">Créneau déjà pris. Choisissez un autre horaire.</div>'
           : '<div class="alert">' + utils.escapeHtml(conflict.message) + "</div>";
         if (ENABLE_CONFLICT_ASSISTANT) {
           showConflictPopup(draft, conflict, reservationId || null);
@@ -487,11 +487,11 @@
       saveButton.disabled = false;
 
       if (error && error.isSlotTaken) {
-        showSaveError("reservationMsg", "Ce creneau vient d etre pris pour cette salle. Choisissez un autre horaire.");
+        showSaveError("reservationMsg", "Ce créneau vient d'être pris pour cette salle. Choisissez un autre horaire.");
         return;
       }
 
-      showSaveError("reservationMsg", "Impossible d'enregistrer ce rendez-vous, reessayez.");
+      showSaveError("reservationMsg", "Impossible d'enregistrer ce rendez-vous, réessayez.");
       window.console && window.console.error && window.console.error(error);
     });
   }
@@ -518,7 +518,7 @@
         state.refresh();
       })
       .catch(function (error) {
-        window.alert("Impossible d'annuler ce rendez-vous, reessayez.");
+        window.alert("Impossible d'annuler ce rendez-vous, réessayez.");
         window.console && window.console.error && window.console.error(error);
       });
   }
@@ -556,7 +556,7 @@
         openProposal(updated);
       }
     }).catch(function (error) {
-      window.alert("Impossible de mettre a jour ce rendez-vous, reessayez.");
+      window.alert("Impossible de mettre à jour ce rendez-vous, réessayez.");
       window.console && window.console.error && window.console.error(error);
     });
   }
@@ -611,7 +611,7 @@
       var price = Number(ui.byId("fDonePrice").value);
 
       if (!(price >= 0)) {
-        window.alert("Le prix ne peut pas etre negatif.");
+        window.alert("Le prix ne peut pas être négatif.");
         return;
       }
 
@@ -648,7 +648,7 @@
     // modale, pour la meme raison.
     ui.showModal([
       '<div class="modal-head">',
-      "  <h3>Prochain RDV propose</h3>",
+      "  <h3>Prochain RDV proposé</h3>",
       '  <button id="closeModalButton" class="x" type="button">x</button>',
       "</div>",
       '<p class="tiny">Proposition interne pour la collaboratrice.</p>',
@@ -797,13 +797,13 @@
 
     var price = Number(ui.byId("pPrice").value);
     if (!(price >= 0)) {
-      showSaveError("proposalMsg", "Le prix ne peut pas etre negatif.");
+      showSaveError("proposalMsg", "Le prix ne peut pas être négatif.");
       return;
     }
 
     var duration = Number(ui.byId("pDuration").value) || 0;
     if (duration <= 0) {
-      showSaveError("proposalMsg", "La duree doit etre superieure a 0.");
+      showSaveError("proposalMsg", "La durée doit être supérieure à 0.");
       return;
     }
 
@@ -851,11 +851,11 @@
       saveButton.disabled = false;
 
       if (error && error.isSlotTaken) {
-        showSaveError("proposalMsg", "Ce creneau vient d etre pris. Choisissez-en un autre.");
+        showSaveError("proposalMsg", "Ce créneau vient d'être pris. Choisissez-en un autre.");
         return;
       }
 
-      showSaveError("proposalMsg", "Impossible d'enregistrer ce rendez-vous, reessayez.");
+      showSaveError("proposalMsg", "Impossible d'enregistrer ce rendez-vous, réessayez.");
       window.console && window.console.error && window.console.error(error);
     });
   }
@@ -869,7 +869,7 @@
     ui.byId("proposalMsg").innerHTML = '<p class="tiny">Verification des creneaux...</p>';
 
     freshVirtualDbForDate(state, date).then(function (virtualDb) {
-      var html = ['<div class="success">Creneaux proposes :</div><div class="chips">'];
+      var html = ['<div class="success">Créneaux proposés :</div><div class="chips">'];
 
       times.forEach(function (time) {
         var reservation = {
@@ -894,13 +894,13 @@
         });
       });
     }).catch(function () {
-      ui.showAlert("proposalMsg", "Impossible de verifier les creneaux, reessayez.");
+      ui.showAlert("proposalMsg", "Impossible de vérifier les créneaux, réessayez.");
     });
   }
 
   function showConflictPopup(reservation, conflict, ignoreId) {
     var conflictReservation = conflict.reservation;
-    var title = "Ce creneau est deja pris";
+    var title = "Ce créneau est déjà pris";
     var slotLabel = reservation.date + " a " + reservation.time;
     var existingLabel = "";
     var meta = [];
@@ -924,7 +924,7 @@
 
     ui.showSheet([
       '<div class="modal-head conflict-sheet-head">',
-      "  <h3>Creneau deja pris</h3>",
+      "  <h3>Créneau déjà pris</h3>",
       '  <button id="closeConflictSheetButton" class="x" type="button">x</button>',
       "</div>",
       '<div class="card conflict-card">',
@@ -985,7 +985,7 @@
         });
       });
     }).catch(function () {
-      root.innerHTML = '<div class="alert">Impossible de verifier les creneaux, reessayez.</div>';
+      root.innerHTML = '<div class="alert">Impossible de vérifier les créneaux, réessayez.</div>';
     });
   }
 

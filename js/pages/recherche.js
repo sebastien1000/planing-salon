@@ -68,7 +68,7 @@
         '<div class="card rsv">',
         '  <div class="row">',
         '    <div class="grow">',
-        '      <h3>Reserve - ' + utils.escapeHtml(reservation.collab) + "</h3>",
+        '      <h3>Réservé - ' + utils.escapeHtml(reservation.collab) + "</h3>",
         '      <div class="tiny">' + utils.escapeHtml(domain.fullDateLabel(reservation.date)) + "</div>",
         '      <div class="tiny">' + utils.escapeHtml(reservation.time) + " - " + utils.escapeHtml(endTime) + "</div>",
         "    </div>",

@@ -15,7 +15,7 @@
   // et de laisser SalonSupabaseClient indefini.
   if (isConfigured && !window.supabase) {
     window.console && window.console.warn && window.console.warn(
-      "Supabase : le SDK (script CDN) ne s'est pas charge, verifiez la balise <script> et la connexion reseau."
+      "Supabase : le SDK (script CDN) ne s'est pas chargé, vérifiez la balise <script> et la connexion réseau."
     );
     isConfigured = false;
   }

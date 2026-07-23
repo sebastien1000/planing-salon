@@ -214,7 +214,7 @@
     }).sort(function (a, b) { return a.time.localeCompare(b.time); });
   }
 
-  var ROOM_STATUS_LABELS = { libre: "Libre", reservee: "Reservee", occupee: "Occupee" };
+  var ROOM_STATUS_LABELS = { libre: "Libre", reservee: "Réservée", occupee: "Occupée" };
   var ROOM_STATUS_BADGE_CLASS = { libre: "status-done", reservee: "status-pre", occupee: "status-run" };
 
   function roomStatusListHtml() {
@@ -250,7 +250,7 @@
 
       var slotsHtml = roomReservations.map(function (reservation) {
         var canSee = auth.canSeeReservation(user, reservation);
-        var who = canSee ? reservation.client : "Reserve - " + reservation.collab;
+        var who = canSee ? reservation.client : "Réservé - " + reservation.collab;
         var endTime = domain.addMinutes(reservation.time, reservation.duration);
 
         return [
@@ -296,7 +296,7 @@
     }
 
     if (!showTypes.holidays) {
-      parts.push("Conges masques");
+      parts.push("Congés masqués");
     }
 
     return parts.join(" · ");
@@ -350,7 +350,7 @@
       '<div class="checkbox-group">',
       buildTypeCheckboxHtml("reservations", "Rendez-vous"),
       buildTypeCheckboxHtml("absences", "Absences"),
-      buildTypeCheckboxHtml("holidays", "Conges / vacances"),
+      buildTypeCheckboxHtml("holidays", "Congés / vacances"),
       "</div>",
 
       '<div class="section-title" style="margin-top:14px">Filtrer les salles par etat</div>',
@@ -524,7 +524,7 @@
               : "";
             var label = auth.canSeeReservation(user, reservation)
               ? reservation.client
-              : "Reserve - " + reservation.collab;
+              : "Réservé - " + reservation.collab;
             return '<span class="' + dotClassName + '"' + dotStyle + '>' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
           }).join(""),
           blockedDotsHtml(blocked),
@@ -571,7 +571,7 @@
       // Seules les infos clientes (nom, tel, email, notes) sont
       // confidentielles pour un RDV d'une autre collaboratrice : la
       // prestation, elle, reste toujours visible (voir showPrestation).
-      var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
+      var title = canSee ? reservation.client : "Réservé - " + reservation.collab;
       var endTime = domain.addMinutes(reservation.time, reservation.duration);
       var collabUser = utils.findByName(db.users, reservation.collab);
       var borderStyle = collabUser && collabUser.color
