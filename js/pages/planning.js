@@ -605,10 +605,8 @@
     ].join("");
   }
 
-  // En-tete "jour + gros numero de date" (vue semaine, style agenda papier) :
-  // separe du titre par defaut de la vue jour (utils.fmtDate, qui inclut le
-  // mois puisqu'on n'y voit qu'un seul jour a la fois, sans repere visuel
-  // du reste de la semaine autour).
+  // En-tete "jour + gros numero de date", style agenda papier - partage par
+  // la vue jour et la vue semaine pour rester visuellement identiques.
   function weekDayHeadTitleHtml(date) {
     return [
       '<div class="week-day-label">',
@@ -619,14 +617,14 @@
     ].join("");
   }
 
-  function dayCardHtml(date, titleHtml) {
+  function dayCardHtml(date) {
     var dateReservations = filteredReservationsForDate(date);
     var blocked = blockedPeriodsOnDate(date);
 
     return [
       '<div class="card">',
       '  <div class="week-day-head">',
-      titleHtml || ("<h3>" + utils.fmtDate(date) + "</h3>"),
+      weekDayHeadTitleHtml(date),
       '    <button class="secondary mini-action" type="button" data-add-date="' + date + '">+ RDV</button>',
       "  </div>",
       blocked.map(function (item) {
@@ -664,7 +662,7 @@
   // pour ne pas dupliquer cette logique.
   function renderWeek(dates) {
     return '<div class="week-grid">' + dates.map(function (date) {
-      return '<div class="week-col">' + dayCardHtml(date, weekDayHeadTitleHtml(date)) + "</div>";
+      return '<div class="week-col">' + dayCardHtml(date) + "</div>";
     }).join("") + "</div>";
   }
 
