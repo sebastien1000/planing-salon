@@ -536,6 +536,11 @@
       return;
     }
 
+    // Un rendez-vous deja "termine" qu'on re-marque "termine" (bouton
+    // Terminer recliqueur sur un RDV deja complete) ne doit pas redeclencher
+    // une nouvelle proposition : sinon un double-clic ou un aller-retour
+    // sur ce RDV cree plusieurs propositions identiques pour la meme visite.
+    var wasAlreadyDone = reservation.status === "done";
     var patch = Object.assign({}, reservation, { status: status });
     if (status === "done") {
       patch.supplement = Number(supplement) || 0;
@@ -547,7 +552,7 @@
     supabaseData.updateReservation(reservationId, patch).then(function (updated) {
       state.refresh();
 
-      if (status === "done") {
+      if (status === "done" && !wasAlreadyDone) {
         openProposal(updated);
       }
     }).catch(function (error) {
@@ -634,10 +639,17 @@
     var proposalCollab = habitualCollab || reservation.collab || state.user.name;
     var room = domain.roomFor(state.db, proposalCollab, client.prestation);
 
-    ui.showSheet([
+    // Modale (pas un sheet) : le selecteur de prestation ci-dessous
+    // (openProposalPrestationPicker) ouvre lui-meme un sheet (l'unique
+    // #sheet partage de l'app) - si ce formulaire vivait aussi dans ce
+    // #sheet, choisir une prestation ecraserait son propre DOM (pDate,
+    // pPrestButton...) et plantait juste apres (element introuvable). Le
+    // formulaire de RDV classique evite deja ce piege en etant lui-meme une
+    // modale, pour la meme raison.
+    ui.showModal([
       '<div class="modal-head">',
       "  <h3>Prochain RDV propose</h3>",
-      '  <button id="closeSheetButton" class="x" type="button">x</button>',
+      '  <button id="closeModalButton" class="x" type="button">x</button>',
       "</div>",
       '<p class="tiny">Proposition interne pour la collaboratrice.</p>',
       '<label for="pDate">Date</label><input id="pDate" class="field" type="date" value="' + nextDate + '">',
@@ -672,7 +684,7 @@
       "</div>"
     ].join(""));
 
-    ui.byId("closeSheetButton").addEventListener("click", ui.closeSheet);
+    ui.byId("closeModalButton").addEventListener("click", ui.closeModal);
     ui.byId("pCollab").addEventListener("change", function () {
       resetProposalPrestation();
       updateProposalRoom();
@@ -832,7 +844,7 @@
       return supabaseData.createReservation(draft).then(function () {
         return supabaseData.updateClient(client.id, { nextDate: draft.date });
       }).then(function () {
-        ui.closeSheet();
+        ui.closeModal();
         state.refresh();
       });
     }).catch(function (error) {
