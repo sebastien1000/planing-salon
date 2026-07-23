@@ -1,5 +1,6 @@
 (function () {
   var supabaseClient = window.SalonSupabaseClient;
+  var utils = window.SalonUtils;
   var checkingPanel = document.getElementById("checkingPanel");
   var invalidPanel = document.getElementById("invalidPanel");
   var resetPanel = document.getElementById("resetPanel");
@@ -8,6 +9,9 @@
   var newPasswordField = document.getElementById("newPassword");
   var confirmPasswordField = document.getElementById("confirmPassword");
   var resetSubmitButton = document.getElementById("resetSubmit");
+
+  utils.bindPasswordToggle("newPassword", "newPasswordToggle");
+  utils.bindPasswordToggle("confirmPassword", "confirmPasswordToggle");
 
   function showPanel(panel) {
     [checkingPanel, invalidPanel, resetPanel, donePanel].forEach(function (item) {

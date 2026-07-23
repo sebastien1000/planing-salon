@@ -1,5 +1,6 @@
 (function () {
   var auth = window.SalonAuth;
+  var utils = window.SalonUtils;
   var loginPanel = document.getElementById("loginPanel");
   var forgotPanel = document.getElementById("forgotPanel");
   var uiMessage = document.getElementById("loginMsg");
@@ -11,6 +12,8 @@
   var emailField = document.getElementById("loginEmail");
   var passwordField = document.getElementById("loginPass");
   var forgotEmailField = document.getElementById("forgotEmail");
+
+  utils.bindPasswordToggle("loginPass", "loginPassToggle");
 
   if (auth.getCurrentUser()) {
     window.location.href = "planning.html";

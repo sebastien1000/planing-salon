@@ -104,8 +104,37 @@
       .replace(/'/g, "&#39;");
   }
 
+  var PASSWORD_EYE_OPEN_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+  var PASSWORD_EYE_OFF_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"></path><path d="M10.6 10.6a3 3 0 0 0 4.24 4.24"></path><path d="M6.5 6.7C3.9 8.3 2 12 2 12s4 8 11 8c1.9 0 3.6-.4 5-.1"></path><path d="M17.9 17.9C20.4 16.2 22 12 22 12s-1.2-2.4-3.3-4.4"></path></svg>';
+
+  // Bouton "oeil" sur un champ mot de passe : bascule uniquement l'attribut
+  // type (password/text), ne touche jamais a la valeur saisie. Partage
+  // entre index.html (connexion) et reset-password.html (nouveau mot de
+  // passe) : les deux chargent utils.js mais pas forcement js/core/ui.js.
+  function bindPasswordToggle(inputId, buttonId) {
+    var input = document.getElementById(inputId);
+    var button = document.getElementById(buttonId);
+
+    if (!input || !button) {
+      return;
+    }
+
+    function setVisible(visible) {
+      input.type = visible ? "text" : "password";
+      button.innerHTML = visible ? PASSWORD_EYE_OFF_ICON : PASSWORD_EYE_OPEN_ICON;
+      button.setAttribute("aria-label", visible ? "Masquer le mot de passe" : "Afficher le mot de passe");
+    }
+
+    setVisible(false);
+
+    button.addEventListener("click", function () {
+      setVisible(input.type === "password");
+    });
+  }
+
   window.SalonUtils = {
     addDays: addDays,
+    bindPasswordToggle: bindPasswordToggle,
     dateObj: dateObj,
     escapeHtml: escapeHtml,
     findById: findById,

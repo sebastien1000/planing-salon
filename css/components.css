@@ -154,6 +154,40 @@ label {
   box-shadow: 0 0 0 3px rgba(221, 142, 164, 0.12);
 }
 
+.field-with-toggle {
+  position: relative;
+  margin-bottom: 22px;
+}
+
+.field-with-toggle .field {
+  margin-bottom: 0;
+  padding-right: 50px;
+}
+
+.field-toggle-visibility {
+  position: absolute;
+  top: 29px;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.field-toggle-visibility:hover,
+.field-toggle-visibility:focus-visible {
+  background: rgba(74, 53, 64, 0.08);
+  color: #4a3540;
+}
+
 .checkbox-group {
   display: flex;
   flex-direction: column;

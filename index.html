@@ -36,13 +36,16 @@
           <input id="loginEmail" class="field" type="email" autocomplete="username" placeholder="vous@exemple.com">
 
           <label for="loginPass">Mot de passe</label>
-          <input
-            id="loginPass"
-            class="field"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Mot de passe"
-          >
+          <div class="field-with-toggle">
+            <input
+              id="loginPass"
+              class="field"
+              type="password"
+              autocomplete="current-password"
+              placeholder="Mot de passe"
+            >
+            <button id="loginPassToggle" class="field-toggle-visibility" type="button" aria-label="Afficher le mot de passe"></button>
+          </div>
 
           <button id="loginSubmit" class="primary login-submit" type="button">Connexion</button>
           <button id="forgotPassword" class="ghost ghost-link" type="button">Mot de passe oublie ?</button>
