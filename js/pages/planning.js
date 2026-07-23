@@ -139,6 +139,7 @@
 
     return reservations.filter(function (reservation) {
       return reservation.date === date &&
+        domain.isActiveReservation(reservation) &&
         (roomFilter === "Toutes" || reservation.room === roomFilter) &&
         matchesCollabFilter(reservation.collab);
     });
