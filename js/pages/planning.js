@@ -31,7 +31,13 @@
   // plus jamais le choix par defaut. Un choix de filtre deja fait avant
   // (sessionStorage) reste toujours prioritaire.
   var collabFilter = sessionStorage.getItem("planning:collab") || "Toutes";
-  var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
+  // Contrairement a la vue/aux filtres, la date affichee ne doit jamais
+  // rester "bloquee" d'un chargement de page a l'autre : chaque arrivee sur
+  // le planning (bouton accueil, changement de page puis retour, nouveau
+  // lancement de l'app) doit montrer la date du jour. Se deplacer avec les
+  // fleches ou cliquer une date reste possible pendant la session en cours,
+  // simplement sans survivre a un rechargement de page.
+  var selectedDate = utils.today();
   var showTypes = loadShowTypes();
   var roomOccupancyFilter = loadRoomOccupancyFilter();
 
@@ -109,7 +115,6 @@
     sessionStorage.setItem("planning:view", view);
     sessionStorage.setItem("planning:room", roomFilter);
     sessionStorage.setItem("planning:collab", collabFilter);
-    sessionStorage.setItem("planning:date", selectedDate);
     sessionStorage.setItem("planning:showTypes", JSON.stringify(showTypes));
     sessionStorage.setItem("planning:roomOccupancy", JSON.stringify(roomOccupancyFilter));
   }
