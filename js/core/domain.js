@@ -244,6 +244,103 @@
     return String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
   }
 
+  // Grille horaire (vues jour/semaine) : 08h-20h par defaut (horaires
+  // habituels du salon), elargie automatiquement (arrondie a l'heure
+  // pleine) si un rendez-vous deborde de cette plage, pour ne jamais
+  // couper un RDV existant hors champ.
+  var DAY_GRID_DEFAULT_START = 8 * 60;
+  var DAY_GRID_DEFAULT_END = 20 * 60;
+  var DAY_GRID_SLOT_MINUTES = 30;
+
+  function minutesToTime(totalMinutes) {
+    var hours = Math.floor(totalMinutes / 60);
+    var minutes = totalMinutes % 60;
+    return String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
+  }
+
+  function dayGridRange(reservations) {
+    var start = DAY_GRID_DEFAULT_START;
+    var end = DAY_GRID_DEFAULT_END;
+
+    reservations.forEach(function (reservation) {
+      var reservationStart = utils.mins(reservation.time);
+      var reservationEnd = reservationStart + Number(reservation.duration || 0);
+      start = Math.min(start, Math.floor(reservationStart / 60) * 60);
+      end = Math.max(end, Math.ceil(reservationEnd / 60) * 60);
+    });
+
+    return { start: start, end: end };
+  }
+
+  // Un repere toutes les 30 min : heure pleine (08:00) mise en avant,
+  // demi-heure (08:30) plus discrete (voir isHour cote CSS/JS appelant).
+  function dayGridSlots(range) {
+    var slots = [];
+
+    for (var minutes = range.start; minutes <= range.end; minutes += DAY_GRID_SLOT_MINUTES) {
+      slots.push({
+        minutes: minutes,
+        isHour: minutes % 60 === 0,
+        label: minutesToTime(minutes)
+      });
+    }
+
+    return slots;
+  }
+
+  // Deux rendez-vous au meme horaire (salles differentes) doivent
+  // s'afficher cote a cote plutot que de se superposer visuellement :
+  // "bin packing" classique - chaque rendez-vous prend la premiere colonne
+  // libre parmi ceux encore actifs, regroupes par chevauchement transitif
+  // pour calculer le nombre total de colonnes necessaires par groupe.
+  function layoutDayGridEvents(reservations) {
+    var sorted = reservations.slice().sort(function (a, b) {
+      return utils.mins(a.time) - utils.mins(b.time);
+    });
+
+    var active = [];
+    var group = [];
+    var groups = [];
+
+    sorted.forEach(function (reservation) {
+      var start = utils.mins(reservation.time);
+      var end = start + Number(reservation.duration || 0);
+
+      active = active.filter(function (item) { return item.end > start; });
+
+      if (!active.length && group.length) {
+        groups.push(group);
+        group = [];
+      }
+
+      var usedColumns = active.map(function (item) { return item.column; });
+      var column = 0;
+      while (usedColumns.indexOf(column) !== -1) {
+        column += 1;
+      }
+
+      reservation._gridColumn = column;
+      active.push({ column: column, end: end });
+      group.push(reservation);
+    });
+
+    if (group.length) {
+      groups.push(group);
+    }
+
+    groups.forEach(function (groupItems) {
+      var columns = groupItems.reduce(function (max, item) {
+        return Math.max(max, item._gridColumn);
+      }, 0) + 1;
+
+      groupItems.forEach(function (item) {
+        item._gridColumns = columns;
+      });
+    });
+
+    return sorted;
+  }
+
   function fullDateLabel(value) {
     return utils.dateObj(value).toLocaleDateString("fr-FR", {
       weekday: "long",
@@ -341,6 +438,11 @@
     conflictDetails: conflictDetails,
     countFor: countFor,
     datesForRange: datesForRange,
+    dayGridRange: dayGridRange,
+    dayGridSlots: dayGridSlots,
+    layoutDayGridEvents: layoutDayGridEvents,
+    minutesToTime: minutesToTime,
+    DAY_GRID_SLOT_MINUTES: DAY_GRID_SLOT_MINUTES,
     doneReservationsFor: doneReservationsFor,
     findBlockingPeriod: findBlockingPeriod,
     fullDateLabel: fullDateLabel,
