@@ -59,6 +59,13 @@
     });
   }
 
+  // Nom du jour seul (ex: "Lundi"), pour l'en-tete de colonne de la vue
+  // semaine - toLocaleDateString rend "lundi" en minuscules en fr-FR.
+  function weekdayLabel(value) {
+    var label = dateObj(value).toLocaleDateString("fr-FR", { weekday: "long" });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
   function mins(time) {
     var parts = time.split(":").map(Number);
     return parts[0] * 60 + parts[1];
@@ -142,6 +149,7 @@
     fmtDate: fmtDate,
     iso: iso,
     mins: mins,
+    weekdayLabel: weekdayLabel,
     monthDates: monthDates,
     overlaps: overlaps,
     readableTextColor: readableTextColor,
