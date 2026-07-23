@@ -169,6 +169,20 @@
     return absences.concat(holidays);
   }
 
+  // Vue mois : un badge distinct par type de blocage plutot qu'un "Blocage
+  // N" generique qui melangeait conges et absences - une periode "holiday"
+  // (conges/vacances) affiche "Vacances", une periode "absence" affiche
+  // "Absence", chacune avec son propre compteur si plusieurs ce jour-la.
+  function blockedDotsHtml(blocked) {
+    var holidayCount = blocked.filter(function (item) { return item.type === "holiday"; }).length;
+    var absenceCount = blocked.filter(function (item) { return item.type === "absence"; }).length;
+
+    return [
+      holidayCount ? '<span class="dot">Vacances' + (holidayCount > 1 ? " " + holidayCount : "") + "</span>" : "",
+      absenceCount ? '<span class="dot">Absence' + (absenceCount > 1 ? " " + absenceCount : "") + "</span>" : ""
+    ].join("");
+  }
+
   function filteredReservationsForDate(date) {
     if (!showTypes.reservations) {
       return [];
@@ -503,7 +517,7 @@
               : "Reserve - " + reservation.collab;
             return '<span class="' + dotClassName + '"' + dotStyle + '>' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
           }).join(""),
-          blocked.length ? '<span class="dot">Blocage ' + blocked.length + "</span>" : "",
+          blockedDotsHtml(blocked),
           dateReservations.length > 2 ? '<span class="dot">+' + (dateReservations.length - 2) + " autre</span>" : "",
           "</button>"
         ].join("");
