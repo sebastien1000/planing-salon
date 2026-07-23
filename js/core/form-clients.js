@@ -92,7 +92,7 @@
       '<div id="clientMsg"></div>',
       (!manageable ? '<div class="alert">Vous pouvez consulter cette fiche mais pas la modifier.</div>' : ""),
       '<label for="cName">Nom</label><input id="cName" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.name) + '">',
-      '<label for="cPhone">Telephone</label><input id="cPhone" class="field" type="tel"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
+      '<label for="cPhone">Téléphone</label><input id="cPhone" class="field" type="tel"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
       '<label for="cEmail">Email</label><input id="cEmail" class="field" type="email"' + readonlyAttr + ' value="' + utils.escapeHtml(client.email || "") + '">',
       '<label>Collaboratrices habituelles</label>',
       '<div class="checkbox-group">' + state.db.users
@@ -152,7 +152,7 @@
       if (reservations.length > 0) {
         window.alert(
           "Impossible de supprimer : cette cliente a " + reservations.length +
-          " rendez-vous enregistre(s). Annulez-les ou reassignez-les d abord."
+          " rendez-vous enregistré(s). Annulez-les ou réassignez-les d'abord."
         );
         return;
       }
@@ -166,7 +166,7 @@
         state.refresh();
       });
     }).catch(function (error) {
-      window.alert("Impossible de supprimer cette fiche, reessayez.");
+      window.alert("Impossible de supprimer cette fiche, réessayez.");
       window.console && window.console.error && window.console.error(error);
     });
   }

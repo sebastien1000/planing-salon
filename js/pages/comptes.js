@@ -83,7 +83,7 @@
 
     ui.showSheet([
       '<div class="modal-head">',
-      "  <h3>Conges - " + utils.escapeHtml(account.name) + "</h3>",
+      "  <h3>Congés - " + utils.escapeHtml(account.name) + "</h3>",
       '  <button id="closeHolidaySheetButton" class="x" type="button">x</button>',
       "</div>",
       isAdmin ? '<button id="addHolidayButton" class="primary" style="width:100%;margin-bottom:12px" type="button">Ajouter un conge</button>' : "",
@@ -116,7 +116,7 @@
     var actions = [];
 
     if (isCollab) {
-      actions.push({ id: "manage-holidays", label: "Gerer les conges" });
+      actions.push({ id: "manage-holidays", label: "Gérer les congés" });
     }
 
     actions.push({ id: "send-password-reset", label: "Envoyer un lien de reinitialisation" });
@@ -265,7 +265,7 @@
       '  <button id="editOwnProfile" class="primary" type="button">Modifier mon profil / mot de passe</button>',
       "</div>",
       '<div class="card">',
-      "  <h3>Mes conges</h3>",
+      "  <h3>Mes congés</h3>",
       '  <div class="stack">' +
         (myHolidays.length ? myHolidays.map(function (item) { return forms.holidayCard(item, true); }).join("") : '<p class="tiny">Aucun conge enregistre.</p>') +
         "</div>",

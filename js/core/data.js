@@ -13,17 +13,17 @@
   var DEFAULT_COLLAB_COLOR = "#e8a7b6";
 
   var STATUS = [
-    ["pre", "Prevu"],
+    ["pre", "Prévu"],
     ["run", "En cours"],
-    ["done", "Termine"],
-    ["cancel", "Annule"],
+    ["done", "Terminé"],
+    ["cancel", "Annulé"],
     ["absent", "Absente"],
-    ["move", "A reprogrammer"]
+    ["move", "À reprogrammer"]
   ];
 
   var HOLIDAY_CATEGORIES = [
     ["vacances", "Vacances"],
-    ["conge", "Conge"],
+    ["conge", "Congé"],
     ["formation", "Formation"],
     ["autre", "Autre"]
   ];

@@ -84,7 +84,7 @@
       resetSubmitButton.disabled = false;
 
       if (result.error) {
-        showError("Impossible de mettre a jour le mot de passe. Le lien a peut-etre expire.");
+        showError("Impossible de mettre à jour le mot de passe. Le lien a peut-être expiré.");
         return;
       }
 

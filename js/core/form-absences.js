@@ -169,13 +169,13 @@
     };
 
     if (!absenceId && !canManageAbsence(absence)) {
-      ui.showAlert("absenceMsg", "Vous ne pouvez creer une absence que pour vous-meme.");
+      ui.showAlert("absenceMsg", "Vous ne pouvez créer une absence que pour vous-même.");
       return;
     }
 
     if (absence.endDate < absence.startDate ||
       (absence.endDate === absence.startDate && absence.endTime <= absence.startTime)) {
-      ui.showAlert("absenceMsg", "La date/heure de fin doit etre apres le debut.");
+      ui.showAlert("absenceMsg", "La date/heure de fin doit être après le début.");
       return;
     }
 
@@ -186,7 +186,7 @@
     }).length;
 
     if (clashingCount && !window.confirm(
-      clashingCount + " rendez-vous existants tombent dans cette periode. Creer quand meme l'absence ?"
+      clashingCount + " rendez-vous existants tombent dans cette période. Créer quand même l'absence ?"
     )) {
       return;
     }

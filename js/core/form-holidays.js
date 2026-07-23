@@ -66,7 +66,7 @@
     var state = formState.state;
 
     if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gerer les conges.");
+      window.alert("Seul l'administrateur peut gérer les congés.");
       return;
     }
 
@@ -141,7 +141,7 @@
     var state = formState.state;
 
     if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gerer les conges.");
+      window.alert("Seul l'administrateur peut gérer les congés.");
       return;
     }
 
@@ -158,7 +158,7 @@
 
     if (holiday.endDate < holiday.startDate ||
       (holiday.endDate === holiday.startDate && holiday.endTime <= holiday.startTime)) {
-      ui.showAlert("holidayMsg", "La date/heure de fin doit etre apres le debut.");
+      ui.showAlert("holidayMsg", "La date/heure de fin doit être après le début.");
       return;
     }
 
@@ -169,7 +169,7 @@
     }).length;
 
     if (clashingCount && !window.confirm(
-      clashingCount + " rendez-vous existants tombent dans cette periode. Creer quand meme le conge ?"
+      clashingCount + " rendez-vous existants tombent dans cette période. Créer quand même le congé ?"
     )) {
       return;
     }
@@ -191,7 +191,7 @@
     var state = formState.state;
 
     if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gerer les conges.");
+      window.alert("Seul l'administrateur peut gérer les congés.");
       return;
     }
 
