@@ -84,7 +84,10 @@ main {
   z-index: 20;
   background: rgba(50, 25, 35, 0.35);
   display: flex;
-  align-items: flex-end;
+  /* En haut de l'ecran (pas en bas) : ouvre directement sous les yeux, la
+     ou on vient de cliquer, sans jamais avoir a descendre - important
+     quand le planning contient beaucoup de RDV. */
+  align-items: flex-start;
   justify-content: center;
 }
 
@@ -94,13 +97,14 @@ main {
   max-height: 92dvh;
   overflow: auto;
   background: var(--bg);
-  border-radius: 28px 28px 0 0;
+  border-radius: 0 0 28px 28px;
+  margin-top: env(safe-area-inset-top, 0px);
   /* Les boutons de validation vivent en bas de ce panneau : sur Android
      (barre de navigation systeme / geste), sans cette marge ils passent
      sous les boutons du telephone. env() vaut 0 sur PC/desktop, donc pas
      de decalage inutile ailleurs. */
   padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -20px 45px rgba(46, 18, 30, 0.25);
+  box-shadow: 0 20px 45px rgba(46, 18, 30, 0.25);
 }
 
 .conflict-sheet-box {
@@ -147,15 +151,20 @@ main {
     max-width: min(96vw, 1400px);
   }
 
-  .tabs,
-  .modal,
-  .sheet {
+  .tabs {
     position: absolute;
   }
 
+  /* .modal/.sheet restent "fixed" (relatifs a l'ecran visible), contrairement
+     a .tabs : en absolute, ils se positionnaient par rapport a .phone, qui
+     grandit avec le contenu (beaucoup de RDV = .phone tres haut) - la boite
+     s'ouvrait alors tout en bas de la page reelle, hors ecran, obligeant a
+     descendre tres loin pour la voir au lieu qu'elle apparaisse directement
+     sous les yeux, la ou on vient de cliquer. */
+
   .modal-box {
     border-radius: 28px;
-    margin-bottom: 20px;
+    margin-top: 20px;
   }
 
   .conflict-sheet-box {
