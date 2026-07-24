@@ -151,16 +151,12 @@ main {
     max-width: min(96vw, 1400px);
   }
 
-  .tabs {
-    position: absolute;
-  }
-
-  /* .modal/.sheet restent "fixed" (relatifs a l'ecran visible), contrairement
-     a .tabs : en absolute, ils se positionnaient par rapport a .phone, qui
-     grandit avec le contenu (beaucoup de RDV = .phone tres haut) - la boite
-     s'ouvrait alors tout en bas de la page reelle, hors ecran, obligeant a
-     descendre tres loin pour la voir au lieu qu'elle apparaisse directement
-     sous les yeux, la ou on vient de cliquer. */
+  /* .tabs reste "fixed" (relatif a l'ecran visible) comme sur mobile : en
+     absolute, elle se positionnait par rapport a .phone, qui grandit avec
+     le contenu (beaucoup de RDV = .phone tres haut) - la barre se
+     retrouvait tout en bas de la page reelle au lieu de rester epinglee
+     a l'ecran pendant le defilement. Meme raisonnement que pour
+     .modal/.sheet ci-dessus. */
 
   .modal-box {
     border-radius: 28px;
