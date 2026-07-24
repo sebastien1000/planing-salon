@@ -48,6 +48,21 @@
   }
 
   function roomFor(db, collab, prestationName) {
+    var user = utils.findByName(db.users, collab);
+
+    // Salle choisie explicitement par l'admin pour cette collaboratrice
+    // (ex. Marion -> Salle Ongles 2), prioritaire sur tout le reste - mais
+    // seulement si elle reste dans ses salles autorisees (au cas ou les deux
+    // reglages divergeraient). Distinct de "Salles autorisees" plus bas :
+    // celui-ci restreint l'acces, celui-la ne fait que suggerer un choix par
+    // defaut modifiable a tout moment dans le formulaire de RDV. Verifiee
+    // AVANT meme de savoir si une prestation est choisie : la salle doit
+    // etre deja proposee des l'ouverture du formulaire, pas seulement une
+    // fois une prestation selectionnee.
+    if (user && user.defaultRoom && isRoomAllowedForUser(user, user.defaultRoom)) {
+      return user.defaultRoom;
+    }
+
     var prestation = db.prestations.find(function (item) {
       return item.name === prestationName;
     });
@@ -56,7 +71,6 @@
       return "";
     }
 
-    var user = utils.findByName(db.users, collab);
     if (user && user.rooms && user.rooms.length) {
       return user.rooms[0];
     }

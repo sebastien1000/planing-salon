@@ -70,6 +70,7 @@
     user.color = user.color || DEFAULT_COLLAB_COLOR;
     user.rooms = Array.isArray(user.rooms) ? user.rooms : null;
     user.prestations = Array.isArray(user.prestations) ? user.prestations : null;
+    user.defaultRoom = user.defaultRoom || "";
     user.phone = user.phone || "";
     user.email = user.email || "";
     user.photo = user.photo || null;

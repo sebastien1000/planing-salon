@@ -49,6 +49,17 @@
     return checked.length === boxes.length ? null : checked;
   }
 
+  // "" = aucune salle par defaut (choix automatique selon la prestation,
+  // comportement precedent - voir domain.js roomFor).
+  function buildDefaultRoomOptionsHtml(selectedRoom) {
+    var options = ['<option value="">Aucune (choix automatique selon la prestation)</option>'];
+    data.ROOMS.forEach(function (room) {
+      var selected = room === selectedRoom ? " selected" : "";
+      options.push('<option value="' + utils.escapeHtml(room) + '"' + selected + ">" + utils.escapeHtml(room) + "</option>");
+    });
+    return options.join("");
+  }
+
   var PHOTO_MAX_SIZE = 200;
   var pendingPhoto; // undefined = no change, null = removed, "data:..." = new photo
 
@@ -144,6 +155,8 @@
       '<input id="uColor" class="field" type="color" value="' + (user.color || "#e8a7b6") + '">',
       '<label>Salles autorisees (tout coche = aucune restriction, tout decoche = aucun acces)</label>',
       '<div class="checkbox-group">' + buildCheckboxGroup("uRoom", data.ROOMS, user.rooms) + "</div>",
+      '<label for="uDefaultRoom">Salle proposee par defaut a la creation d un RDV</label>',
+      '<select id="uDefaultRoom" class="field">' + buildDefaultRoomOptionsHtml(user.defaultRoom) + "</select>",
       '<label>Prestations autorisees (tout coche = aucune restriction, tout decoche = aucun acces)</label>',
       '<div class="checkbox-group">' + buildCheckboxGroup("uPrestation", prestationNames, user.prestations) + "</div>"
     ].join("");
@@ -260,7 +273,8 @@
         name: user.name,
         role: user.role,
         active: user.active !== false,
-        color: user.color
+        color: user.color,
+        default_room: user.defaultRoom || null
       }).then(function () {
         window.alert(changeLabel + " mis a jour : les droits reels de " + user.name + " ont change immediatement, sans reconnexion.");
       });
@@ -293,6 +307,7 @@
 
     var roleChanged = false;
     var colorChanged = false;
+    var defaultRoomChanged = false;
     var roleField = ui.byId("uRole");
     if (auth.isAdmin(state.user) && roleField) {
       if (roleField.tagName === "SELECT") {
@@ -311,14 +326,21 @@
       user.color = newColor;
       user.rooms = readCheckedValues("uRoom");
       user.prestations = readCheckedValues("uPrestation");
+
+      var newDefaultRoom = ui.byId("uDefaultRoom").value;
+      defaultRoomChanged = newDefaultRoom !== user.defaultRoom;
+      user.defaultRoom = newDefaultRoom;
     }
 
     ui.closeModal();
     formState.saveAndRefresh();
 
-    if (roleChanged || colorChanged) {
-      var changeLabel = roleChanged && colorChanged ? "Role et couleur" : (roleChanged ? "Role" : "Couleur");
-      syncAccountToSupabase(user, changeLabel);
+    if (roleChanged || colorChanged || defaultRoomChanged) {
+      var changedLabels = [];
+      if (roleChanged) { changedLabels.push("Role"); }
+      if (colorChanged) { changedLabels.push("Couleur"); }
+      if (defaultRoomChanged) { changedLabels.push("Salle par defaut"); }
+      syncAccountToSupabase(user, changedLabels.join(" et "));
     }
   }
 
@@ -330,7 +352,7 @@
       return;
     }
 
-    var blankUser = { color: "#e8a7b6", prestations: [], role: "collab", rooms: [] };
+    var blankUser = { color: "#e8a7b6", defaultRoom: "", prestations: [], role: "collab", rooms: [] };
 
     ui.showModal([
       '<div class="modal-head">',
@@ -385,6 +407,7 @@
       role: ui.byId("uRole").value,
       color: ui.byId("uColor").value,
       rooms: readCheckedValues("uRoom"),
+      defaultRoom: ui.byId("uDefaultRoom").value,
       prestations: readCheckedValues("uPrestation"),
       phone: ui.byId("naPhone").value.trim(),
       email: email,
