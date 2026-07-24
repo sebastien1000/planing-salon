@@ -135,6 +135,11 @@
     // l'ancien catalogue local (findPrestationPrice) le temps de la
     // migration progressive (voir js/core/data.js).
     var price = reservation.price != null ? reservation.price : findPrestationPrice(reservation.prestation);
+    // Le tatouage a un prix tres variable selon le client (taille, detail) :
+    // n'importe quelle collaboratrice peut donc l'ajuster, contrairement aux
+    // autres prestations ou seul l'admin modifie le prix (voir
+    // updatePriceLockState, reevalue a chaque changement de prestation).
+    var priceReadOnly = isAdmin || isTattooPrestation(reservation.prestation) ? "" : " readonly";
 
     return [
       '<div class="modal-head">',
@@ -164,6 +169,8 @@
         "</button>",
       "  </div>",
       "</div>",
+      '<label for="fQuantity">Quantite (meme prestation plusieurs fois)</label>',
+      '<input id="fQuantity" class="field" type="number" min="1" step="1" value="1">',
       '<div class="grid2">',
       '  <div><label for="fDate">Date</label><input id="fDate" class="field" type="date" value="' + reservation.date + '"></div>',
       '  <div><label for="fTime">Heure</label><input id="fTime" class="field" type="time" value="' + reservation.time + '"></div>',
@@ -174,7 +181,7 @@
       "</div>",
       '<div id="fEndTimePreview" class="tiny"></div>',
       '<label for="fPrice">Prix (EUR)</label><input id="fPrice" class="field" type="number" min="0" step="0.5"' +
-        (isAdmin ? "" : " readonly") + ' value="' + price + '">',
+        priceReadOnly + ' value="' + price + '">',
       '<label for="fStatus">Statut</label>',
       '<select id="fStatus" class="field">' + data.STATUS.map(function (status) {
         var selected = status[0] === reservation.status ? " selected" : "";
@@ -205,15 +212,61 @@
 
   // Applique la prestation choisie dans le menu par categorie (voir
   // js/core/form-services.js) : remplit automatiquement le prix, la duree
-  // et l'heure de fin estimee, comme demande.
+  // et l'heure de fin estimee, comme demande. baseDuration/basePrice/baseName
+  // sont conserves separement du prix/de la duree affiches (qui, eux,
+  // refletent deja la quantite - voir applyQuantityToFields) pour pouvoir
+  // recalculer proprement si la quantite change ensuite.
   function applyServiceSelection(entry) {
     var button = ui.byId("fPrestButton");
     button.dataset.entryId = entry.id;
     button.dataset.serviceId = entry.serviceId;
-    button.textContent = entry.name;
-    ui.byId("fDuration").value = entry.duration;
-    ui.byId("fPrice").value = entry.price;
+    button.dataset.baseName = entry.name;
+    button.dataset.baseDuration = entry.duration;
+    button.dataset.basePrice = entry.price;
+    updatePriceLockState(entry.name);
+    applyQuantityToFields();
+  }
+
+  // Permet de choisir "2x Semi-permanent" au lieu de creer deux rendez-vous
+  // separes : la duree/le prix affiches sont le produit (prix/duree unitaire
+  // x quantite), et le nom affiche/enregistre gagne un suffixe "(xN)" pour
+  // rester clair a la relecture (planning, historique...). Rien a changer
+  // cote sauvegarde (js/core/supabase-data.js) : la quantite n'est qu'un
+  // multiplicateur cote formulaire, seuls le prix/la duree/le nom finaux
+  // sont enregistres, comme n'importe quel autre RDV.
+  function applyQuantityToFields() {
+    var button = ui.byId("fPrestButton");
+    var baseName = button.dataset.baseName;
+
+    if (!baseName) {
+      return;
+    }
+
+    var baseDuration = Number(button.dataset.baseDuration) || 0;
+    var basePrice = Number(button.dataset.basePrice) || 0;
+    var quantity = Math.max(1, Math.round(Number(ui.byId("fQuantity").value)) || 1);
+
+    button.textContent = quantity > 1 ? baseName + " (x" + quantity + ")" : baseName;
+    ui.byId("fDuration").value = baseDuration * quantity;
+    ui.byId("fPrice").value = basePrice * quantity;
     updateEndTimePreview();
+  }
+
+  // Le tatouage a un prix tres variable selon le client (taille, detail,
+  // temps passe) : seule prestation ou n'importe quelle collaboratrice peut
+  // ajuster le prix du RDV, pas seulement l'admin comme pour les autres
+  // prestations (voir priceReadOnly dans buildReservationForm).
+  function isTattooPrestation(prestationName) {
+    return String(prestationName || "").toLowerCase().indexOf("tatouage") !== -1;
+  }
+
+  function updatePriceLockState(prestationName) {
+    var state = formState.state;
+    var priceField = ui.byId("fPrice");
+    if (!priceField) {
+      return;
+    }
+    priceField.readOnly = !auth.isAdmin(state.user) && !isTattooPrestation(prestationName);
   }
 
   function updateEndTimePreview() {
@@ -277,6 +330,7 @@
     ui.byId("fPrestButton").addEventListener("click", openPrestationPicker);
     ui.byId("fTime").addEventListener("change", updateEndTimePreview);
     ui.byId("fDuration").addEventListener("input", updateEndTimePreview);
+    ui.byId("fQuantity").addEventListener("input", applyQuantityToFields);
 
     updateReservationRoom();
     updateEndTimePreview();
@@ -289,7 +343,12 @@
     var button = ui.byId("fPrestButton");
     button.dataset.entryId = "";
     button.dataset.serviceId = "";
+    button.dataset.baseName = "";
+    button.dataset.baseDuration = "";
+    button.dataset.basePrice = "";
     button.textContent = "Choisir une prestation";
+    ui.byId("fQuantity").value = "1";
+    updatePriceLockState("");
     ui.byId("fRoom").innerHTML = buildRoomOptionsHtml(state, ui.byId("fCollab").value, ui.byId("fRoom").value);
   }
 
