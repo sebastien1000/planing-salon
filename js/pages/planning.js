@@ -217,7 +217,12 @@
     return blocked.map(function (item) {
       var visible = canSeeBlockedDetail(item.type, item.collab);
       var label = visible ? categoryLabelFor(item.type, item.category) : (item.type === "holiday" ? "Vacances" : "Absence");
-      var collabUser = utils.findByName(db.users, item.collab);
+      // profiles (frais depuis Supabase, voir render()) plutot que db.users
+      // (mirroir local par appareil) : la couleur de profil n'y est
+      // rafraichie qu'a la connexion ou a une visite admin de Comptes, donc
+      // souvent perimee/absente sur un appareil qui vient de voir cette
+      // fonctionnalite arriver.
+      var collabUser = utils.findByName(profiles, item.collab);
       var colorVars = collabColorVars(collabUser);
       var style = colorVars
         ? ' style="' + colorVars + "background-color:var(--collab-color);" +
@@ -584,7 +589,7 @@
               "dot",
               isMine ? "planning-dot-own" : "planning-dot-other"
             ].join(" ");
-            var collabUser = utils.findByName(db.users, reservation.collab);
+            var collabUser = utils.findByName(profiles, reservation.collab);
             var colorVars = collabColorVars(collabUser);
             var textColor = collabUser && collabUser.color ? "color:" + utils.readableTextColor(collabUser.color) + ";" : "";
             var dotStyle = colorVars ? ' style="' + colorVars + textColor + '"' : "";
@@ -631,7 +636,7 @@
   function blockedGridEventHtml(item, top, height, leftPct, widthPct) {
     var visible = canSeeBlockedDetail(item.type, item.collab);
     var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
-    var collabUser = utils.findByName(db.users, item.collab);
+    var collabUser = utils.findByName(profiles, item.collab);
     var colorVars = collabColorVars(collabUser);
     var showNotes = visible && item.notes && height >= GRID_SLOT_HEIGHT * 2;
 
@@ -682,7 +687,7 @@
       // prestation, elle, reste toujours visible (voir showPrestation).
       var title = canSee ? reservation.client : "Réservé - " + reservation.collab;
       var endTime = domain.addMinutes(reservation.time, reservation.duration);
-      var collabUser = utils.findByName(db.users, reservation.collab);
+      var collabUser = utils.findByName(profiles, reservation.collab);
       var colorVars = collabColorVars(collabUser);
       // Sur un RDV masque, la prestation est l'une des seules informations
       // que la regle metier autorise a montrer : elle reste donc toujours
