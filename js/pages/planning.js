@@ -651,6 +651,15 @@
     ].join("");
   }
 
+  // Ordre stable (alphabetique, via profiles - deja trie par nom cote
+  // Supabase) : garantit que "qui est a gauche/a droite" ne change jamais
+  // d'un moment a l'autre de la journee (voir layoutDayGridEventsByCollab).
+  function stableCollabOrder() {
+    return profiles
+      .filter(function (item) { return item.role === "collab"; })
+      .map(function (item) { return item.name; });
+  }
+
   function timeGridHtml(date, dateReservations, blocked) {
     var blockedEvents = blocked.map(function (item) { return blockedPeriodGridEvent(item, date); });
     var allEvents = dateReservations.concat(blockedEvents);
@@ -658,7 +667,7 @@
     var slots = domain.dayGridSlots(range);
     var slotMinutes = domain.DAY_GRID_SLOT_MINUTES;
     var totalHeight = ((range.end - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
-    var laidOutEvents = domain.layoutDayGridEvents(allEvents);
+    var laidOutEvents = domain.layoutDayGridEventsByCollab(allEvents, stableCollabOrder());
 
     var timesHtml = slots.map(function (slot) {
       var top = ((slot.minutes - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
@@ -670,10 +679,16 @@
       var start = utils.mins(event.time);
       var top = ((start - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
       var height = (Number(event.duration || 0) / slotMinutes) * GRID_SLOT_HEIGHT;
-      var columns = event._gridColumns || 1;
-      var column = event._gridColumn || 0;
-      var widthPct = 100 / columns;
-      var leftPct = widthPct * column;
+      // Zone fixe par collaboratrice (toute la journee), sous-decoupee
+      // seulement en cas de vrai chevauchement au sein de la MEME
+      // collaboratrice (voir layoutDayGridEventsByCollab).
+      var zoneCount = event._zoneCount || 1;
+      var zoneIndex = event._zoneIndex || 0;
+      var subColumns = event._gridColumns || 1;
+      var subColumn = event._gridColumn || 0;
+      var zoneWidthPct = 100 / zoneCount;
+      var widthPct = zoneWidthPct / subColumns;
+      var leftPct = zoneWidthPct * zoneIndex + widthPct * subColumn;
 
       if (event.type === "holiday" || event.type === "absence") {
         return blockedGridEventHtml(event, top, height, leftPct, widthPct);

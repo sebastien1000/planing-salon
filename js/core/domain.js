@@ -370,6 +370,52 @@
     return sorted;
   }
 
+  // Meme grille horaire que layoutDayGridEvents, mais chaque collaboratrice
+  // garde une zone FIXE toute la journee (dans l'ordre stable collabOrder,
+  // ex. alphabetique via la liste profiles) plutot qu'une colonne
+  // recalculee a chaque chevauchement : sans ca, deux collaboratrices ayant
+  // chacune un RDV a des heures differentes pouvaient se retrouver tantot a
+  // gauche tantot a droite au fil de la journee, obligeant a chercher des
+  // deux cotes. Un vrai chevauchement au sein de la MEME collaboratrice
+  // (rare : RDV pendant sa propre absence/conge force malgre l'avertissement)
+  // est gere en sous-decoupant sa zone (reutilise layoutDayGridEvents,
+  // scope a ses seuls evenements).
+  function layoutDayGridEventsByCollab(events, collabOrder) {
+    var byCollab = {};
+
+    events.forEach(function (event) {
+      var key = event.collab || "";
+      if (!byCollab[key]) {
+        byCollab[key] = [];
+      }
+      byCollab[key].push(event);
+    });
+
+    var zones = collabOrder.filter(function (name) {
+      return byCollab[name] && byCollab[name].length;
+    });
+
+    Object.keys(byCollab).forEach(function (name) {
+      if (zones.indexOf(name) === -1) {
+        zones.push(name);
+      }
+    });
+
+    var zoneCount = Math.max(zones.length, 1);
+
+    zones.forEach(function (name, zoneIndex) {
+      layoutDayGridEvents(byCollab[name]).forEach(function (event) {
+        event._zoneIndex = zoneIndex;
+        event._zoneCount = zoneCount;
+        // _gridColumn/_gridColumns (deja poses par layoutDayGridEvents)
+        // deviennent la sous-position DANS la zone de cette collaboratrice,
+        // plus jamais une colonne globale a la journee.
+      });
+    });
+
+    return events;
+  }
+
   function fullDateLabel(value) {
     return utils.dateObj(value).toLocaleDateString("fr-FR", {
       weekday: "long",
@@ -454,6 +500,7 @@
     dayGridRange: dayGridRange,
     dayGridSlots: dayGridSlots,
     layoutDayGridEvents: layoutDayGridEvents,
+    layoutDayGridEventsByCollab: layoutDayGridEventsByCollab,
     minutesToTime: minutesToTime,
     DAY_GRID_SLOT_MINUTES: DAY_GRID_SLOT_MINUTES,
     doneReservationsFor: doneReservationsFor,
