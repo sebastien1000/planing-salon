@@ -45,6 +45,15 @@ create table if not exists profiles (
 -- synchronisee vers chaque appareil a la connexion (voir js/core/auth.js).
 alter table profiles add column if not exists color text;
 
+-- Salle proposee par defaut a la creation d'un RDV (ex. Marion -> Salle
+-- Ongles 2) : meme principe que color ci-dessus - source de verite
+-- serveur, synchronisee vers chaque appareil a la connexion (voir
+-- js/core/auth.js). Distincte des salles autorisees (js/core/data.js,
+-- db.users[].rooms, toujours locales uniquement) : celle-ci ne fait que
+-- suggerer un choix par defaut, modifiable a tout moment dans le
+-- formulaire de RDV (voir js/core/domain.js, roomFor).
+alter table profiles add column if not exists default_room text;
+
 -- 3. Table clients
 create table if not exists clients (
   id uuid primary key default gen_random_uuid(),
