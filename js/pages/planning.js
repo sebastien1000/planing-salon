@@ -610,12 +610,50 @@
   // (voir showDetail plus bas), pour ne jamais rendre le texte illisible.
   var GRID_SLOT_HEIGHT = 44;
 
-  function timeGridHtml(dateReservations) {
-    var range = domain.dayGridRange(dateReservations);
+  // Convertit une periode bloquee (conge/absence) en pseudo-evenement
+  // compatible avec domain.layoutDayGridEvents (.time/.duration), pour
+  // qu'elle soit positionnee et dimensionnee dans la grille horaire EXACTEMENT
+  // comme un rendez-vous, au lieu d'une carte texte qui ne refletait ni sa
+  // duree ni son horaire reel. Une periode multi-jours (startDate !=
+  // endDate) est "decoupee" a l'heure exacte uniquement le premier/dernier
+  // jour ; les jours intermediaires l'occupent entierement (00:00-23:59).
+  function blockedPeriodGridEvent(item, date) {
+    var startTime = date === item.startDate ? item.startTime : "00:00";
+    var endTime = date === item.endDate ? item.endTime : "23:59";
+    var duration = Math.max(utils.mins(endTime) - utils.mins(startTime), 0);
+
+    return Object.assign({}, item, {
+      time: startTime,
+      duration: duration
+    });
+  }
+
+  function blockedGridEventHtml(item, top, height, leftPct, widthPct) {
+    var visible = canSeeBlockedDetail(item.type, item.collab);
+    var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
+    var collabUser = utils.findByName(db.users, item.collab);
+    var colorVars = collabColorVars(collabUser);
+    var showNotes = visible && item.notes && height >= GRID_SLOT_HEIGHT * 2;
+
+    return [
+      '<div class="grid-event absence-slot"',
+      ' style="top:' + top + "px;height:" + Math.max(height, GRID_SLOT_HEIGHT) + "px;left:" + leftPct + "%;width:calc(" + widthPct + "% - 4px);" + colorVars + '"',
+      ">",
+      '  <div class="grid-event-time">' + utils.escapeHtml(item.collab) + "</div>",
+      '  <div class="grid-event-title">' + utils.escapeHtml(title) + "</div>",
+      (showNotes ? '  <div class="grid-event-sub">' + utils.escapeHtml(item.notes) + "</div>" : ""),
+      "</div>"
+    ].join("");
+  }
+
+  function timeGridHtml(date, dateReservations, blocked) {
+    var blockedEvents = blocked.map(function (item) { return blockedPeriodGridEvent(item, date); });
+    var allEvents = dateReservations.concat(blockedEvents);
+    var range = domain.dayGridRange(allEvents);
     var slots = domain.dayGridSlots(range);
     var slotMinutes = domain.DAY_GRID_SLOT_MINUTES;
     var totalHeight = ((range.end - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
-    var laidOutReservations = domain.layoutDayGridEvents(dateReservations);
+    var laidOutEvents = domain.layoutDayGridEvents(allEvents);
 
     var timesHtml = slots.map(function (slot) {
       var top = ((slot.minutes - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
@@ -623,15 +661,20 @@
       return '<div class="' + className + '" style="top:' + top + 'px">' + slot.label + "</div>";
     }).join("");
 
-    var eventsHtml = laidOutReservations.map(function (reservation) {
-      var start = utils.mins(reservation.time);
+    var eventsHtml = laidOutEvents.map(function (event) {
+      var start = utils.mins(event.time);
       var top = ((start - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
-      var height = (Number(reservation.duration || 0) / slotMinutes) * GRID_SLOT_HEIGHT;
-      var columns = reservation._gridColumns || 1;
-      var column = reservation._gridColumn || 0;
+      var height = (Number(event.duration || 0) / slotMinutes) * GRID_SLOT_HEIGHT;
+      var columns = event._gridColumns || 1;
+      var column = event._gridColumn || 0;
       var widthPct = 100 / columns;
       var leftPct = widthPct * column;
 
+      if (event.type === "holiday" || event.type === "absence") {
+        return blockedGridEventHtml(event, top, height, leftPct, widthPct);
+      }
+
+      var reservation = event;
       var isMine = reservation.collab === user.name;
       var canSee = auth.canSeeReservation(user, reservation);
       // Seules les infos clientes (nom, tel, email, notes) sont
@@ -691,27 +734,7 @@
       weekDayHeadTitleHtml(date),
       '    <button class="secondary mini-action" type="button" data-add-date="' + date + '">+ RDV</button>',
       "  </div>",
-      blocked.map(function (item) {
-        var visible = canSeeBlockedDetail(item.type, item.collab);
-        var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
-        var collabUser = utils.findByName(db.users, item.collab);
-        var colorVars = collabColorVars(collabUser);
-
-        return [
-          '<div class="card absence-slot"' + (colorVars ? ' style="' + colorVars + '"' : "") + ">",
-          "  <b>" + utils.escapeHtml(title) + "</b>",
-          '  <div class="meta">',
-          '    <span class="badge">' + utils.escapeHtml(item.collab) + "</span>",
-          '    <span class="badge">' + utils.escapeHtml(item.startTime) + " - " + utils.escapeHtml(item.endTime) + "</span>",
-          (item.startDate !== item.endDate
-            ? '    <span class="badge">jusqu au ' + utils.escapeHtml(item.endDate) + "</span>"
-            : ""),
-          "  </div>",
-          (visible && item.notes ? '  <div class="tiny">' + utils.escapeHtml(item.notes) + "</div>" : ""),
-          "</div>"
-        ].join("");
-      }).join(""),
-      timeGridHtml(dateReservations),
+      timeGridHtml(date, dateReservations, blocked),
       "</div>"
     ].join("");
   }
@@ -724,8 +747,9 @@
   // (jamais empiles verticalement), avec defilement horizontal propre sur
   // petit ecran si la largeur ne suffit pas (voir .week-grid/.week-col dans
   // css/components.css). Reutilise dayCardHtml (meme contenu que la vue
-  // jour : blocages, RDV masques/hachures pour les autres collaboratrices)
-  // pour ne pas dupliquer cette logique.
+  // jour : blocages/absences positionnes dans la grille horaire selon
+  // leurs vraies heures, RDV masques/hachures pour les autres
+  // collaboratrices) pour ne pas dupliquer cette logique.
   function renderWeek(dates) {
     return '<div class="week-grid">' + dates.map(function (date) {
       return '<div class="week-col">' + dayCardHtml(date) + "</div>";
