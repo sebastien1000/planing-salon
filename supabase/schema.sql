@@ -283,12 +283,11 @@ create policy "clients_delete_authenticated"
 -- exige un droit SELECT sur les colonnes lues, meme sans RETURNING :
 -- cette policy doit donc rester au moins aussi restrictive que la policy
 -- UPDATE ci-dessous, sinon toute modification de rendez-vous echoue avec
--- une erreur 403 (deja arrive : voir historique). Elle ne donne pas acces
--- aux vrais noms clients des autres collaboratrices pour autant : la
--- lecture "grand public" (planning partage) passe par la vue
--- reservations_public, qui masque ces donnees et s'execute avec les
--- privileges de son proprietaire (elle voit donc toutes les lignes,
--- meme si cette policy-ci ne les donne pas en direct).
+-- une erreur 403 (deja arrive : voir historique). La lecture "grand
+-- public" (planning partage, tous les noms clients visibles) passe par
+-- la vue reservations_public, qui masque uniquement les notes privees et
+-- s'execute avec les privileges de son proprietaire (elle voit donc
+-- toutes les lignes, meme si cette policy-ci ne les donne pas en direct).
 drop policy if exists "reservations_select_authenticated" on reservations;
 create policy "reservations_select_authenticated"
   on reservations for select
@@ -527,18 +526,16 @@ join (values
 on conflict (category_id, name) do nothing;
 
 -- 8. Vue reservations_public
--- L'app ne doit jamais lire la table brute (elle contient le vrai nom de
--- cliente et les notes privees) : seule cette vue, qui masque ces colonnes
--- pour les autres collaborateurs, doit etre interrogee cote client.
+-- L'app ne doit jamais lire la table brute (elle contient les notes
+-- privees) : seule cette vue, qui masque cette colonne pour les autres
+-- collaborateurs, doit etre interrogee cote client. Le nom du client,
+-- lui, est visible par toutes les collaboratrices (planning partage).
 drop view if exists reservations_public;
 create or replace view reservations_public as
 select
   r.id,
   r.client_id,
-  case when is_admin() or r.collab_id = auth.uid()
-    then r.client_name
-    else 'Reserve'
-  end as client_name,
+  r.client_name,
   r.collab_id,
   p.name as collab_name,
   r.room,
