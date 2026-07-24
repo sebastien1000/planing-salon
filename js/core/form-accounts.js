@@ -49,6 +49,17 @@
     return checked.length === boxes.length ? null : checked;
   }
 
+  // "" = aucune salle par defaut (choix automatique selon la prestation,
+  // comportement precedent - voir domain.js roomFor).
+  function buildDefaultRoomOptionsHtml(selectedRoom) {
+    var options = ['<option value="">Aucune (choix automatique selon la prestation)</option>'];
+    data.ROOMS.forEach(function (room) {
+      var selected = room === selectedRoom ? " selected" : "";
+      options.push('<option value="' + utils.escapeHtml(room) + '"' + selected + ">" + utils.escapeHtml(room) + "</option>");
+    });
+    return options.join("");
+  }
+
   var PHOTO_MAX_SIZE = 200;
   var pendingPhoto; // undefined = no change, null = removed, "data:..." = new photo
 
@@ -144,6 +155,8 @@
       '<input id="uColor" class="field" type="color" value="' + (user.color || "#e8a7b6") + '">',
       '<label>Salles autorisees (tout coche = aucune restriction, tout decoche = aucun acces)</label>',
       '<div class="checkbox-group">' + buildCheckboxGroup("uRoom", data.ROOMS, user.rooms) + "</div>",
+      '<label for="uDefaultRoom">Salle proposee par defaut a la creation d un RDV</label>',
+      '<select id="uDefaultRoom" class="field">' + buildDefaultRoomOptionsHtml(user.defaultRoom) + "</select>",
       '<label>Prestations autorisees (tout coche = aucune restriction, tout decoche = aucun acces)</label>',
       '<div class="checkbox-group">' + buildCheckboxGroup("uPrestation", prestationNames, user.prestations) + "</div>"
     ].join("");
@@ -171,9 +184,9 @@
       (user.active === false ? '<div class="alert">Ce compte est desactive.</div>' : ""),
       buildPhotoFieldHtml(user),
       '<label for="uName">Nom affiche</label><input id="uName" class="field" value="' + utils.escapeHtml(user.name) + '">',
-      '<label for="uPhone">Telephone</label><input id="uPhone" class="field" type="tel" value="' + utils.escapeHtml(user.phone || "") + '">',
+      '<label for="uPhone">Téléphone</label><input id="uPhone" class="field" type="tel" value="' + utils.escapeHtml(user.phone || "") + '">',
       '<label for="uEmail">Email</label><input id="uEmail" class="field" type="email" value="' + utils.escapeHtml(user.email || "") + '">',
-      '<button id="sendResetButton" class="secondary" style="width:100%;margin-bottom:14px" type="button">Envoyer un lien de reinitialisation</button>',
+      '<button id="sendResetButton" class="secondary" style="width:100%;margin-bottom:14px" type="button">Envoyer un lien de réinitialisation</button>',
       isAdminEditing ? buildAccountExtraFieldsHtml(user, isSelf) : "",
       '<div class="row" style="margin-top:14px">',
       '  <button id="saveProfileButton" class="primary grow" type="button">Enregistrer</button>',
@@ -259,7 +272,9 @@
         email: user.email,
         name: user.name,
         role: user.role,
-        active: user.active !== false
+        active: user.active !== false,
+        color: user.color,
+        default_room: user.defaultRoom || null
       }).then(function () {
         window.alert(changeLabel + " mis a jour : les droits reels de " + user.name + " ont change immediatement, sans reconnexion.");
       });
@@ -281,7 +296,6 @@
       return;
     }
 
-    var oldName = user.name;
     var newName = ui.byId("uName").value.trim() || user.name;
 
     user.name = newName;
@@ -292,6 +306,8 @@
     }
 
     var roleChanged = false;
+    var colorChanged = false;
+    var defaultRoomChanged = false;
     var roleField = ui.byId("uRole");
     if (auth.isAdmin(state.user) && roleField) {
       if (roleField.tagName === "SELECT") {
@@ -305,20 +321,26 @@
         user.role = newRole;
       }
 
-      user.color = ui.byId("uColor").value;
+      var newColor = ui.byId("uColor").value;
+      colorChanged = newColor !== user.color;
+      user.color = newColor;
       user.rooms = readCheckedValues("uRoom");
       user.prestations = readCheckedValues("uPrestation");
-    }
 
-    if (oldName !== newName) {
-      domain.renameCollaborator(state.db, oldName, newName);
+      var newDefaultRoom = ui.byId("uDefaultRoom").value;
+      defaultRoomChanged = newDefaultRoom !== user.defaultRoom;
+      user.defaultRoom = newDefaultRoom;
     }
 
     ui.closeModal();
     formState.saveAndRefresh();
 
-    if (roleChanged) {
-      syncAccountToSupabase(user, "Role");
+    if (roleChanged || colorChanged || defaultRoomChanged) {
+      var changedLabels = [];
+      if (roleChanged) { changedLabels.push("Role"); }
+      if (colorChanged) { changedLabels.push("Couleur"); }
+      if (defaultRoomChanged) { changedLabels.push("Salle par defaut"); }
+      syncAccountToSupabase(user, changedLabels.join(" et "));
     }
   }
 
@@ -330,7 +352,7 @@
       return;
     }
 
-    var blankUser = { color: "#e8a7b6", prestations: [], role: "collab", rooms: [] };
+    var blankUser = { color: "#e8a7b6", defaultRoom: "", prestations: [], role: "collab", rooms: [] };
 
     ui.showModal([
       '<div class="modal-head">',
@@ -340,10 +362,10 @@
       '<div id="addAccountMsg"></div>',
       '<label for="naName">Nom affiche</label><input id="naName" class="field" placeholder="Ex : Lea">',
       '<label for="naLogin">Identifiant de connexion</label><input id="naLogin" class="field" placeholder="Ex : Lea">',
-      '<label for="naPhone">Telephone (facultatif)</label><input id="naPhone" class="field">',
+      '<label for="naPhone">Téléphone (facultatif)</label><input id="naPhone" class="field">',
       '<label for="naEmail">Email</label><input id="naEmail" class="field" type="email" placeholder="obligatoire pour la connexion">',
       '<p class="tiny">Le mot de passe n est plus defini ici : creez le compte correspondant dans Supabase avec le meme email, ' +
-        'puis utilisez "Envoyer un lien de reinitialisation" pour que la personne choisisse son mot de passe.</p>',
+        'puis utilisez "Envoyer un lien de réinitialisation" pour que la personne choisisse son mot de passe.</p>',
       buildAccountExtraFieldsHtml(blankUser),
       '<button id="saveAddAccountButton" class="primary" style="width:100%;margin-top:14px" type="button">Ajouter</button>'
     ].join(""));
@@ -374,7 +396,7 @@
     });
 
     if (duplicate) {
-      ui.showAlert("addAccountMsg", "Cet identifiant existe deja.");
+      ui.showAlert("addAccountMsg", "Cet identifiant existe déjà.");
       return;
     }
 
@@ -385,6 +407,7 @@
       role: ui.byId("uRole").value,
       color: ui.byId("uColor").value,
       rooms: readCheckedValues("uRoom"),
+      defaultRoom: ui.byId("uDefaultRoom").value,
       prestations: readCheckedValues("uPrestation"),
       phone: ui.byId("naPhone").value.trim(),
       email: email,
@@ -461,7 +484,7 @@
     });
 
     if (hasUpcoming) {
-      window.alert("Impossible de supprimer : ce compte a des rendez-vous a venir. Annulez ou reassignez-les d abord.");
+      window.alert("Impossible de supprimer : ce compte a des rendez-vous à venir. Annulez ou réassignez-les d'abord.");
       return;
     }
 
@@ -493,7 +516,7 @@
     var user = utils.findById(state.db.users, userId);
 
     if (!user || !canManageAccount(userId)) {
-      window.alert("Vous ne pouvez pas demander une reinitialisation pour ce compte.");
+      window.alert("Vous ne pouvez pas demander une réinitialisation pour ce compte.");
       return;
     }
 
@@ -503,7 +526,7 @@
     }
 
     auth.requestPasswordReset(user.email).then(function () {
-      window.alert("Si un compte Supabase existe pour " + user.email + ", un lien de reinitialisation vient d etre envoye.");
+      window.alert("Si un compte Supabase existe pour " + user.email + ", un lien de réinitialisation vient d'être envoyé.");
     });
   }
 

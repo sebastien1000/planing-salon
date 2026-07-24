@@ -28,11 +28,13 @@
     window.console && window.console.error && window.console.error(error);
   }
 
-  function collabLabel(client) {
-    if (!client.collabId) {
-      return "";
-    }
-    return supabaseData.resolveCollabName(profiles, client.collabId);
+  // Une cliente peut avoir plusieurs collaboratrices habituelles (ex. Julie
+  // ET Marion) : renvoie un nom par id associe, pas seulement le premier
+  // (voir clientCollabIds plus bas et supabase/schema.sql, collab_ids).
+  function collabNames(client) {
+    return clientCollabIds(client)
+      .map(function (id) { return supabaseData.resolveCollabName(profiles, id); })
+      .filter(Boolean);
   }
 
   function clientCollabIds(client) {
@@ -69,7 +71,9 @@
   }
 
   function clientCard(client) {
-    var collab = collabLabel(client);
+    var collabBadges = collabNames(client).map(function (name) {
+      return '<span class="badge">' + utils.escapeHtml(name) + "</span>";
+    }).join("");
 
     return [
       '<div class="card">',
@@ -81,7 +85,7 @@
       '    <button class="secondary" type="button" data-client-id="' + client.id + '">Ouvrir</button>',
       "  </div>",
       '  <div class="meta">',
-      collab ? '    <span class="badge">' + utils.escapeHtml(collab) + "</span>" : "",
+      collabBadges,
       client.prestation ? '    <span class="badge">' + utils.escapeHtml(client.prestation) + "</span>" : "",
       client.frequency ? '    <span class="badge">Tous les ' + client.frequency + " jours</span>" : "",
       client.allergies ? '    <span class="badge danger">Allergie / precaution</span>' : "",

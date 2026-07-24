@@ -113,6 +113,16 @@
     ].join("");
 
     byId("goPlanning").addEventListener("click", function () {
+      // Marion prefere ouvrir le planning directement sur la vue mois (voir
+      // js/pages/planning.js) : ce choix par defaut ne s'applique que si
+      // aucune vue n'est deja memorisee pour la session (sessionStorage),
+      // donc si elle avait bascule sur jour/semaine plus tot, cliquer sur
+      // "accueil" la laisserait sinon sur cette vue au lieu de revenir au
+      // mois. On efface donc la vue memorisee ici pour que "accueil" la
+      // ramene toujours sur sa vue par defaut, comme un vrai bouton accueil.
+      if (user.name === "Marion") {
+        sessionStorage.removeItem("planning:view");
+      }
       window.location.href = "planning.html";
     });
 

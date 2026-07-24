@@ -14,6 +14,7 @@
     bindReservationCardActions: reservations.bindReservationCardActions,
     cancelReservation: reservations.cancelReservation,
     canManageAbsence: absences.canManageAbsence,
+    canManageHoliday: holidays.canManageHoliday,
     configure: formState.configure,
     deleteAbsence: absences.deleteAbsence,
     deleteAccount: accounts.deleteAccount,

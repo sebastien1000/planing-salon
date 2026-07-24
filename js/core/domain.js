@@ -48,6 +48,21 @@
   }
 
   function roomFor(db, collab, prestationName) {
+    var user = utils.findByName(db.users, collab);
+
+    // Salle choisie explicitement par l'admin pour cette collaboratrice
+    // (ex. Marion -> Salle Ongles 2), prioritaire sur tout le reste - mais
+    // seulement si elle reste dans ses salles autorisees (au cas ou les deux
+    // reglages divergeraient). Distinct de "Salles autorisees" plus bas :
+    // celui-ci restreint l'acces, celui-la ne fait que suggerer un choix par
+    // defaut modifiable a tout moment dans le formulaire de RDV. Verifiee
+    // AVANT meme de savoir si une prestation est choisie : la salle doit
+    // etre deja proposee des l'ouverture du formulaire, pas seulement une
+    // fois une prestation selectionnee.
+    if (user && user.defaultRoom && isRoomAllowedForUser(user, user.defaultRoom)) {
+      return user.defaultRoom;
+    }
+
     var prestation = db.prestations.find(function (item) {
       return item.name === prestationName;
     });
@@ -56,7 +71,6 @@
       return "";
     }
 
-    var user = utils.findByName(db.users, collab);
     if (user && user.rooms && user.rooms.length) {
       return user.rooms[0];
     }
@@ -430,22 +444,6 @@
     }).length;
   }
 
-  // Clientes/rendez-vous n'ont plus besoin d'etre parcourus ici : Supabase
-  // les relie a un collaborateur par id (collab_id), pas par nom - un
-  // renommage n'y touche donc rien, le nom affiche vient de profiles.name.
-  function renameCollaborator(db, oldName, newName) {
-    db.absences.forEach(function (absence) {
-      if (absence.collab === oldName) {
-        absence.collab = newName;
-      }
-    });
-
-    db.holidays.forEach(function (holiday) {
-      if (holiday.collab === oldName) {
-        holiday.collab = newName;
-      }
-    });
-  }
 
   window.SalonDomain = {
     assignmentError: assignmentError,
@@ -468,7 +466,6 @@
     isRoomAllowedForUser: isRoomAllowedForUser,
     normalizeStatus: normalizeStatus,
     periodCoversDate: periodCoversDate,
-    renameCollaborator: renameCollaborator,
     revenueFor: revenueFor,
     roomFor: roomFor,
     roomStatus: roomStatus,

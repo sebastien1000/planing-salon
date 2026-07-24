@@ -390,13 +390,15 @@
 
   // Pas de bornage par date : la recherche doit pouvoir retrouver un
   // rendez-vous ancien ou a venir, comme le faisait la version localStorage.
+  // Meme tri chronologique (date puis heure) que les autres listes (voir
+  // sortReservationsByDateTime ci-dessus) : un tri inverse trainait ici par
+  // erreur, la page Recherche n'affichait donc pas ses resultats dans
+  // l'ordre chronologique attendu.
   function listAllReservations() {
     return unwrap(
-      client().from("reservations_public").select("*").order("date", { ascending: false }).order("time", { ascending: false })
+      client().from("reservations_public").select("*").order("date").order("time")
     ).then(function (rows) {
-      return rows.map(mapReservationRow).sort(function (a, b) {
-        return window.SalonDomain.compareReservationsByDateTime(b, a);
-      });
+      return sortReservationsByDateTime(rows.map(mapReservationRow));
     });
   }
 
@@ -451,15 +453,84 @@
       .catch(markSlotTakenError);
   }
 
+  // ---- Conges / absences des collaborateurs ----
+  // Lecture toujours via la vue blocked_periods_public : elle renvoie deja
+  // le nom du collaborateur (jointure profiles) et masque motif/notes d'une
+  // absence pour tout le monde sauf l'admin et la collaboratrice concernee
+  // (voir supabase/schema.sql). L'app ne lit jamais la table brute directement.
+
+  function mapBlockedPeriodRow(row) {
+    return {
+      id: row.id,
+      kind: row.kind,
+      collab: row.collab_name,
+      collabId: row.collab_id,
+      category: row.category,
+      startDate: row.start_date,
+      startTime: String(row.start_time || "00:00").slice(0, 5),
+      endDate: row.end_date,
+      endTime: String(row.end_time || "23:59").slice(0, 5),
+      notes: row.notes
+    };
+  }
+
+  function toBlockedPeriodRow(entry) {
+    return {
+      kind: entry.kind,
+      collab_id: entry.collabId,
+      category: entry.category,
+      start_date: entry.startDate,
+      start_time: entry.startTime,
+      end_date: entry.endDate,
+      end_time: entry.endTime,
+      notes: entry.notes || null
+    };
+  }
+
+  function listBlockedPeriods() {
+    return unwrap(
+      client().from("blocked_periods_public").select("*").order("start_date")
+    ).then(function (rows) {
+      return rows.map(mapBlockedPeriodRow);
+    });
+  }
+
+  // Pas de .select() apres insert/update : meme prudence que pour
+  // createReservation/updateReservation ci-dessus, meme si la policy SELECT
+  // actuelle laisse en pratique toujours l'auteur de l'ecriture relire sa
+  // propre ligne (admin ou collaboratrice concernee dans les deux cas).
+  function createBlockedPeriod(entry) {
+    var row = toBlockedPeriodRow(entry);
+    row.id = generateId();
+    return unwrap(client().from("blocked_periods").insert(row))
+      .then(function () {
+        return Object.assign({}, entry, { id: row.id });
+      });
+  }
+
+  function updateBlockedPeriod(id, entry) {
+    return unwrap(client().from("blocked_periods").update(toBlockedPeriodRow(entry)).eq("id", id))
+      .then(function () {
+        return Object.assign({}, entry, { id: id });
+      });
+  }
+
+  function deleteBlockedPeriod(id) {
+    return unwrap(client().from("blocked_periods").delete().eq("id", id));
+  }
+
   window.SalonSupabaseData = {
     countReservationsForService: countReservationsForService,
     countServiceUsage: countServiceUsage,
+    createBlockedPeriod: createBlockedPeriod,
     createReservation: createReservation,
+    deleteBlockedPeriod: deleteBlockedPeriod,
     deleteClient: deleteClient,
     deleteCollaboratorService: deleteCollaboratorService,
     deleteService: deleteService,
     findOrCreateClient: findOrCreateClient,
     listAllReservations: listAllReservations,
+    listBlockedPeriods: listBlockedPeriods,
     listClients: listClients,
     listCollaboratorServices: listCollaboratorServices,
     listProfiles: listProfiles,
@@ -469,6 +540,7 @@
     listServices: listServices,
     resolveCollabId: resolveCollabId,
     resolveCollabName: resolveCollabName,
+    updateBlockedPeriod: updateBlockedPeriod,
     updateClient: updateClient,
     updateReservation: updateReservation,
     upsertCollaboratorService: upsertCollaboratorService,

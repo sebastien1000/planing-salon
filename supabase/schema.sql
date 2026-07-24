@@ -37,6 +37,23 @@ create table if not exists profiles (
   created_at timestamptz not null default now()
 );
 
+-- Couleur d'affichage dans le planning (ex. #e8a7b6) : vivait avant
+-- uniquement en localStorage (js/core/data.js), donc jamais synchronisee
+-- entre appareils - un admin qui changeait la couleur de Julie sur son
+-- telephone ne la voyait pas changer sur la tablette du salon. Meme
+-- principe que les autres champs "profiles" : source de verite serveur,
+-- synchronisee vers chaque appareil a la connexion (voir js/core/auth.js).
+alter table profiles add column if not exists color text;
+
+-- Salle proposee par defaut a la creation d'un RDV (ex. Marion -> Salle
+-- Ongles 2) : meme principe que color ci-dessus - source de verite
+-- serveur, synchronisee vers chaque appareil a la connexion (voir
+-- js/core/auth.js). Distincte des salles autorisees (js/core/data.js,
+-- db.users[].rooms, toujours locales uniquement) : celle-ci ne fait que
+-- suggerer un choix par defaut, modifiable a tout moment dans le
+-- formulaire de RDV (voir js/core/domain.js, roomFor).
+alter table profiles add column if not exists default_room text;
+
 -- 3. Table clients
 create table if not exists clients (
   id uuid primary key default gen_random_uuid(),
@@ -413,11 +430,30 @@ create policy "services_select_authenticated"
   on services for select
   using (auth.uid() is not null);
 
+-- Ajouter une prestation NEUVE au catalogue general (ex: une specialite pas
+-- encore proposee par personne) est ouvert a toute collaboratrice connectee,
+-- pour qu'elle puisse ensuite s'y attribuer son propre tarif sans dependre
+-- de l'admin (voir js/core/form-services.js, renderOwnServicesSection).
+-- Modifier ou retirer une prestation DEJA existante du catalogue (utilisee
+-- par toute l'equipe) reste reserve a l'admin, pour eviter qu'une
+-- collaboratrice modifie/supprime par erreur une prestation dont dependent
+-- ses collegues.
 drop policy if exists "services_write_admin" on services;
-create policy "services_write_admin"
-  on services for all
+drop policy if exists "services_insert_authenticated" on services;
+create policy "services_insert_authenticated"
+  on services for insert
+  with check (auth.uid() is not null);
+
+drop policy if exists "services_update_admin" on services;
+create policy "services_update_admin"
+  on services for update
   using (is_admin())
   with check (is_admin());
+
+drop policy if exists "services_delete_admin" on services;
+create policy "services_delete_admin"
+  on services for delete
+  using (is_admin());
 
 -- collaborator_services : l'admin voit/gere tout ; chaque collaboratrice ne
 -- voit et ne modifie QUE ses propres tarifs/durees, jamais ceux d'une autre.
@@ -535,3 +571,98 @@ grant select on reservations_public to authenticated;
 -- Les insertions/modifications passent par la table reservations elle-meme
 -- (RLS ci-dessus), la vue sert uniquement a la lecture masquee.
 grant insert, update on reservations to authenticated;
+
+-- 10. Table blocked_periods (conges + absences des collaborateurs)
+--
+-- Remplace l'ancien stockage 100% localStorage (db.holidays / db.absences,
+-- voir js/core/data.js) : un conge/une absence n'existait alors que sur
+-- l'appareil qui l'avait cree, invisible pour les autres collaboratrices ou
+-- l'admin sur un autre appareil - c'est exactement ce que ce script corrige.
+create table if not exists blocked_periods (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('holiday', 'absence')),
+  collab_id uuid not null references profiles(id) on delete cascade,
+  category text not null,
+  start_date date not null,
+  start_time time not null default '00:00',
+  end_date date not null,
+  end_time time not null default '23:59',
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint blocked_periods_range_check check (
+    end_date > start_date or (end_date = start_date and end_time > start_time)
+  )
+);
+
+create index if not exists blocked_periods_collab_id_idx on blocked_periods (collab_id);
+
+drop trigger if exists set_updated_at on blocked_periods;
+create trigger set_updated_at
+  before update on blocked_periods
+  for each row execute function set_updated_at();
+
+alter table blocked_periods enable row level security;
+
+-- SELECT restreint sur la table brute (meme principe que "reservations") :
+-- la lecture "grand public" masquee passe par la vue blocked_periods_public
+-- plus bas, qui s'execute avec les privileges de son proprietaire.
+drop policy if exists "blocked_periods_select_admin_or_own" on blocked_periods;
+create policy "blocked_periods_select_admin_or_own"
+  on blocked_periods for select
+  using (is_admin() or collab_id = auth.uid());
+
+-- Conges ET absences : l'admin peut gerer ceux de tout le monde ; une
+-- collaboratrice ne gere que les siens (regle deja appliquee cote
+-- JavaScript dans js/core/form-holidays.js et js/core/form-absences.js,
+-- desormais aussi garantie cote base). Meme regle pour les deux "kind" :
+-- une collaboratrice peut desormais poser ses propres conges sans dependre
+-- de l'admin, comme elle le fait deja pour ses absences.
+drop policy if exists "blocked_periods_insert_authorized" on blocked_periods;
+create policy "blocked_periods_insert_authorized"
+  on blocked_periods for insert
+  with check (is_admin() or collab_id = auth.uid());
+
+drop policy if exists "blocked_periods_update_authorized" on blocked_periods;
+create policy "blocked_periods_update_authorized"
+  on blocked_periods for update
+  using (is_admin() or collab_id = auth.uid())
+  with check (is_admin() or collab_id = auth.uid());
+
+drop policy if exists "blocked_periods_delete_authorized" on blocked_periods;
+create policy "blocked_periods_delete_authorized"
+  on blocked_periods for delete
+  using (is_admin() or collab_id = auth.uid());
+
+-- Vue "grand public" : tout le monde doit voir qu'un creneau est bloque
+-- (sinon impossible de reperer un conflit ou d'afficher le planning
+-- correctement), mais le detail (motif/notes) d'une ABSENCE reste prive a
+-- l'admin et a la collaboratrice concernee - seul "Indisponible" est montre
+-- aux autres cote JavaScript (voir js/pages/planning.js,
+-- canSeeBlockedDetail). Les conges, eux, restent toujours visibles en clair
+-- pour tout le monde (motif "Vacances" etc. jamais sensible).
+drop view if exists blocked_periods_public;
+create or replace view blocked_periods_public as
+select
+  bp.id,
+  bp.kind,
+  bp.collab_id,
+  p.name as collab_name,
+  case when bp.kind = 'holiday' or is_admin() or bp.collab_id = auth.uid()
+    then bp.category
+    else null
+  end as category,
+  bp.start_date,
+  bp.start_time,
+  bp.end_date,
+  bp.end_time,
+  case when bp.kind = 'holiday' or is_admin() or bp.collab_id = auth.uid()
+    then bp.notes
+    else null
+  end as notes
+from blocked_periods bp
+join profiles p on p.id = bp.collab_id;
+
+grant select on blocked_periods to authenticated;
+grant select on blocked_periods_public to authenticated;
+grant insert, update, delete on blocked_periods to authenticated;

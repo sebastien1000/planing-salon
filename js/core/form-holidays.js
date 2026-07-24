@@ -3,6 +3,7 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var formState = window.SalonFormState;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
@@ -11,8 +12,16 @@
     return pair ? pair[1] : category;
   }
 
-  function holidaysForCollab(db, collabName) {
-    return db.holidays
+  // Meme regle que canManageAbsence (js/core/form-absences.js) : l'admin
+  // gere les conges de tout le monde, une collaboratrice ne gere que les
+  // siens.
+  function canManageHoliday(holiday) {
+    var state = formState.state;
+    return auth.isAdmin(state.user) || holiday.collab === state.user.name;
+  }
+
+  function holidaysForCollab(holidays, collabName) {
+    return holidays
       .filter(function (item) { return item.collab === collabName; })
       .sort(function (a, b) { return a.startDate.localeCompare(b.startDate); });
   }
@@ -65,16 +74,11 @@
   function openHolidayForm(holidayId, presetCollab) {
     var state = formState.state;
 
-    if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gerer les conges.");
-      return;
-    }
-
     var holiday = holidayId
-      ? utils.findById(state.db.holidays, holidayId)
+      ? utils.findById(state.holidays, holidayId)
       : {
           id: "",
-          collab: presetCollab || "",
+          collab: auth.isAdmin(state.user) ? (presetCollab || "") : state.user.name,
           startDate: state.selectedDate,
           startTime: "00:00",
           endDate: state.selectedDate,
@@ -87,6 +91,12 @@
       return;
     }
 
+    if (holidayId && !canManageHoliday(holiday)) {
+      window.alert("Vous ne pouvez pas modifier ce congé.");
+      return;
+    }
+
+    var lockOwnCollab = !auth.isAdmin(state.user);
     var collabOptions = state.db.users
       .filter(function (user) {
         return user.role === "collab" && (user.active !== false || user.name === holiday.collab);
@@ -105,7 +115,7 @@
       "</div>",
       '<div id="holidayMsg"></div>',
       '<label for="hoCollab">Collaborateur</label>',
-      '<select id="hoCollab" class="field">' + collabOptions + "</select>",
+      '<select id="hoCollab" class="field"' + (lockOwnCollab ? " disabled" : "") + '>' + collabOptions + "</select>",
       '<label for="hoCategory">Motif</label>',
       '<select id="hoCategory" class="field">' + buildCategoryOptionsHtml(holiday.category) + "</select>",
       '<div class="grid2">',
@@ -139,15 +149,25 @@
 
   function saveHoliday(holidayId) {
     var state = formState.state;
+    var current = holidayId ? utils.findById(state.holidays, holidayId) : null;
 
-    if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gerer les conges.");
+    if (holidayId && (!current || !canManageHoliday(current))) {
+      ui.showAlert("holidayMsg", "Vous ne pouvez pas modifier ce congé.");
+      return;
+    }
+
+    var collabName = auth.isAdmin(state.user) ? ui.byId("hoCollab").value : state.user.name;
+    var collabUser = utils.findByName(state.db.users, collabName);
+
+    if (!collabUser) {
+      ui.showAlert("holidayMsg", "Collaborateur introuvable, réessayez.");
       return;
     }
 
     var holiday = {
-      id: holidayId || utils.uid("h"),
-      collab: ui.byId("hoCollab").value,
+      kind: "holiday",
+      collab: collabName,
+      collabId: collabUser.id,
       startDate: ui.byId("hoStartDate").value,
       startTime: ui.byId("hoStartTime").value || "00:00",
       endDate: ui.byId("hoEndDate").value,
@@ -156,9 +176,14 @@
       notes: ui.byId("hoNotes").value
     };
 
+    if (!holidayId && !canManageHoliday(holiday)) {
+      ui.showAlert("holidayMsg", "Vous ne pouvez créer un congé que pour vous-même.");
+      return;
+    }
+
     if (holiday.endDate < holiday.startDate ||
       (holiday.endDate === holiday.startDate && holiday.endTime <= holiday.startTime)) {
-      ui.showAlert("holidayMsg", "La date/heure de fin doit etre apres le debut.");
+      ui.showAlert("holidayMsg", "La date/heure de fin doit être après le début.");
       return;
     }
 
@@ -169,29 +194,38 @@
     }).length;
 
     if (clashingCount && !window.confirm(
-      clashingCount + " rendez-vous existants tombent dans cette periode. Creer quand meme le conge ?"
+      clashingCount + " rendez-vous existants tombent dans cette période. Créer quand même le congé ?"
     )) {
       return;
     }
 
-    if (holidayId) {
-      var current = utils.findById(state.db.holidays, holidayId);
-      if (current) {
-        Object.assign(current, holiday);
-      }
-    } else {
-      state.db.holidays.push(holiday);
-    }
+    var saveButton = ui.byId("saveHolidayButton");
+    saveButton.disabled = true;
 
-    ui.closeModal();
-    formState.saveAndRefresh();
+    var writePromise = holidayId
+      ? supabaseData.updateBlockedPeriod(holidayId, holiday)
+      : supabaseData.createBlockedPeriod(holiday);
+
+    writePromise.then(function () {
+      ui.closeModal();
+      state.refresh();
+    }).catch(function (error) {
+      saveButton.disabled = false;
+      ui.showAlert("holidayMsg", "Erreur, impossible d'enregistrer ce congé.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   function deleteHoliday(holidayId) {
     var state = formState.state;
+    var holiday = utils.findById(state.holidays, holidayId);
 
-    if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gerer les conges.");
+    if (!holiday) {
+      return;
+    }
+
+    if (!canManageHoliday(holiday)) {
+      window.alert("Vous ne pouvez pas supprimer ce congé.");
       return;
     }
 
@@ -199,16 +233,18 @@
       return;
     }
 
-    state.db.holidays = state.db.holidays.filter(function (item) {
-      return item.id !== holidayId;
+    supabaseData.deleteBlockedPeriod(holidayId).then(function () {
+      ui.closeModal();
+      state.refresh();
+    }).catch(function (error) {
+      window.alert("Erreur, impossible de supprimer ce congé.");
+      window.console && window.console.error && window.console.error(error);
     });
-
-    ui.closeModal();
-    formState.saveAndRefresh();
   }
 
   window.SalonHolidayForms = {
     bindHolidayCardActions: bindHolidayCardActions,
+    canManageHoliday: canManageHoliday,
     deleteHoliday: deleteHoliday,
     holidayCard: holidayCard,
     holidaysForCollab: holidaysForCollab,

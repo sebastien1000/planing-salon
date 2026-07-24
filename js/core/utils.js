@@ -59,6 +59,13 @@
     });
   }
 
+  // Nom du jour seul (ex: "Lundi"), pour l'en-tete de colonne de la vue
+  // semaine - toLocaleDateString rend "lundi" en minuscules en fr-FR.
+  function weekdayLabel(value) {
+    var label = dateObj(value).toLocaleDateString("fr-FR", { weekday: "long" });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+
   function mins(time) {
     var parts = time.split(":").map(Number);
     return parts[0] * 60 + parts[1];
@@ -93,6 +100,28 @@
     var b = parseInt(value.slice(4, 6), 16);
     var luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance > 0.6 ? "#241019" : "#ffffff";
+  }
+
+  // Convertit une couleur hex (#rrggbb, celle du selecteur "color" du profil)
+  // en rgba(...) a l'opacite demandee - utilise pour teinter les hachures/
+  // fonds du planning selon la couleur de la collaboratrice concernee (voir
+  // js/pages/planning.js). Retourne null si la valeur n'est pas un hex valide
+  // (garde-fou : le CSS retombe alors sur sa couleur par defaut).
+  function hexToRgba(hex, alpha) {
+    var value = String(hex || "").replace("#", "");
+    if (value.length !== 6) {
+      return null;
+    }
+
+    var r = parseInt(value.slice(0, 2), 16);
+    var g = parseInt(value.slice(2, 4), 16);
+    var b = parseInt(value.slice(4, 6), 16);
+
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+      return null;
+    }
+
+    return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
   }
 
   function escapeHtml(value) {
@@ -140,8 +169,10 @@
     findById: findById,
     findByName: findByName,
     fmtDate: fmtDate,
+    hexToRgba: hexToRgba,
     iso: iso,
     mins: mins,
+    weekdayLabel: weekdayLabel,
     monthDates: monthDates,
     overlaps: overlaps,
     readableTextColor: readableTextColor,

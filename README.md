@@ -4,7 +4,7 @@ Application web statique pour gerer un planning de salon, les clientes, les comp
 
 ## Apercu
 
-L'authentification, les clientes et les rendez-vous sont geres par [Supabase](https://supabase.com) (vraie base de donnees + droits verifies cote serveur). Le reste (comptes/roles, prestations, salles, absences, conges, preferences d'affichage) reste dans `localStorage` du navigateur.
+L'authentification, les clientes, les rendez-vous, les conges/absences et les prestations (catalogue + tarifs par collaboratrice) sont geres par [Supabase](https://supabase.com) (vraie base de donnees + droits verifies cote serveur). Le reste (comptes/roles locaux, salles/prestations autorisees, photo de profil, preferences d'affichage) reste dans `localStorage` du navigateur.
 
 Pages principales :
 
@@ -49,7 +49,7 @@ Le reset par SMS n'est pas encore branche (necessiterait un fournisseur SMS type
 
 ## Clientes et rendez-vous (Supabase)
 
-Executez une seule fois `supabase/schema.sql` dans Supabase > SQL Editor : il cree les tables `profiles`/`clients`/`reservations`, les regles de securite (Row Level Security), une vue `reservations_public` qui masque le nom de la cliente et les notes pour tout le monde sauf l'admin et la collaboratrice concernee, et une contrainte qui refuse tout double-reservation d'une salle au niveau de la base de donnees elle-meme (pas seulement en JavaScript).
+Executez une seule fois `supabase/schema.sql` dans Supabase > SQL Editor (script idempotent, peut etre relance sans risque) : il cree les tables `profiles`/`clients`/`reservations`/`service_categories`/`services`/`collaborator_services`/`blocked_periods`, les regles de securite (Row Level Security), des vues `reservations_public`/`blocked_periods_public` qui masquent les informations privees pour tout le monde sauf l'admin et la personne concernee, et une contrainte qui refuse tout double-reservation d'une salle au niveau de la base de donnees elle-meme (pas seulement en JavaScript).
 
 Comportement :
 
@@ -83,11 +83,20 @@ Depuis l'espace admin (page Comptes), un administrateur peut creer, modifier ou 
 - la suppression est bloquee si le compte a des rendez-vous a venir, et il doit toujours rester au moins un administrateur
 - un compte peut etre desactive au lieu d'etre supprime : il ne peut plus se connecter ni recevoir de nouveaux rendez-vous, mais ses rendez-vous existants restent geres normalement
 
-## Conges et absences
+## Conges et absences (Supabase)
 
-- **Conges** (page Comptes, bouton "Conges" sur une fiche collaborateur) : geres uniquement par l'admin, plage de dates/heures, motif (vacances, conge, formation, autre). Toujours visibles en detail par toute l'equipe.
+Stockes dans la table `blocked_periods` (voir `supabase/schema.sql`), avec droits verifies cote serveur.
+
+- **Conges** (page Comptes, "Mes conges"/bouton "Conges" sur une fiche collaborateur) : chaque collaborateur cree, modifie et supprime ses propres conges (vacances, conge, formation, autre) ; l'admin gere ceux de tout le monde. Toujours visibles en detail par toute l'equipe.
 - **Absences** (page Plus) : chaque collaborateur cree, modifie et supprime ses propres absences (maladie, rendez-vous personnel, formation, urgence, indisponibilite, autre). L'admin voit et gere celles de tout le monde. Les autres collaborateurs voient qu'un creneau est bloque mais pas le motif.
-- Dans les deux cas, un rendez-vous ne peut pas etre enregistre sur une periode couverte par un conge ou une absence : le planning verifie la date, l'heure de debut et l'heure de fin.
+- Dans les deux cas, un rendez-vous ne peut pas etre enregistre sur une periode couverte par un conge ou une absence : le planning verifie la date, l'heure de debut et l'heure de fin, et affiche le blocage positionne dans la grille horaire selon sa duree reelle.
+
+## Prestations (Supabase)
+
+Catalogue general (`service_categories`/`services`) et tarifs par collaboratrice (`collaborator_services`), voir `supabase/schema.sql`.
+
+- N'importe quelle collaboratrice connectee peut ajouter une prestation neuve au catalogue et s'y attribuer son propre tarif/duree (page Plus, "Mes prestations").
+- Modifier ou retirer une prestation deja existante du catalogue partage reste reserve a l'admin (page Plus, vue "Prestations par collaboratrice").
 
 ## Stockage local
 
@@ -95,11 +104,9 @@ Les donnees sont stockees sous la cle `salonMvpV4`.
 
 Contenu principal :
 
-- utilisateurs (roles, couleurs, salles/prestations autorisees, photo de profil)
-- prestations
-- absences, conges
+- utilisateurs (roles, couleurs, salle par defaut, salles/prestations autorisees, photo de profil)
 
-Les clientes et les rendez-vous ne sont plus ici : voir "Clientes et rendez-vous (Supabase)".
+Les clientes, rendez-vous, conges/absences et prestations ne sont plus ici : voir "Clientes et rendez-vous (Supabase)", "Conges et absences (Supabase)" et "Prestations (Supabase)".
 
 ## Depannage
 

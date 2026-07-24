@@ -31,7 +31,13 @@
   // plus jamais le choix par defaut. Un choix de filtre deja fait avant
   // (sessionStorage) reste toujours prioritaire.
   var collabFilter = sessionStorage.getItem("planning:collab") || "Toutes";
-  var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
+  // Contrairement a la vue/aux filtres, la date affichee ne doit jamais
+  // rester "bloquee" d'un chargement de page a l'autre : chaque arrivee sur
+  // le planning (bouton accueil, changement de page puis retour, nouveau
+  // lancement de l'app) doit montrer la date du jour. Se deplacer avec les
+  // fleches ou cliquer une date reste possible pendant la session en cours,
+  // simplement sans survivre a un rechargement de page.
+  var selectedDate = utils.today();
   var showTypes = loadShowTypes();
   var roomOccupancyFilter = loadRoomOccupancyFilter();
 
@@ -72,12 +78,18 @@
     }
   });
 
-  // Clientes/rendez-vous/profils viennent de Supabase, rafraichis a chaque
-  // render() ; le reste (collaborateurs, prestations, absences, conges)
+  // Clientes/rendez-vous/profils/absences/conges viennent de Supabase,
+  // rafraichis a chaque render() ; le reste (collaborateurs, prestations)
   // reste dans localStorage via db.
   var reservations = [];
   var clients = [];
   var profiles = [];
+  var holidays = [];
+  var absences = [];
+  // Recalcule a chaque render() (voir myReservations) : les stats cliquables
+  // de l'en-tete (js/pages/planning.js:renderHeader) s'appuient dessus pour
+  // ouvrir le recap correspondant (voir openReservationsRecapSheet).
+  var myVisibleReservationsCache = [];
 
   function loadShowTypes() {
     try {
@@ -109,7 +121,6 @@
     sessionStorage.setItem("planning:view", view);
     sessionStorage.setItem("planning:room", roomFilter);
     sessionStorage.setItem("planning:collab", collabFilter);
-    sessionStorage.setItem("planning:date", selectedDate);
     sessionStorage.setItem("planning:showTypes", JSON.stringify(showTypes));
     sessionStorage.setItem("planning:roomOccupancy", JSON.stringify(roomOccupancyFilter));
   }
@@ -150,6 +161,31 @@
     return pair ? pair[1] : category;
   }
 
+  // Variables CSS custom (--collab-color/--collab-tint/--collab-tint-soft)
+  // posees en inline sur un dot/une card du planning : permet a
+  // css/components.css de teinter aussi bien le fond plein (RDV a soi) que
+  // les hachures (RDV d'une autre collaboratrice) avec LA MEME couleur de
+  // profil, pour reperer d'un coup d'oeil qui a quel rendez-vous. Retourne
+  // "" si la collaboratrice est inconnue ou sans couleur valide : le CSS
+  // retombe alors sur ses couleurs par defaut (voir les regles .planning-dot-*
+  // et .grid-event*).
+  function collabColorVars(collabUser) {
+    if (!collabUser || !collabUser.color) {
+      return "";
+    }
+
+    var tint = utils.hexToRgba(collabUser.color, 0.28);
+    if (!tint) {
+      return "";
+    }
+
+    var tintSoft = utils.hexToRgba(collabUser.color, 0.14);
+
+    return "--collab-color:" + utils.escapeHtml(collabUser.color) + ";" +
+      "--collab-tint:" + tint + ";" +
+      "--collab-tint-soft:" + tintSoft + ";";
+  }
+
   function canSeeBlockedDetail(type, collab) {
     return type === "holiday" || auth.isAdmin(user) || collab === user.name;
   }
@@ -159,31 +195,36 @@
   }
 
   function blockedPeriodsOnDate(date) {
-    var absences = showTypes.absences
-      ? db.absences
+    var absencesOnDate = showTypes.absences
+      ? absences
         .filter(function (item) { return domain.periodCoversDate(item, date) && matchesCollabFilter(item.collab); })
         .map(function (item) { return Object.assign({ type: "absence" }, item); })
       : [];
-    var holidays = showTypes.holidays
-      ? db.holidays
+    var holidaysOnDate = showTypes.holidays
+      ? holidays
         .filter(function (item) { return domain.periodCoversDate(item, date) && matchesCollabFilter(item.collab); })
         .map(function (item) { return Object.assign({ type: "holiday" }, item); })
       : [];
-    return absences.concat(holidays);
+    return absencesOnDate.concat(holidaysOnDate);
   }
 
-  // Vue mois : un badge distinct par type de blocage plutot qu'un "Blocage
-  // N" generique qui melangeait conges et absences - une periode "holiday"
-  // (conges/vacances) affiche "Vacances", une periode "absence" affiche
-  // "Absence", chacune avec son propre compteur si plusieurs ce jour-la.
+  // Vue mois : un badge par periode bloquee (pas juste un compteur par
+  // type "Vacances"/"Absence" generique) pour que chacun soit colore selon
+  // le profil de la collaboratrice concernee, comme les RDV (voir
+  // collabColorVars) - sinon impossible de distinguer d'un coup d'oeil qui
+  // est en conge/absent quand plusieurs collaboratrices le sont le meme jour.
   function blockedDotsHtml(blocked) {
-    var holidayCount = blocked.filter(function (item) { return item.type === "holiday"; }).length;
-    var absenceCount = blocked.filter(function (item) { return item.type === "absence"; }).length;
-
-    return [
-      holidayCount ? '<span class="dot">Vacances' + (holidayCount > 1 ? " " + holidayCount : "") + "</span>" : "",
-      absenceCount ? '<span class="dot">Absence' + (absenceCount > 1 ? " " + absenceCount : "") + "</span>" : ""
-    ].join("");
+    return blocked.map(function (item) {
+      var visible = canSeeBlockedDetail(item.type, item.collab);
+      var label = visible ? categoryLabelFor(item.type, item.category) : (item.type === "holiday" ? "Vacances" : "Absence");
+      var collabUser = utils.findByName(db.users, item.collab);
+      var colorVars = collabColorVars(collabUser);
+      var style = colorVars
+        ? ' style="' + colorVars + "background-color:var(--collab-color);" +
+          (collabUser.color ? "color:" + utils.readableTextColor(collabUser.color) + ";" : "") + '"'
+        : "";
+      return '<span class="dot"' + style + ">" + utils.escapeHtml(label) + "</span>";
+    }).join("");
   }
 
   function filteredReservationsForDate(date) {
@@ -205,6 +246,30 @@
     }, []);
   }
 
+  // Contrairement a filteredReservationsForDate (qui respecte le filtre
+  // "Collaborateur" du menu Filtres, "Toutes" par defaut - necessaire pour
+  // reperer une salle deja prise par une collegue), les stats "RDV
+  // affiches"/"Termines" de l'en-tete doivent toujours ne compter QUE les
+  // rendez-vous de la personne connectee, quel que soit ce filtre.
+  function myReservationsForDate(date) {
+    if (!showTypes.reservations) {
+      return [];
+    }
+
+    return reservations.filter(function (reservation) {
+      return reservation.date === date &&
+        domain.isActiveReservation(reservation) &&
+        (roomFilter === "Toutes" || reservation.room === roomFilter) &&
+        reservation.collab === user.name;
+    });
+  }
+
+  function myReservations(dates) {
+    return dates.reduce(function (acc, date) {
+      return acc.concat(myReservationsForDate(date));
+    }, []);
+  }
+
   // Rendez-vous actifs d'une salle pour la date choisie, a partir des
   // rendez-vous deja recuperes depuis Supabase pour la vue courante
   // (selectedDate fait toujours partie des dates visibles).
@@ -214,7 +279,7 @@
     }).sort(function (a, b) { return a.time.localeCompare(b.time); });
   }
 
-  var ROOM_STATUS_LABELS = { libre: "Libre", reservee: "Reservee", occupee: "Occupee" };
+  var ROOM_STATUS_LABELS = { libre: "Libre", reservee: "Réservée", occupee: "Occupée" };
   var ROOM_STATUS_BADGE_CLASS = { libre: "status-done", reservee: "status-pre", occupee: "status-run" };
 
   function roomStatusListHtml() {
@@ -250,7 +315,7 @@
 
       var slotsHtml = roomReservations.map(function (reservation) {
         var canSee = auth.canSeeReservation(user, reservation);
-        var who = canSee ? reservation.client : "Reserve - " + reservation.collab;
+        var who = canSee ? reservation.client : "Réservé - " + reservation.collab;
         var endTime = domain.addMinutes(reservation.time, reservation.duration);
 
         return [
@@ -296,7 +361,7 @@
     }
 
     if (!showTypes.holidays) {
-      parts.push("Conges masques");
+      parts.push("Congés masqués");
     }
 
     return parts.join(" · ");
@@ -350,7 +415,7 @@
       '<div class="checkbox-group">',
       buildTypeCheckboxHtml("reservations", "Rendez-vous"),
       buildTypeCheckboxHtml("absences", "Absences"),
-      buildTypeCheckboxHtml("holidays", "Conges / vacances"),
+      buildTypeCheckboxHtml("holidays", "Congés / vacances"),
       "</div>",
 
       '<div class="section-title" style="margin-top:14px">Filtrer les salles par etat</div>',
@@ -453,8 +518,9 @@
     return [selectedDate];
   }
 
-  function renderHeader(visibleReservations) {
+  function renderHeader(myVisibleReservations) {
     var summary = activeFilterSummary();
+    var myDone = myVisibleReservations.filter(function (item) { return item.status === "done"; });
 
     return [
       '<div class="card page-header-card">',
@@ -473,8 +539,8 @@
         return '<button class="' + className + '" type="button" data-view="' + item + '">' + label + "</button>";
       }).join("") + "</div>",
       '  <div class="statgrid statgrid-2">',
-      '    <div class="stat"><b>' + visibleReservations.length + '</b><span>RDV affiches</span></div>',
-      '    <div class="stat"><b>' + visibleReservations.filter(function (item) { return item.status === "done"; }).length + '</b><span>Termines</span></div>',
+      '    <button class="stat" type="button" id="myReservationsStatButton"><b>' + myVisibleReservations.length + '</b><span>Mes RDV affiches</span></button>',
+      '    <button class="stat" type="button" id="myDoneStatButton"><b>' + myDone.length + '</b><span>Mes termines</span></button>',
       "  </div>",
       '  <button id="headerAddReservation" class="primary" type="button" style="width:100%">Ajouter un RDV</button>',
       "</div>",
@@ -519,12 +585,12 @@
               isMine ? "planning-dot-own" : "planning-dot-other"
             ].join(" ");
             var collabUser = utils.findByName(db.users, reservation.collab);
-            var dotStyle = collabUser && collabUser.color
-              ? ' style="background:' + collabUser.color + ';color:' + utils.readableTextColor(collabUser.color) + '"'
-              : "";
+            var colorVars = collabColorVars(collabUser);
+            var textColor = collabUser && collabUser.color ? "color:" + utils.readableTextColor(collabUser.color) + ";" : "";
+            var dotStyle = colorVars ? ' style="' + colorVars + textColor + '"' : "";
             var label = auth.canSeeReservation(user, reservation)
               ? reservation.client
-              : "Reserve - " + reservation.collab;
+              : "Réservé - " + reservation.collab;
             return '<span class="' + dotClassName + '"' + dotStyle + '>' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
           }).join(""),
           blockedDotsHtml(blocked),
@@ -544,12 +610,50 @@
   // (voir showDetail plus bas), pour ne jamais rendre le texte illisible.
   var GRID_SLOT_HEIGHT = 44;
 
-  function timeGridHtml(dateReservations) {
-    var range = domain.dayGridRange(dateReservations);
+  // Convertit une periode bloquee (conge/absence) en pseudo-evenement
+  // compatible avec domain.layoutDayGridEvents (.time/.duration), pour
+  // qu'elle soit positionnee et dimensionnee dans la grille horaire EXACTEMENT
+  // comme un rendez-vous, au lieu d'une carte texte qui ne refletait ni sa
+  // duree ni son horaire reel. Une periode multi-jours (startDate !=
+  // endDate) est "decoupee" a l'heure exacte uniquement le premier/dernier
+  // jour ; les jours intermediaires l'occupent entierement (00:00-23:59).
+  function blockedPeriodGridEvent(item, date) {
+    var startTime = date === item.startDate ? item.startTime : "00:00";
+    var endTime = date === item.endDate ? item.endTime : "23:59";
+    var duration = Math.max(utils.mins(endTime) - utils.mins(startTime), 0);
+
+    return Object.assign({}, item, {
+      time: startTime,
+      duration: duration
+    });
+  }
+
+  function blockedGridEventHtml(item, top, height, leftPct, widthPct) {
+    var visible = canSeeBlockedDetail(item.type, item.collab);
+    var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
+    var collabUser = utils.findByName(db.users, item.collab);
+    var colorVars = collabColorVars(collabUser);
+    var showNotes = visible && item.notes && height >= GRID_SLOT_HEIGHT * 2;
+
+    return [
+      '<div class="grid-event absence-slot"',
+      ' style="top:' + top + "px;height:" + Math.max(height, GRID_SLOT_HEIGHT) + "px;left:" + leftPct + "%;width:calc(" + widthPct + "% - 4px);" + colorVars + '"',
+      ">",
+      '  <div class="grid-event-time">' + utils.escapeHtml(item.collab) + "</div>",
+      '  <div class="grid-event-title">' + utils.escapeHtml(title) + "</div>",
+      (showNotes ? '  <div class="grid-event-sub">' + utils.escapeHtml(item.notes) + "</div>" : ""),
+      "</div>"
+    ].join("");
+  }
+
+  function timeGridHtml(date, dateReservations, blocked) {
+    var blockedEvents = blocked.map(function (item) { return blockedPeriodGridEvent(item, date); });
+    var allEvents = dateReservations.concat(blockedEvents);
+    var range = domain.dayGridRange(allEvents);
     var slots = domain.dayGridSlots(range);
     var slotMinutes = domain.DAY_GRID_SLOT_MINUTES;
     var totalHeight = ((range.end - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
-    var laidOutReservations = domain.layoutDayGridEvents(dateReservations);
+    var laidOutEvents = domain.layoutDayGridEvents(allEvents);
 
     var timesHtml = slots.map(function (slot) {
       var top = ((slot.minutes - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
@@ -557,26 +661,29 @@
       return '<div class="' + className + '" style="top:' + top + 'px">' + slot.label + "</div>";
     }).join("");
 
-    var eventsHtml = laidOutReservations.map(function (reservation) {
-      var start = utils.mins(reservation.time);
+    var eventsHtml = laidOutEvents.map(function (event) {
+      var start = utils.mins(event.time);
       var top = ((start - range.start) / slotMinutes) * GRID_SLOT_HEIGHT;
-      var height = (Number(reservation.duration || 0) / slotMinutes) * GRID_SLOT_HEIGHT;
-      var columns = reservation._gridColumns || 1;
-      var column = reservation._gridColumn || 0;
+      var height = (Number(event.duration || 0) / slotMinutes) * GRID_SLOT_HEIGHT;
+      var columns = event._gridColumns || 1;
+      var column = event._gridColumn || 0;
       var widthPct = 100 / columns;
       var leftPct = widthPct * column;
 
+      if (event.type === "holiday" || event.type === "absence") {
+        return blockedGridEventHtml(event, top, height, leftPct, widthPct);
+      }
+
+      var reservation = event;
       var isMine = reservation.collab === user.name;
       var canSee = auth.canSeeReservation(user, reservation);
       // Seules les infos clientes (nom, tel, email, notes) sont
       // confidentielles pour un RDV d'une autre collaboratrice : la
       // prestation, elle, reste toujours visible (voir showPrestation).
-      var title = canSee ? reservation.client : "Reserve - " + reservation.collab;
+      var title = canSee ? reservation.client : "Réservé - " + reservation.collab;
       var endTime = domain.addMinutes(reservation.time, reservation.duration);
       var collabUser = utils.findByName(db.users, reservation.collab);
-      var borderStyle = collabUser && collabUser.color
-        ? "border-left-color:" + utils.escapeHtml(collabUser.color) + ";"
-        : "";
+      var colorVars = collabColorVars(collabUser);
       // Sur un RDV masque, la prestation est l'une des seules informations
       // que la regle metier autorise a montrer : elle reste donc toujours
       // affichee, meme sur un creneau court. Sur un RDV "a soi", le detail
@@ -587,7 +694,7 @@
 
       return [
         '<div class="grid-event ' + (isMine ? "grid-event--mine" : "grid-event--other") + '"',
-        ' style="top:' + top + "px;height:" + Math.max(height, GRID_SLOT_HEIGHT) + "px;left:" + leftPct + "%;width:calc(" + widthPct + "% - 4px);" + borderStyle + '"',
+        ' style="top:' + top + "px;height:" + Math.max(height, GRID_SLOT_HEIGHT) + "px;left:" + leftPct + "%;width:calc(" + widthPct + "% - 4px);" + colorVars + '"',
         clickAttr,
         ">",
         '  <div class="grid-event-time">' + utils.escapeHtml(reservation.time) + " - " + utils.escapeHtml(endTime) + " · " + utils.escapeHtml(reservation.room) + "</div>",
@@ -605,6 +712,18 @@
     ].join("");
   }
 
+  // En-tete "jour + gros numero de date", style agenda papier - partage par
+  // la vue jour et la vue semaine pour rester visuellement identiques.
+  function weekDayHeadTitleHtml(date) {
+    return [
+      '<div class="week-day-label">',
+      "  <span class=\"week-day-name\">" + utils.escapeHtml(utils.weekdayLabel(date)) + "</span>",
+      "  <span class=\"week-day-num" + (date === utils.today() ? " today" : "") + "\">" +
+        utils.dateObj(date).getDate() + "</span>",
+      "</div>"
+    ].join("");
+  }
+
   function dayCardHtml(date) {
     var dateReservations = filteredReservationsForDate(date);
     var blocked = blockedPeriodsOnDate(date);
@@ -612,28 +731,10 @@
     return [
       '<div class="card">',
       '  <div class="week-day-head">',
-      "    <h3>" + utils.fmtDate(date) + "</h3>",
+      weekDayHeadTitleHtml(date),
       '    <button class="secondary mini-action" type="button" data-add-date="' + date + '">+ RDV</button>',
       "  </div>",
-      blocked.map(function (item) {
-        var visible = canSeeBlockedDetail(item.type, item.collab);
-        var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
-
-        return [
-          '<div class="card absence-slot">',
-          "  <b>" + utils.escapeHtml(title) + "</b>",
-          '  <div class="meta">',
-          '    <span class="badge">' + utils.escapeHtml(item.collab) + "</span>",
-          '    <span class="badge">' + utils.escapeHtml(item.startTime) + " - " + utils.escapeHtml(item.endTime) + "</span>",
-          (item.startDate !== item.endDate
-            ? '    <span class="badge">jusqu au ' + utils.escapeHtml(item.endDate) + "</span>"
-            : ""),
-          "  </div>",
-          (visible && item.notes ? '  <div class="tiny">' + utils.escapeHtml(item.notes) + "</div>" : ""),
-          "</div>"
-        ].join("");
-      }).join(""),
-      timeGridHtml(dateReservations),
+      timeGridHtml(date, dateReservations, blocked),
       "</div>"
     ].join("");
   }
@@ -646,12 +747,49 @@
   // (jamais empiles verticalement), avec defilement horizontal propre sur
   // petit ecran si la largeur ne suffit pas (voir .week-grid/.week-col dans
   // css/components.css). Reutilise dayCardHtml (meme contenu que la vue
-  // jour : blocages, RDV masques/hachures pour les autres collaboratrices)
-  // pour ne pas dupliquer cette logique.
+  // jour : blocages/absences positionnes dans la grille horaire selon
+  // leurs vraies heures, RDV masques/hachures pour les autres
+  // collaboratrices) pour ne pas dupliquer cette logique.
   function renderWeek(dates) {
     return '<div class="week-grid">' + dates.map(function (date) {
       return '<div class="week-col">' + dayCardHtml(date) + "</div>";
     }).join("") + "</div>";
+  }
+
+  // Recap declenche par les stats cliquables de l'en-tete ("Mes RDV
+  // affiches"/"Mes termines", voir renderHeader) - meme principe que le
+  // bouton "termines" cliquable de la page Comptes (js/pages/comptes.js,
+  // openHistorySheet) : un coup d'oeil rapide sur le detail derriere un
+  // chiffre, sans quitter le planning.
+  function openReservationsRecapSheet(title, items) {
+    var sorted = items.slice().sort(domain.compareReservationsByDateTime);
+    var rows = sorted.length
+      ? sorted.map(function (item) {
+          var canSee = auth.canSeeReservation(user, item);
+          var who = canSee ? (item.client || "Client") : "Réservé";
+          return [
+            '<div class="row" style="justify-content:space-between">',
+            '  <div class="grow">',
+            "    <b>" + utils.escapeHtml(who) + "</b>",
+            '    <div class="tiny">' + utils.escapeHtml(item.prestation || "") + " · " +
+              utils.escapeHtml(domain.fullDateLabel(item.date)) + " " + utils.escapeHtml(item.time) +
+              " · " + utils.escapeHtml(item.room || "") + "</div>",
+            "  </div>",
+            '  <span class="badge">' + utils.escapeHtml(domain.getStatusLabel(item.status)) + "</span>",
+            "</div>"
+          ].join("");
+        }).join("")
+      : '<p class="tiny">Aucun rendez-vous.</p>';
+
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>" + utils.escapeHtml(title) + "</h3>",
+      '  <button id="closeReservationsRecapButton" class="x" type="button">x</button>',
+      "</div>",
+      '<div class="stack">' + rows + "</div>"
+    ].join(""));
+
+    ui.byId("closeReservationsRecapButton").addEventListener("click", ui.closeSheet);
   }
 
   function bindPlanningEvents() {
@@ -667,6 +805,15 @@
       selectedDate = event.target.value;
       persistState();
       render();
+    });
+
+    ui.byId("myReservationsStatButton").addEventListener("click", function () {
+      openReservationsRecapSheet("Mes RDV affichés - " + viewLabel(), myVisibleReservationsCache);
+    });
+
+    ui.byId("myDoneStatButton").addEventListener("click", function () {
+      var myDone = myVisibleReservationsCache.filter(function (item) { return item.status === "done"; });
+      openReservationsRecapSheet("Mes RDV terminés - " + viewLabel(), myDone);
     });
 
     ui.byId("headerAddReservation").addEventListener("click", function () {
@@ -719,11 +866,14 @@
     return Promise.all([
       supabaseData.listReservationsForDates(dates),
       supabaseData.listClients(),
-      supabaseData.listProfiles()
+      supabaseData.listProfiles(),
+      supabaseData.listBlockedPeriods()
     ]).then(function (results) {
       reservations = results[0];
       clients = results[1];
       profiles = results[2];
+      holidays = results[3].filter(function (item) { return item.kind === "holiday"; });
+      absences = results[3].filter(function (item) { return item.kind === "absence"; });
 
       forms.configure({
         db: db,
@@ -732,10 +882,13 @@
         user: user,
         clients: clients,
         reservations: reservations,
-        profiles: profiles
+        profiles: profiles,
+        holidays: holidays,
+        absences: absences
       });
 
-      var content = renderHeader(filteredReservations(dates));
+      myVisibleReservationsCache = myReservations(dates);
+      var content = renderHeader(myVisibleReservationsCache);
       content += view === "month" ? renderMonth(dates) : (view === "week" ? renderWeek(dates) : renderDays(dates));
       ui.setMain(content);
       bindPlanningEvents();

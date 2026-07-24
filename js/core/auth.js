@@ -56,10 +56,11 @@
     return ROLE_ALIASES[key] || null;
   }
 
-  // Cree ou met a jour la fiche locale (couleur, salles/prestations
-  // autorisees, telephone, photo... des champs qui ne vivent que dans
-  // localStorage) a partir de la ligne "profiles" Supabase, qui reste la
-  // source de verite pour l'identite/le role/l'activation.
+  // Cree ou met a jour la fiche locale (salles/prestations autorisees,
+  // telephone, photo... des champs qui ne vivent que dans localStorage) a
+  // partir de la ligne "profiles" Supabase, qui reste la source de verite
+  // pour l'identite/le role/l'activation/la couleur d'affichage/la salle
+  // par defaut.
   function syncLocalUserFromRemoteProfile(remoteProfile, normalizedRole) {
     var db = getDb();
     var local = utils.findById(db.users, remoteProfile.id) || findLocalUserByEmail(remoteProfile.email);
@@ -74,15 +75,61 @@
         photo: null
       };
       db.users.push(local);
+    } else if (local.id !== remoteProfile.id) {
+      // Fiche locale retrouvee par email mais avec un ancien id local
+      // provisoire (bug historique : login() creait autrefois la ligne
+      // "profiles" Supabase avec le vrai uuid sans jamais corriger l'id de
+      // la fiche locale correspondante). Sans cette correction, TOUTE
+      // ecriture "self-service" d'une collaboratrice (conges, absences,
+      // prestations - RLS collab_id = auth.uid()) echoue indefiniment,
+      // meme apres la creation de sa ligne "profiles" reelle.
+      local.id = remoteProfile.id;
     }
 
     local.name = remoteProfile.name || local.name;
     local.email = remoteProfile.email;
     local.role = normalizedRole;
     local.active = remoteProfile.active !== false;
+    // remoteProfile.color/default_room restent vides tant que personne n'a
+    // encore resauvegarde ce profil depuis la mise a jour de schema.sql
+    // (colonnes ajoutees apres coup) : on garde alors la valeur locale
+    // existante plutot que de l'ecraser par du vide.
+    local.color = remoteProfile.color || local.color;
+    local.defaultRoom = remoteProfile.default_room || local.defaultRoom;
 
     data.saveDb(db);
     return local;
+  }
+
+  // Retire les fiches locales devenues des doublons d'une meme personne
+  // (meme email ou meme nom qu'une fiche fraichement synchronisee depuis
+  // Supabase, mais avec un ancien id different) : peut arriver si le
+  // rapprochement par email a echoue une fois (ex. faute de frappe a la
+  // creation du compte via "Ajouter un collaborateur") - une nouvelle
+  // fiche locale etait alors creee au lieu d'etre fusionnee avec
+  // l'ancienne, faisant apparaitre "Marion"/"Julie" en double dans tous
+  // les selecteurs de collaboratrice (conges, absences, fiche cliente...).
+  function dedupeSyncedUsers(db, syncedUsers) {
+    var keepIds = {};
+    syncedUsers.forEach(function (user) { keepIds[user.id] = true; });
+
+    db.users = db.users.filter(function (user) {
+      if (keepIds[user.id]) {
+        return true;
+      }
+
+      var normalizedEmail = String(user.email || "").trim().toLowerCase();
+      var normalizedName = String(user.name || "").trim().toLowerCase();
+
+      var isDuplicate = syncedUsers.some(function (synced) {
+        return (normalizedEmail && String(synced.email || "").trim().toLowerCase() === normalizedEmail) ||
+          String(synced.name || "").trim().toLowerCase() === normalizedName;
+      });
+
+      return !isDuplicate;
+    });
+
+    data.saveDb(db);
   }
 
   // Cree/met a jour la fiche locale de CHAQUE compte Supabase, pas
@@ -91,13 +138,17 @@
   // jamais connectee sur cet appareil precis (chaque appareil a son propre
   // stockage local, voir js/core/data.js).
   function syncProfilesToLocal(profiles) {
-    return (profiles || []).reduce(function (synced, remoteProfile) {
+    var synced = (profiles || []).reduce(function (acc, remoteProfile) {
       var role = normalizeRole(remoteProfile.role);
       if (role) {
-        synced.push(syncLocalUserFromRemoteProfile(remoteProfile, role));
+        acc.push(syncLocalUserFromRemoteProfile(remoteProfile, role));
       }
-      return synced;
+      return acc;
     }, []);
+
+    dedupeSyncedUsers(getDb(), synced);
+
+    return synced;
   }
 
   // Le mot de passe n'est plus verifie ici : Supabase Auth compare le mot
@@ -151,6 +202,23 @@
             role: localRole,
             active: localUser.active !== false
           }).catch(function () {});
+
+          // localUser.id est un identifiant local provisoire (uid genere
+          // par "Ajouter un collaborateur", avant toute vraie premiere
+          // connexion) : il ne correspond pas a l'uuid Supabase reel
+          // (authUser.id) que Postgres attend partout pour les ecritures
+          // "self-service" d'une collaboratrice (RLS collab_id =
+          // auth.uid() sur les conges/absences/prestations). On le corrige
+          // ici, au moment ou ce lien devient enfin connu - sinon ce
+          // mismatch persisterait a chaque connexion future et bloquerait
+          // indefiniment ces ecritures.
+          var reindexDb = getDb();
+          var reindexedUser = utils.findById(reindexDb.users, localUser.id);
+          if (reindexedUser) {
+            reindexedUser.id = authUser.id;
+            data.saveDb(reindexDb);
+            localUser = reindexedUser;
+          }
 
           saveCurrentUserId(localUser.id);
           return { status: "ok", user: localUser };

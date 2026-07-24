@@ -20,6 +20,7 @@
   var db = data.loadDb();
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
   var reservations = [];
+  var holidays = [];
 
   function virtualDb() {
     return { reservations: reservations, prestations: db.prestations };
@@ -71,19 +72,27 @@
   }
 
   function openHolidaySheet(account) {
-    var items = forms.holidaysForCollab(db, account.name);
+    var items = forms.holidaysForCollab(holidays, account.name);
     var isAdmin = auth.isAdmin(user);
 
     function refreshWhileOpen() {
-      render();
-      openHolidaySheet(account);
+      render().then(function () {
+        openHolidaySheet(account);
+      });
     }
 
-    forms.configure({ db: db, refresh: refreshWhileOpen, selectedDate: selectedDate, user: user, reservations: reservations });
+    forms.configure({
+      db: db,
+      refresh: refreshWhileOpen,
+      selectedDate: selectedDate,
+      user: user,
+      reservations: reservations,
+      holidays: holidays
+    });
 
     ui.showSheet([
       '<div class="modal-head">',
-      "  <h3>Conges - " + utils.escapeHtml(account.name) + "</h3>",
+      "  <h3>Congés - " + utils.escapeHtml(account.name) + "</h3>",
       '  <button id="closeHolidaySheetButton" class="x" type="button">x</button>',
       "</div>",
       isAdmin ? '<button id="addHolidayButton" class="primary" style="width:100%;margin-bottom:12px" type="button">Ajouter un conge</button>' : "",
@@ -93,7 +102,14 @@
     ].join(""));
 
     ui.byId("closeHolidaySheetButton").addEventListener("click", function () {
-      forms.configure({ db: db, refresh: render, selectedDate: selectedDate, user: user, reservations: reservations });
+      forms.configure({
+        db: db,
+        refresh: render,
+        selectedDate: selectedDate,
+        user: user,
+        reservations: reservations,
+        holidays: holidays
+      });
       ui.closeSheet();
     });
     forms.bindHolidayCardActions(ui.byId("holidayList"));
@@ -116,7 +132,7 @@
     var actions = [];
 
     if (isCollab) {
-      actions.push({ id: "manage-holidays", label: "Gerer les conges" });
+      actions.push({ id: "manage-holidays", label: "Gérer les congés" });
     }
 
     actions.push({ id: "send-password-reset", label: "Envoyer un lien de reinitialisation" });
@@ -245,7 +261,7 @@
   }
 
   function renderOwnCard() {
-    var myHolidays = forms.holidaysForCollab(db, user.name);
+    var myHolidays = forms.holidaysForCollab(holidays, user.name);
 
     return [
       '<div class="card">',
@@ -265,9 +281,12 @@
       '  <button id="editOwnProfile" class="primary" type="button">Modifier mon profil / mot de passe</button>',
       "</div>",
       '<div class="card">',
-      "  <h3>Mes conges</h3>",
-      '  <div class="stack">' +
-        (myHolidays.length ? myHolidays.map(function (item) { return forms.holidayCard(item, true); }).join("") : '<p class="tiny">Aucun conge enregistre.</p>') +
+      '  <div class="row">',
+      '    <div class="grow"><h3>Mes congés</h3></div>',
+      '    <button id="addHolidayButton" class="primary" type="button">+ Ajouter</button>',
+      "  </div>",
+      '  <div id="myHolidayList" class="stack" style="margin-top:12px">' +
+        (myHolidays.length ? myHolidays.map(function (item) { return forms.holidayCard(item, false); }).join("") : '<p class="tiny">Aucun conge enregistre.</p>') +
         "</div>",
       "</div>"
     ].join("");
@@ -286,6 +305,18 @@
       ownButton.addEventListener("click", function () {
         forms.openProfileForm(user.id);
       });
+    }
+
+    var addHolidayButton = ui.byId("addHolidayButton");
+    if (addHolidayButton) {
+      addHolidayButton.addEventListener("click", function () {
+        forms.openHolidayForm(null, user.name);
+      });
+    }
+
+    var myHolidayList = ui.byId("myHolidayList");
+    if (myHolidayList) {
+      forms.bindHolidayCardActions(myHolidayList);
     }
 
     document.querySelectorAll("[data-edit-profile]").forEach(function (button) {
@@ -326,9 +357,14 @@
     // a jour la fiche locale de chacun avant d'afficher quoi que ce soit.
     var profilesPromise = auth.isAdmin(user) ? supabaseData.listProfiles() : Promise.resolve(null);
 
-    Promise.all([supabaseData.listAllReservations(), profilesPromise]).then(function (results) {
+    return Promise.all([
+      supabaseData.listAllReservations(),
+      profilesPromise,
+      supabaseData.listBlockedPeriods()
+    ]).then(function (results) {
       reservations = results[0];
       var profiles = results[1];
+      holidays = results[2].filter(function (item) { return item.kind === "holiday"; });
 
       if (profiles) {
         auth.syncProfilesToLocal(profiles);
@@ -340,7 +376,8 @@
         refresh: render,
         selectedDate: selectedDate,
         user: user,
-        reservations: reservations
+        reservations: reservations,
+        holidays: holidays
       });
 
       if (auth.isAdmin(user)) {

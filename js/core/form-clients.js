@@ -92,10 +92,15 @@
       '<div id="clientMsg"></div>',
       (!manageable ? '<div class="alert">Vous pouvez consulter cette fiche mais pas la modifier.</div>' : ""),
       '<label for="cName">Nom</label><input id="cName" class="field"' + readonlyAttr + ' value="' + utils.escapeHtml(client.name) + '">',
-      '<label for="cPhone">Telephone</label><input id="cPhone" class="field" type="tel"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
+      '<label for="cPhone">Téléphone</label><input id="cPhone" class="field" type="tel"' + readonlyAttr + ' value="' + utils.escapeHtml(client.phone || "") + '">',
       '<label for="cEmail">Email</label><input id="cEmail" class="field" type="email"' + readonlyAttr + ' value="' + utils.escapeHtml(client.email || "") + '">',
       '<label>Collaboratrices habituelles</label>',
-      '<div class="checkbox-group">' + state.db.users
+      // state.profiles (fraichement charge depuis Supabase par js/pages/
+      // clients.js) plutot que state.db.users (mirroir local par appareil,
+      // qui peut contenir une fiche en double pour la meme personne si un
+      // rapprochement par email a echoue une fois - Julie/Marion
+      // apparaissaient alors deux fois dans cette case a cocher).
+      '<div class="checkbox-group">' + state.profiles
         .filter(function (item) { return item.role === "collab"; })
         .map(function (item) {
           var checked = clientCollabIds.indexOf(item.id) !== -1 ? " checked" : "";
@@ -152,7 +157,7 @@
       if (reservations.length > 0) {
         window.alert(
           "Impossible de supprimer : cette cliente a " + reservations.length +
-          " rendez-vous enregistre(s). Annulez-les ou reassignez-les d abord."
+          " rendez-vous enregistré(s). Annulez-les ou réassignez-les d'abord."
         );
         return;
       }
@@ -166,7 +171,7 @@
         state.refresh();
       });
     }).catch(function (error) {
-      window.alert("Impossible de supprimer cette fiche, reessayez.");
+      window.alert("Impossible de supprimer cette fiche, réessayez.");
       window.console && window.console.error && window.console.error(error);
     });
   }

@@ -17,6 +17,7 @@
 
   var db = data.loadDb();
   var selectedDate = sessionStorage.getItem("planning:date") || window.SalonUtils.today();
+  var absences = [];
 
   forms.configure({
     db: db,
@@ -54,8 +55,10 @@
   function render() {
     Promise.all([
       supabaseData.listAllReservations(),
-      supabaseData.listClients()
+      supabaseData.listClients(),
+      supabaseData.listBlockedPeriods()
     ]).then(function (results) {
+      absences = results[2].filter(function (item) { return item.kind === "absence"; });
       renderContent(results[0], results[1]);
     }).catch(showLoadError);
   }
@@ -67,18 +70,19 @@
       selectedDate: selectedDate,
       user: user,
       reservations: reservations,
-      clients: clients
+      clients: clients,
+      absences: absences
     });
 
     var waiting = clients.filter(function (client) {
       return !client.nextDate;
     }).length;
 
-    var myAbsences = sortByStartDate(db.absences.filter(function (item) {
+    var myAbsences = sortByStartDate(absences.filter(function (item) {
       return item.collab === user.name;
     }));
     var teamAbsences = auth.isAdmin(user)
-      ? sortByStartDate(db.absences.filter(function (item) { return item.collab !== user.name; }))
+      ? sortByStartDate(absences.filter(function (item) { return item.collab !== user.name; }))
       : [];
 
     ui.setMain([
@@ -88,7 +92,7 @@
       "    <h3>" + (auth.isAdmin(user) ? "Prestations par collaboratrice" : "Mes prestations") + "</h3>",
       '    <div class="tiny">' + (auth.isAdmin(user)
         ? "Chaque collaboratrice a son propre tarif et sa propre duree pour chaque prestation."
-        : "Vos tarifs et durees, definis par l administrateur.") + "</div>",
+        : "Ajoutez ou modifiez vos propres tarifs et durees a tout moment.") + "</div>",
       '    <div id="servicesSection" style="margin-top:12px"></div>',
       "  </div>",
       '  <div class="card">',
