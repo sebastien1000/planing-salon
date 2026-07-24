@@ -129,17 +129,11 @@
       reservation.room || domain.roomFor(state.db, reservation.collab, reservation.prestation)
     );
 
-    var isAdmin = auth.isAdmin(state.user);
     // Photo figee sur le rendez-vous si deja enregistree (reservation.price) ;
     // pour un ancien rendez-vous sans photo figee, on retombe sur
     // l'ancien catalogue local (findPrestationPrice) le temps de la
     // migration progressive (voir js/core/data.js).
     var price = reservation.price != null ? reservation.price : findPrestationPrice(reservation.prestation);
-    // Le tatouage a un prix tres variable selon le client (taille, detail) :
-    // n'importe quelle collaboratrice peut donc l'ajuster, contrairement aux
-    // autres prestations ou seul l'admin modifie le prix (voir
-    // updatePriceLockState, reevalue a chaque changement de prestation).
-    var priceReadOnly = isAdmin || isTattooPrestation(reservation.prestation) ? "" : " readonly";
 
     return [
       '<div class="modal-head">',
@@ -180,8 +174,7 @@
       '  <div><label for="fRoom">Salle</label><select id="fRoom" class="field">' + roomOptions + "</select></div>",
       "</div>",
       '<div id="fEndTimePreview" class="tiny"></div>',
-      '<label for="fPrice">Prix (EUR)</label><input id="fPrice" class="field" type="number" min="0" step="0.5"' +
-        priceReadOnly + ' value="' + price + '">',
+      '<label for="fPrice">Prix (EUR)</label><input id="fPrice" class="field" type="number" min="0" step="0.5" value="' + price + '">',
       '<label for="fStatus">Statut</label>',
       '<select id="fStatus" class="field">' + data.STATUS.map(function (status) {
         var selected = status[0] === reservation.status ? " selected" : "";
@@ -223,7 +216,6 @@
     button.dataset.baseName = entry.name;
     button.dataset.baseDuration = entry.duration;
     button.dataset.basePrice = entry.price;
-    updatePriceLockState(entry.name);
     applyQuantityToFields();
   }
 
@@ -250,23 +242,6 @@
     ui.byId("fDuration").value = baseDuration * quantity;
     ui.byId("fPrice").value = basePrice * quantity;
     updateEndTimePreview();
-  }
-
-  // Le tatouage a un prix tres variable selon le client (taille, detail,
-  // temps passe) : seule prestation ou n'importe quelle collaboratrice peut
-  // ajuster le prix du RDV, pas seulement l'admin comme pour les autres
-  // prestations (voir priceReadOnly dans buildReservationForm).
-  function isTattooPrestation(prestationName) {
-    return String(prestationName || "").toLowerCase().indexOf("tatouage") !== -1;
-  }
-
-  function updatePriceLockState(prestationName) {
-    var state = formState.state;
-    var priceField = ui.byId("fPrice");
-    if (!priceField) {
-      return;
-    }
-    priceField.readOnly = !auth.isAdmin(state.user) && !isTattooPrestation(prestationName);
   }
 
   function updateEndTimePreview() {
@@ -348,7 +323,6 @@
     button.dataset.basePrice = "";
     button.textContent = "Choisir une prestation";
     ui.byId("fQuantity").value = "1";
-    updatePriceLockState("");
     ui.byId("fRoom").innerHTML = buildRoomOptionsHtml(state, ui.byId("fCollab").value, ui.byId("fRoom").value);
   }
 
@@ -694,7 +668,6 @@
     base.setDate(base.getDate() + Number(client.frequency || 21));
 
     var nextDate = utils.iso(base);
-    var isAdmin = auth.isAdmin(state.user);
     var habitualCollab = pickHabitualCollabName(state, client);
     var proposalCollab = habitualCollab || reservation.collab || state.user.name;
     var room = domain.roomFor(state.db, proposalCollab, client.prestation);
@@ -734,8 +707,7 @@
       '  <div><label for="pDuration">Duree</label><input id="pDuration" class="field" type="number" value="' + client.duration + '"></div>',
       '  <div><label for="pRoom">Salle</label><select id="pRoom" class="field">' + buildRoomOptionsHtml(state, proposalCollab, room) + "</select></div>",
       "</div>",
-      '<label for="pPrice">Prix (EUR)</label><input id="pPrice" class="field" type="number" min="0" step="0.5"' +
-        (isAdmin ? "" : " readonly") + ' value="0">',
+      '<label for="pPrice">Prix (EUR)</label><input id="pPrice" class="field" type="number" min="0" step="0.5" value="0">',
       '<div id="pEndTimePreview" class="tiny"></div>',
       '<div id="proposalMsg"></div>',
       '<div class="row" style="margin-top:14px">',
