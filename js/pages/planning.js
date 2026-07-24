@@ -208,18 +208,23 @@
     return absencesOnDate.concat(holidaysOnDate);
   }
 
-  // Vue mois : un badge distinct par type de blocage plutot qu'un "Blocage
-  // N" generique qui melangeait conges et absences - une periode "holiday"
-  // (conges/vacances) affiche "Vacances", une periode "absence" affiche
-  // "Absence", chacune avec son propre compteur si plusieurs ce jour-la.
+  // Vue mois : un badge par periode bloquee (pas juste un compteur par
+  // type "Vacances"/"Absence" generique) pour que chacun soit colore selon
+  // le profil de la collaboratrice concernee, comme les RDV (voir
+  // collabColorVars) - sinon impossible de distinguer d'un coup d'oeil qui
+  // est en conge/absent quand plusieurs collaboratrices le sont le meme jour.
   function blockedDotsHtml(blocked) {
-    var holidayCount = blocked.filter(function (item) { return item.type === "holiday"; }).length;
-    var absenceCount = blocked.filter(function (item) { return item.type === "absence"; }).length;
-
-    return [
-      holidayCount ? '<span class="dot">Vacances' + (holidayCount > 1 ? " " + holidayCount : "") + "</span>" : "",
-      absenceCount ? '<span class="dot">Absence' + (absenceCount > 1 ? " " + absenceCount : "") + "</span>" : ""
-    ].join("");
+    return blocked.map(function (item) {
+      var visible = canSeeBlockedDetail(item.type, item.collab);
+      var label = visible ? categoryLabelFor(item.type, item.category) : (item.type === "holiday" ? "Vacances" : "Absence");
+      var collabUser = utils.findByName(db.users, item.collab);
+      var colorVars = collabColorVars(collabUser);
+      var style = colorVars
+        ? ' style="' + colorVars + "background-color:var(--collab-color);" +
+          (collabUser.color ? "color:" + utils.readableTextColor(collabUser.color) + ";" : "") + '"'
+        : "";
+      return '<span class="dot"' + style + ">" + utils.escapeHtml(label) + "</span>";
+    }).join("");
   }
 
   function filteredReservationsForDate(date) {
@@ -689,9 +694,11 @@
       blocked.map(function (item) {
         var visible = canSeeBlockedDetail(item.type, item.collab);
         var title = visible ? categoryLabelFor(item.type, item.category) : "Indisponible";
+        var collabUser = utils.findByName(db.users, item.collab);
+        var colorVars = collabColorVars(collabUser);
 
         return [
-          '<div class="card absence-slot">',
+          '<div class="card absence-slot"' + (colorVars ? ' style="' + colorVars + '"' : "") + ">",
           "  <b>" + utils.escapeHtml(title) + "</b>",
           '  <div class="meta">',
           '    <span class="badge">' + utils.escapeHtml(item.collab) + "</span>",

@@ -941,6 +941,11 @@ label {
   overflow: hidden;
 }
 
+/* --collab-tint : pose en inline par js/pages/planning.js (collabColorVars)
+   selon la couleur du profil de la collaboratrice en conge/absente - meme
+   mecanisme que les RDV (.grid-event--other), pour reperer d'un coup
+   d'oeil qui est concerne(e) quand plusieurs collaboratrices le sont le
+   meme jour. */
 .blocked-slot::before,
 .absence-slot::before,
 .unavailable-slot::before {
@@ -950,8 +955,8 @@ label {
   pointer-events: none;
   background: repeating-linear-gradient(
     -45deg,
-    rgba(232, 167, 182, 0.25),
-    rgba(232, 167, 182, 0.25) 8px,
+    var(--collab-tint, rgba(232, 167, 182, 0.25)),
+    var(--collab-tint, rgba(232, 167, 182, 0.25)) 8px,
     rgba(255, 255, 255, 0.7) 8px,
     rgba(255, 255, 255, 0.7) 16px
   );
