@@ -281,9 +281,12 @@
       '  <button id="editOwnProfile" class="primary" type="button">Modifier mon profil / mot de passe</button>',
       "</div>",
       '<div class="card">',
-      "  <h3>Mes congés</h3>",
-      '  <div class="stack">' +
-        (myHolidays.length ? myHolidays.map(function (item) { return forms.holidayCard(item, true); }).join("") : '<p class="tiny">Aucun conge enregistre.</p>') +
+      '  <div class="row">',
+      '    <div class="grow"><h3>Mes congés</h3></div>',
+      '    <button id="addHolidayButton" class="primary" type="button">+ Ajouter</button>',
+      "  </div>",
+      '  <div id="myHolidayList" class="stack" style="margin-top:12px">' +
+        (myHolidays.length ? myHolidays.map(function (item) { return forms.holidayCard(item, false); }).join("") : '<p class="tiny">Aucun conge enregistre.</p>') +
         "</div>",
       "</div>"
     ].join("");
@@ -302,6 +305,18 @@
       ownButton.addEventListener("click", function () {
         forms.openProfileForm(user.id);
       });
+    }
+
+    var addHolidayButton = ui.byId("addHolidayButton");
+    if (addHolidayButton) {
+      addHolidayButton.addEventListener("click", function () {
+        forms.openHolidayForm(null, user.name);
+      });
+    }
+
+    var myHolidayList = ui.byId("myHolidayList");
+    if (myHolidayList) {
+      forms.bindHolidayCardActions(myHolidayList);
     }
 
     document.querySelectorAll("[data-edit-profile]").forEach(function (button) {

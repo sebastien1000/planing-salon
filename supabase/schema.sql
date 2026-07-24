@@ -595,39 +595,27 @@ create policy "blocked_periods_select_admin_or_own"
   on blocked_periods for select
   using (is_admin() or collab_id = auth.uid());
 
--- Conges (vacances) : seul l'admin peut creer/modifier/supprimer (regle deja
--- appliquee cote JavaScript dans js/core/form-holidays.js, desormais aussi
--- garantie cote base).
--- Absences : l'admin peut gerer celles de tout le monde ; une collaboratrice
--- ne peut gerer que les siennes (regle deja appliquee cote JavaScript dans
--- js/core/form-absences.js, desormais aussi garantie cote base).
+-- Conges ET absences : l'admin peut gerer ceux de tout le monde ; une
+-- collaboratrice ne gere que les siens (regle deja appliquee cote
+-- JavaScript dans js/core/form-holidays.js et js/core/form-absences.js,
+-- desormais aussi garantie cote base). Meme regle pour les deux "kind" :
+-- une collaboratrice peut desormais poser ses propres conges sans dependre
+-- de l'admin, comme elle le fait deja pour ses absences.
 drop policy if exists "blocked_periods_insert_authorized" on blocked_periods;
 create policy "blocked_periods_insert_authorized"
   on blocked_periods for insert
-  with check (
-    (kind = 'holiday' and is_admin())
-    or (kind = 'absence' and (is_admin() or collab_id = auth.uid()))
-  );
+  with check (is_admin() or collab_id = auth.uid());
 
 drop policy if exists "blocked_periods_update_authorized" on blocked_periods;
 create policy "blocked_periods_update_authorized"
   on blocked_periods for update
-  using (
-    (kind = 'holiday' and is_admin())
-    or (kind = 'absence' and (is_admin() or collab_id = auth.uid()))
-  )
-  with check (
-    (kind = 'holiday' and is_admin())
-    or (kind = 'absence' and (is_admin() or collab_id = auth.uid()))
-  );
+  using (is_admin() or collab_id = auth.uid())
+  with check (is_admin() or collab_id = auth.uid());
 
 drop policy if exists "blocked_periods_delete_authorized" on blocked_periods;
 create policy "blocked_periods_delete_authorized"
   on blocked_periods for delete
-  using (
-    (kind = 'holiday' and is_admin())
-    or (kind = 'absence' and (is_admin() or collab_id = auth.uid()))
-  );
+  using (is_admin() or collab_id = auth.uid());
 
 -- Vue "grand public" : tout le monde doit voir qu'un creneau est bloque
 -- (sinon impossible de reperer un conflit ou d'afficher le planning

@@ -12,6 +12,14 @@
     return pair ? pair[1] : category;
   }
 
+  // Meme regle que canManageAbsence (js/core/form-absences.js) : l'admin
+  // gere les conges de tout le monde, une collaboratrice ne gere que les
+  // siens.
+  function canManageHoliday(holiday) {
+    var state = formState.state;
+    return auth.isAdmin(state.user) || holiday.collab === state.user.name;
+  }
+
   function holidaysForCollab(holidays, collabName) {
     return holidays
       .filter(function (item) { return item.collab === collabName; })
@@ -66,16 +74,11 @@
   function openHolidayForm(holidayId, presetCollab) {
     var state = formState.state;
 
-    if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gérer les congés.");
-      return;
-    }
-
     var holiday = holidayId
       ? utils.findById(state.holidays, holidayId)
       : {
           id: "",
-          collab: presetCollab || "",
+          collab: auth.isAdmin(state.user) ? (presetCollab || "") : state.user.name,
           startDate: state.selectedDate,
           startTime: "00:00",
           endDate: state.selectedDate,
@@ -88,6 +91,12 @@
       return;
     }
 
+    if (holidayId && !canManageHoliday(holiday)) {
+      window.alert("Vous ne pouvez pas modifier ce congé.");
+      return;
+    }
+
+    var lockOwnCollab = !auth.isAdmin(state.user);
     var collabOptions = state.db.users
       .filter(function (user) {
         return user.role === "collab" && (user.active !== false || user.name === holiday.collab);
@@ -106,7 +115,7 @@
       "</div>",
       '<div id="holidayMsg"></div>',
       '<label for="hoCollab">Collaborateur</label>',
-      '<select id="hoCollab" class="field">' + collabOptions + "</select>",
+      '<select id="hoCollab" class="field"' + (lockOwnCollab ? " disabled" : "") + '>' + collabOptions + "</select>",
       '<label for="hoCategory">Motif</label>',
       '<select id="hoCategory" class="field">' + buildCategoryOptionsHtml(holiday.category) + "</select>",
       '<div class="grid2">',
@@ -140,13 +149,14 @@
 
   function saveHoliday(holidayId) {
     var state = formState.state;
+    var current = holidayId ? utils.findById(state.holidays, holidayId) : null;
 
-    if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gérer les congés.");
+    if (holidayId && (!current || !canManageHoliday(current))) {
+      ui.showAlert("holidayMsg", "Vous ne pouvez pas modifier ce congé.");
       return;
     }
 
-    var collabName = ui.byId("hoCollab").value;
+    var collabName = auth.isAdmin(state.user) ? ui.byId("hoCollab").value : state.user.name;
     var collabUser = utils.findByName(state.db.users, collabName);
 
     if (!collabUser) {
@@ -165,6 +175,11 @@
       category: ui.byId("hoCategory").value,
       notes: ui.byId("hoNotes").value
     };
+
+    if (!holidayId && !canManageHoliday(holiday)) {
+      ui.showAlert("holidayMsg", "Vous ne pouvez créer un congé que pour vous-même.");
+      return;
+    }
 
     if (holiday.endDate < holiday.startDate ||
       (holiday.endDate === holiday.startDate && holiday.endTime <= holiday.startTime)) {
@@ -203,9 +218,14 @@
 
   function deleteHoliday(holidayId) {
     var state = formState.state;
+    var holiday = utils.findById(state.holidays, holidayId);
 
-    if (!auth.isAdmin(state.user)) {
-      window.alert("Seul l'administrateur peut gérer les congés.");
+    if (!holiday) {
+      return;
+    }
+
+    if (!canManageHoliday(holiday)) {
+      window.alert("Vous ne pouvez pas supprimer ce congé.");
       return;
     }
 
@@ -224,6 +244,7 @@
 
   window.SalonHolidayForms = {
     bindHolidayCardActions: bindHolidayCardActions,
+    canManageHoliday: canManageHoliday,
     deleteHoliday: deleteHoliday,
     holidayCard: holidayCard,
     holidaysForCollab: holidaysForCollab,
