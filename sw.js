@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v63-prix-libre-toutes-prestations";
+const CACHE_NAME = "salon-mvp-v64-sync-profils-planning";
 
 const APP_ASSETS = [
   "./",

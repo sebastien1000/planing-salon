@@ -895,6 +895,16 @@
       holidays = results[3].filter(function (item) { return item.kind === "holiday"; });
       absences = results[3].filter(function (item) { return item.kind === "absence"; });
 
+      // Synchronise db.users (role/active/couleur/salle par defaut) avec
+      // la liste profiles fraiche ci-dessus : sans ca, ces reglages admin
+      // (ex. Marion -> Salle Ongles 2, voir domain.js roomFor) ne se
+      // rafraichissent que si l'admin a visite la page Comptes ou que la
+      // personne s'est reconnectee - ce qui ne concernait ni tout le monde
+      // ni tous les appareils. profiles_select_authenticated autorise deja
+      // n'importe quel compte connecte a lire tous les profils.
+      auth.syncProfilesToLocal(profiles);
+      db = data.loadDb();
+
       forms.configure({
         db: db,
         refresh: render,
