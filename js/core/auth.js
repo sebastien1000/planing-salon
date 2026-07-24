@@ -75,6 +75,15 @@
         photo: null
       };
       db.users.push(local);
+    } else if (local.id !== remoteProfile.id) {
+      // Fiche locale retrouvee par email mais avec un ancien id local
+      // provisoire (bug historique : login() creait autrefois la ligne
+      // "profiles" Supabase avec le vrai uuid sans jamais corriger l'id de
+      // la fiche locale correspondante). Sans cette correction, TOUTE
+      // ecriture "self-service" d'une collaboratrice (conges, absences,
+      // prestations - RLS collab_id = auth.uid()) echoue indefiniment,
+      // meme apres la creation de sa ligne "profiles" reelle.
+      local.id = remoteProfile.id;
     }
 
     local.name = remoteProfile.name || local.name;
@@ -158,6 +167,23 @@
             role: localRole,
             active: localUser.active !== false
           }).catch(function () {});
+
+          // localUser.id est un identifiant local provisoire (uid genere
+          // par "Ajouter un collaborateur", avant toute vraie premiere
+          // connexion) : il ne correspond pas a l'uuid Supabase reel
+          // (authUser.id) que Postgres attend partout pour les ecritures
+          // "self-service" d'une collaboratrice (RLS collab_id =
+          // auth.uid() sur les conges/absences/prestations). On le corrige
+          // ici, au moment ou ce lien devient enfin connu - sinon ce
+          // mismatch persisterait a chaque connexion future et bloquerait
+          // indefiniment ces ecritures.
+          var reindexDb = getDb();
+          var reindexedUser = utils.findById(reindexDb.users, localUser.id);
+          if (reindexedUser) {
+            reindexedUser.id = authUser.id;
+            data.saveDb(reindexDb);
+            localUser = reindexedUser;
+          }
 
           saveCurrentUserId(localUser.id);
           return { status: "ok", user: localUser };
