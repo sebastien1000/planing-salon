@@ -6,6 +6,7 @@
     "Salle Ongles",
     "Salle Ongles 2",
     "Salle Noire",
+    "Salle Semi Pieds",
     "Baby Spa",
     "Exterieur"
   ];
