@@ -101,19 +101,54 @@
     return local;
   }
 
+  // Retire les fiches locales devenues des doublons d'une meme personne
+  // (meme email ou meme nom qu'une fiche fraichement synchronisee depuis
+  // Supabase, mais avec un ancien id different) : peut arriver si le
+  // rapprochement par email a echoue une fois (ex. faute de frappe a la
+  // creation du compte via "Ajouter un collaborateur") - une nouvelle
+  // fiche locale etait alors creee au lieu d'etre fusionnee avec
+  // l'ancienne, faisant apparaitre "Marion"/"Julie" en double dans tous
+  // les selecteurs de collaboratrice (conges, absences, fiche cliente...).
+  function dedupeSyncedUsers(db, syncedUsers) {
+    var keepIds = {};
+    syncedUsers.forEach(function (user) { keepIds[user.id] = true; });
+
+    db.users = db.users.filter(function (user) {
+      if (keepIds[user.id]) {
+        return true;
+      }
+
+      var normalizedEmail = String(user.email || "").trim().toLowerCase();
+      var normalizedName = String(user.name || "").trim().toLowerCase();
+
+      var isDuplicate = syncedUsers.some(function (synced) {
+        return (normalizedEmail && String(synced.email || "").trim().toLowerCase() === normalizedEmail) ||
+          String(synced.name || "").trim().toLowerCase() === normalizedName;
+      });
+
+      return !isDuplicate;
+    });
+
+    data.saveDb(db);
+  }
+
   // Cree/met a jour la fiche locale de CHAQUE compte Supabase, pas
   // seulement celui qui se connecte : necessaire pour que la page Comptes
   // (vue admin) liste tout le monde, meme une collaboratrice qui ne s'est
   // jamais connectee sur cet appareil precis (chaque appareil a son propre
   // stockage local, voir js/core/data.js).
   function syncProfilesToLocal(profiles) {
-    return (profiles || []).reduce(function (synced, remoteProfile) {
+    var synced = (profiles || []).reduce(function (acc, remoteProfile) {
       var role = normalizeRole(remoteProfile.role);
       if (role) {
-        synced.push(syncLocalUserFromRemoteProfile(remoteProfile, role));
+        acc.push(syncLocalUserFromRemoteProfile(remoteProfile, role));
       }
-      return synced;
+      return acc;
     }, []);
+
+    dedupeSyncedUsers(getDb(), synced);
+
+    return synced;
   }
 
   // Le mot de passe n'est plus verifie ici : Supabase Auth compare le mot
