@@ -86,6 +86,10 @@
   var profiles = [];
   var holidays = [];
   var absences = [];
+  // Recalcule a chaque render() (voir myReservations) : les stats cliquables
+  // de l'en-tete (js/pages/planning.js:renderHeader) s'appuient dessus pour
+  // ouvrir le recap correspondant (voir openReservationsRecapSheet).
+  var myVisibleReservationsCache = [];
 
   function loadShowTypes() {
     try {
@@ -234,6 +238,30 @@
   function filteredReservations(dates) {
     return dates.reduce(function (acc, date) {
       return acc.concat(filteredReservationsForDate(date));
+    }, []);
+  }
+
+  // Contrairement a filteredReservationsForDate (qui respecte le filtre
+  // "Collaborateur" du menu Filtres, "Toutes" par defaut - necessaire pour
+  // reperer une salle deja prise par une collegue), les stats "RDV
+  // affiches"/"Termines" de l'en-tete doivent toujours ne compter QUE les
+  // rendez-vous de la personne connectee, quel que soit ce filtre.
+  function myReservationsForDate(date) {
+    if (!showTypes.reservations) {
+      return [];
+    }
+
+    return reservations.filter(function (reservation) {
+      return reservation.date === date &&
+        domain.isActiveReservation(reservation) &&
+        (roomFilter === "Toutes" || reservation.room === roomFilter) &&
+        reservation.collab === user.name;
+    });
+  }
+
+  function myReservations(dates) {
+    return dates.reduce(function (acc, date) {
+      return acc.concat(myReservationsForDate(date));
     }, []);
   }
 
@@ -485,8 +513,9 @@
     return [selectedDate];
   }
 
-  function renderHeader(visibleReservations) {
+  function renderHeader(myVisibleReservations) {
     var summary = activeFilterSummary();
+    var myDone = myVisibleReservations.filter(function (item) { return item.status === "done"; });
 
     return [
       '<div class="card page-header-card">',
@@ -505,8 +534,8 @@
         return '<button class="' + className + '" type="button" data-view="' + item + '">' + label + "</button>";
       }).join("") + "</div>",
       '  <div class="statgrid statgrid-2">',
-      '    <div class="stat"><b>' + visibleReservations.length + '</b><span>RDV affiches</span></div>',
-      '    <div class="stat"><b>' + visibleReservations.filter(function (item) { return item.status === "done"; }).length + '</b><span>Termines</span></div>',
+      '    <button class="stat" type="button" id="myReservationsStatButton"><b>' + myVisibleReservations.length + '</b><span>Mes RDV affiches</span></button>',
+      '    <button class="stat" type="button" id="myDoneStatButton"><b>' + myDone.length + '</b><span>Mes termines</span></button>',
       "  </div>",
       '  <button id="headerAddReservation" class="primary" type="button" style="width:100%">Ajouter un RDV</button>',
       "</div>",
@@ -696,6 +725,42 @@
     }).join("") + "</div>";
   }
 
+  // Recap declenche par les stats cliquables de l'en-tete ("Mes RDV
+  // affiches"/"Mes termines", voir renderHeader) - meme principe que le
+  // bouton "termines" cliquable de la page Comptes (js/pages/comptes.js,
+  // openHistorySheet) : un coup d'oeil rapide sur le detail derriere un
+  // chiffre, sans quitter le planning.
+  function openReservationsRecapSheet(title, items) {
+    var sorted = items.slice().sort(domain.compareReservationsByDateTime);
+    var rows = sorted.length
+      ? sorted.map(function (item) {
+          var canSee = auth.canSeeReservation(user, item);
+          var who = canSee ? (item.client || "Client") : "Réservé";
+          return [
+            '<div class="row" style="justify-content:space-between">',
+            '  <div class="grow">',
+            "    <b>" + utils.escapeHtml(who) + "</b>",
+            '    <div class="tiny">' + utils.escapeHtml(item.prestation || "") + " · " +
+              utils.escapeHtml(domain.fullDateLabel(item.date)) + " " + utils.escapeHtml(item.time) +
+              " · " + utils.escapeHtml(item.room || "") + "</div>",
+            "  </div>",
+            '  <span class="badge">' + utils.escapeHtml(domain.getStatusLabel(item.status)) + "</span>",
+            "</div>"
+          ].join("");
+        }).join("")
+      : '<p class="tiny">Aucun rendez-vous.</p>';
+
+    ui.showSheet([
+      '<div class="modal-head">',
+      "  <h3>" + utils.escapeHtml(title) + "</h3>",
+      '  <button id="closeReservationsRecapButton" class="x" type="button">x</button>',
+      "</div>",
+      '<div class="stack">' + rows + "</div>"
+    ].join(""));
+
+    ui.byId("closeReservationsRecapButton").addEventListener("click", ui.closeSheet);
+  }
+
   function bindPlanningEvents() {
     ui.byId("planningPrev").addEventListener("click", function () {
       movePlanning(-1);
@@ -709,6 +774,15 @@
       selectedDate = event.target.value;
       persistState();
       render();
+    });
+
+    ui.byId("myReservationsStatButton").addEventListener("click", function () {
+      openReservationsRecapSheet("Mes RDV affichés - " + viewLabel(), myVisibleReservationsCache);
+    });
+
+    ui.byId("myDoneStatButton").addEventListener("click", function () {
+      var myDone = myVisibleReservationsCache.filter(function (item) { return item.status === "done"; });
+      openReservationsRecapSheet("Mes RDV terminés - " + viewLabel(), myDone);
     });
 
     ui.byId("headerAddReservation").addEventListener("click", function () {
@@ -782,7 +856,8 @@
         absences: absences
       });
 
-      var content = renderHeader(filteredReservations(dates));
+      myVisibleReservationsCache = myReservations(dates);
+      var content = renderHeader(myVisibleReservationsCache);
       content += view === "month" ? renderMonth(dates) : (view === "week" ? renderWeek(dates) : renderDays(dates));
       ui.setMain(content);
       bindPlanningEvents();
