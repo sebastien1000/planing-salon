@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v61-salle-semi-pieds";
+const CACHE_NAME = "salon-mvp-v62-quantite-et-prix-tatouage";
 
 const APP_ASSETS = [
   "./",
