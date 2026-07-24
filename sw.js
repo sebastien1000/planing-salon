@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v47-collab-conges";
+const CACHE_NAME = "salon-mvp-v48-couleurs-collab";
 
 const APP_ASSETS = [
   "./",

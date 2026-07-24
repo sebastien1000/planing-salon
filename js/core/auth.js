@@ -56,10 +56,10 @@
     return ROLE_ALIASES[key] || null;
   }
 
-  // Cree ou met a jour la fiche locale (couleur, salles/prestations
-  // autorisees, telephone, photo... des champs qui ne vivent que dans
-  // localStorage) a partir de la ligne "profiles" Supabase, qui reste la
-  // source de verite pour l'identite/le role/l'activation.
+  // Cree ou met a jour la fiche locale (salles/prestations autorisees,
+  // telephone, photo... des champs qui ne vivent que dans localStorage) a
+  // partir de la ligne "profiles" Supabase, qui reste la source de verite
+  // pour l'identite/le role/l'activation/la couleur d'affichage.
   function syncLocalUserFromRemoteProfile(remoteProfile, normalizedRole) {
     var db = getDb();
     var local = utils.findById(db.users, remoteProfile.id) || findLocalUserByEmail(remoteProfile.email);
@@ -80,6 +80,11 @@
     local.email = remoteProfile.email;
     local.role = normalizedRole;
     local.active = remoteProfile.active !== false;
+    // remoteProfile.color reste vide tant que personne n'a encore
+    // resauvegarde ce profil depuis la mise a jour de schema.sql (colonne
+    // ajoutee apres coup) : on garde alors la couleur locale existante
+    // plutot que de l'ecraser par du vide.
+    local.color = remoteProfile.color || local.color;
 
     data.saveDb(db);
     return local;

@@ -157,6 +157,31 @@
     return pair ? pair[1] : category;
   }
 
+  // Variables CSS custom (--collab-color/--collab-tint/--collab-tint-soft)
+  // posees en inline sur un dot/une card du planning : permet a
+  // css/components.css de teinter aussi bien le fond plein (RDV a soi) que
+  // les hachures (RDV d'une autre collaboratrice) avec LA MEME couleur de
+  // profil, pour reperer d'un coup d'oeil qui a quel rendez-vous. Retourne
+  // "" si la collaboratrice est inconnue ou sans couleur valide : le CSS
+  // retombe alors sur ses couleurs par defaut (voir les regles .planning-dot-*
+  // et .grid-event*).
+  function collabColorVars(collabUser) {
+    if (!collabUser || !collabUser.color) {
+      return "";
+    }
+
+    var tint = utils.hexToRgba(collabUser.color, 0.28);
+    if (!tint) {
+      return "";
+    }
+
+    var tintSoft = utils.hexToRgba(collabUser.color, 0.14);
+
+    return "--collab-color:" + utils.escapeHtml(collabUser.color) + ";" +
+      "--collab-tint:" + tint + ";" +
+      "--collab-tint-soft:" + tintSoft + ";";
+  }
+
   function canSeeBlockedDetail(type, collab) {
     return type === "holiday" || auth.isAdmin(user) || collab === user.name;
   }
@@ -526,9 +551,9 @@
               isMine ? "planning-dot-own" : "planning-dot-other"
             ].join(" ");
             var collabUser = utils.findByName(db.users, reservation.collab);
-            var dotStyle = collabUser && collabUser.color
-              ? ' style="background:' + collabUser.color + ';color:' + utils.readableTextColor(collabUser.color) + '"'
-              : "";
+            var colorVars = collabColorVars(collabUser);
+            var textColor = collabUser && collabUser.color ? "color:" + utils.readableTextColor(collabUser.color) + ";" : "";
+            var dotStyle = colorVars ? ' style="' + colorVars + textColor + '"' : "";
             var label = auth.canSeeReservation(user, reservation)
               ? reservation.client
               : "Réservé - " + reservation.collab;
@@ -581,9 +606,7 @@
       var title = canSee ? reservation.client : "Réservé - " + reservation.collab;
       var endTime = domain.addMinutes(reservation.time, reservation.duration);
       var collabUser = utils.findByName(db.users, reservation.collab);
-      var borderStyle = collabUser && collabUser.color
-        ? "border-left-color:" + utils.escapeHtml(collabUser.color) + ";"
-        : "";
+      var colorVars = collabColorVars(collabUser);
       // Sur un RDV masque, la prestation est l'une des seules informations
       // que la regle metier autorise a montrer : elle reste donc toujours
       // affichee, meme sur un creneau court. Sur un RDV "a soi", le detail
@@ -594,7 +617,7 @@
 
       return [
         '<div class="grid-event ' + (isMine ? "grid-event--mine" : "grid-event--other") + '"',
-        ' style="top:' + top + "px;height:" + Math.max(height, GRID_SLOT_HEIGHT) + "px;left:" + leftPct + "%;width:calc(" + widthPct + "% - 4px);" + borderStyle + '"',
+        ' style="top:' + top + "px;height:" + Math.max(height, GRID_SLOT_HEIGHT) + "px;left:" + leftPct + "%;width:calc(" + widthPct + "% - 4px);" + colorVars + '"',
         clickAttr,
         ">",
         '  <div class="grid-event-time">' + utils.escapeHtml(reservation.time) + " - " + utils.escapeHtml(endTime) + " · " + utils.escapeHtml(reservation.room) + "</div>",

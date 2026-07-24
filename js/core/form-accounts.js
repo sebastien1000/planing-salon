@@ -259,7 +259,8 @@
         email: user.email,
         name: user.name,
         role: user.role,
-        active: user.active !== false
+        active: user.active !== false,
+        color: user.color
       }).then(function () {
         window.alert(changeLabel + " mis a jour : les droits reels de " + user.name + " ont change immediatement, sans reconnexion.");
       });
@@ -291,6 +292,7 @@
     }
 
     var roleChanged = false;
+    var colorChanged = false;
     var roleField = ui.byId("uRole");
     if (auth.isAdmin(state.user) && roleField) {
       if (roleField.tagName === "SELECT") {
@@ -304,7 +306,9 @@
         user.role = newRole;
       }
 
-      user.color = ui.byId("uColor").value;
+      var newColor = ui.byId("uColor").value;
+      colorChanged = newColor !== user.color;
+      user.color = newColor;
       user.rooms = readCheckedValues("uRoom");
       user.prestations = readCheckedValues("uPrestation");
     }
@@ -312,8 +316,9 @@
     ui.closeModal();
     formState.saveAndRefresh();
 
-    if (roleChanged) {
-      syncAccountToSupabase(user, "Role");
+    if (roleChanged || colorChanged) {
+      var changeLabel = roleChanged && colorChanged ? "Role et couleur" : (roleChanged ? "Role" : "Couleur");
+      syncAccountToSupabase(user, changeLabel);
     }
   }
 

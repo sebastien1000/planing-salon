@@ -102,6 +102,28 @@
     return luminance > 0.6 ? "#241019" : "#ffffff";
   }
 
+  // Convertit une couleur hex (#rrggbb, celle du selecteur "color" du profil)
+  // en rgba(...) a l'opacite demandee - utilise pour teinter les hachures/
+  // fonds du planning selon la couleur de la collaboratrice concernee (voir
+  // js/pages/planning.js). Retourne null si la valeur n'est pas un hex valide
+  // (garde-fou : le CSS retombe alors sur sa couleur par defaut).
+  function hexToRgba(hex, alpha) {
+    var value = String(hex || "").replace("#", "");
+    if (value.length !== 6) {
+      return null;
+    }
+
+    var r = parseInt(value.slice(0, 2), 16);
+    var g = parseInt(value.slice(2, 4), 16);
+    var b = parseInt(value.slice(4, 6), 16);
+
+    if (isNaN(r) || isNaN(g) || isNaN(b)) {
+      return null;
+    }
+
+    return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+  }
+
   function escapeHtml(value) {
     return String(value || "")
       .replace(/&/g, "&amp;")
@@ -147,6 +169,7 @@
     findById: findById,
     findByName: findByName,
     fmtDate: fmtDate,
+    hexToRgba: hexToRgba,
     iso: iso,
     mins: mins,
     weekdayLabel: weekdayLabel,

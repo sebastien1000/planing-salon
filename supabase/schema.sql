@@ -37,6 +37,14 @@ create table if not exists profiles (
   created_at timestamptz not null default now()
 );
 
+-- Couleur d'affichage dans le planning (ex. #e8a7b6) : vivait avant
+-- uniquement en localStorage (js/core/data.js), donc jamais synchronisee
+-- entre appareils - un admin qui changeait la couleur de Julie sur son
+-- telephone ne la voyait pas changer sur la tablette du salon. Meme
+-- principe que les autres champs "profiles" : source de verite serveur,
+-- synchronisee vers chaque appareil a la connexion (voir js/core/auth.js).
+alter table profiles add column if not exists color text;
+
 -- 3. Table clients
 create table if not exists clients (
   id uuid primary key default gen_random_uuid(),

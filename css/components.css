@@ -899,13 +899,26 @@ label {
   text-overflow: ellipsis;
 }
 
-.planning-dot-other {
+/* --collab-color/--collab-tint : poses en inline par js/pages/planning.js
+   (collabColorVars) selon la couleur du profil de la collaboratrice
+   concernee - permet de reperer d'un coup d'oeil qui a quel rendez-vous.
+   Selecteur qualifie ".month-cell .dot.planning-dot-own/-other" (au lieu de
+   juste ".planning-dot-*") : necessaire pour que sa specificite egale ou
+   depasse celle de ".month-cell .dot" ci-dessus, sinon son "background"
+   (raccourci qui reinitialise aussi background-image) gagnerait toujours et
+   la teinte/le hachurage ci-dessous ne s'afficherait jamais. */
+.month-cell .dot.planning-dot-own {
+  background-color: var(--collab-color, #f8eef1);
+}
+
+.month-cell .dot.planning-dot-other {
+  background-color: #fff;
   background-image: repeating-linear-gradient(
     -45deg,
-    rgba(255, 255, 255, 0.32),
-    rgba(255, 255, 255, 0.32) 6px,
-    rgba(0, 0, 0, 0.06) 6px,
-    rgba(0, 0, 0, 0.06) 12px
+    rgba(255, 255, 255, 0.92) 0px,
+    rgba(255, 255, 255, 0.92) 6px,
+    var(--collab-tint, rgba(0, 0, 0, 0.06)) 6px,
+    var(--collab-tint, rgba(0, 0, 0, 0.06)) 12px
   );
 }
 
@@ -1003,8 +1016,12 @@ label {
   position: absolute;
   overflow: hidden;
   border-radius: 10px;
-  border-left: 5px solid var(--pink);
-  background: #fff;
+  /* --collab-color/--collab-tint/--collab-tint-soft : poses en inline par
+     js/pages/planning.js (collabColorVars) selon la couleur du profil de la
+     collaboratrice concernee - meme mecanisme que les dots de la vue mois
+     ci-dessus, pour reperer d'un coup d'oeil qui a quel rendez-vous. */
+  border-left: 5px solid var(--collab-color, var(--pink));
+  background-color: #fff;
   box-shadow: 0 3px 8px rgba(92, 44, 59, 0.12);
   padding: 4px 6px;
   font-size: 11px;
@@ -1012,14 +1029,19 @@ label {
   cursor: pointer;
 }
 
+.grid-event--mine {
+  background-color: var(--collab-tint-soft, #fff);
+}
+
 .grid-event--other {
   cursor: default;
-  background: repeating-linear-gradient(
+  background-color: #fff;
+  background-image: repeating-linear-gradient(
     -45deg,
     rgba(255, 255, 255, 0.92) 0px,
     rgba(255, 255, 255, 0.92) 8px,
-    rgba(232, 167, 182, 0.28) 8px,
-    rgba(232, 167, 182, 0.28) 16px
+    var(--collab-tint, rgba(232, 167, 182, 0.28)) 8px,
+    var(--collab-tint, rgba(232, 167, 182, 0.28)) 16px
   ) !important;
 }
 
