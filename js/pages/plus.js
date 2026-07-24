@@ -92,7 +92,7 @@
       "    <h3>" + (auth.isAdmin(user) ? "Prestations par collaboratrice" : "Mes prestations") + "</h3>",
       '    <div class="tiny">' + (auth.isAdmin(user)
         ? "Chaque collaboratrice a son propre tarif et sa propre duree pour chaque prestation."
-        : "Vos tarifs et durees, definis par l administrateur.") + "</div>",
+        : "Ajoutez ou modifiez vos propres tarifs et durees a tout moment.") + "</div>",
       '    <div id="servicesSection" style="margin-top:12px"></div>',
       "  </div>",
       '  <div class="card">',

@@ -182,8 +182,18 @@
     });
   }
 
-  // ---- Espace administrateur : gerer les prestations de chaque
-  // collaboratrice (prix, duree, categorie, active/inactive). ----
+  // ---- Gestion des prestations (prix, duree, categorie, active/inactive) ----
+  //
+  // L'admin gere les prestations de N'IMPORTE QUELLE collaboratrice (menu de
+  // selection). Une collaboratrice gere desormais les SIENNES exactement de
+  // la meme facon (memes formulaires, meme catalogue), sans selecteur -
+  // toujours elle-meme. Dans les deux cas, "context" porte qui est concerne
+  // (collaboratorId/collaboratorName), la fonction a appeler pour rafraichir
+  // l'ecran apres une action, et si le catalogue general (partage par toute
+  // l'equipe) peut etre modifie/retire - reserve a l'admin : une
+  // collaboratrice peut ajouter une prestation neuve au catalogue (pour
+  // ensuite s'y attribuer son propre tarif), mais ne peut ni modifier ni
+  // retirer une prestation deja existante dont dependent ses collegues.
 
   var adminState = { collaborators: [], selectedCollaboratorId: "" };
 
@@ -212,7 +222,47 @@
 
   function renderAdminServicesBody(containerId) {
     var container = ui.byId(containerId);
-    if (!container || !adminState.selectedCollaboratorId) {
+    var collaborator = utils.findById(adminState.collaborators, adminState.selectedCollaboratorId);
+
+    if (!container || !collaborator) {
+      if (container) {
+        container.innerHTML = '<p class="tiny">Aucune collaboratrice active.</p>';
+      }
+      return Promise.resolve();
+    }
+
+    var collabOptionsHtml = adminState.collaborators.map(function (collab) {
+      var selected = collab.id === adminState.selectedCollaboratorId ? " selected" : "";
+      return '<option value="' + collab.id + '"' + selected + ">" +
+        utils.escapeHtml(collab.name) + "</option>";
+    }).join("");
+
+    return renderServicesBody(containerId, {
+      collaboratorId: collaborator.id,
+      collaboratorName: collaborator.name,
+      canManageCatalog: true,
+      collabOptionsHtml: collabOptionsHtml,
+      addButtonLabel: "+ Nouvelle prestation au catalogue",
+      refresh: function () { return renderAdminServicesBody(containerId); }
+    });
+  }
+
+  // Vue collaboratrice : elle gere ses propres prestations (memes actions
+  // que l'admin), sans selecteur - toujours elle-meme, et sans pouvoir
+  // modifier/retirer une prestation deja existante du catalogue partage.
+  function renderOwnServicesSection(containerId, user) {
+    return renderServicesBody(containerId, {
+      collaboratorId: user.id,
+      collaboratorName: user.name,
+      canManageCatalog: false,
+      addButtonLabel: "+ Nouvelle prestation",
+      refresh: function () { return renderOwnServicesSection(containerId, user); }
+    });
+  }
+
+  function renderServicesBody(containerId, context) {
+    var container = ui.byId(containerId);
+    if (!container || !context.collaboratorId) {
       if (container) {
         container.innerHTML = '<p class="tiny">Aucune collaboratrice active.</p>';
       }
@@ -221,7 +271,7 @@
 
     return Promise.all([
       loadCatalog(true),
-      loadCollaboratorEntries(adminState.selectedCollaboratorId)
+      loadCollaboratorEntries(context.collaboratorId)
     ]).then(function (results) {
       var catalog = results[0];
       var entries = results[1];
@@ -239,8 +289,8 @@
         })
         .filter(function (group) { return group.services.length > 0; });
 
-      container.innerHTML = renderAdminServicesHtml(categoryGroups);
-      bindAdminServicesActions(containerId, catalog, entryByServiceId, categoryGroups);
+      container.innerHTML = renderServicesHtml(categoryGroups, context);
+      bindServicesActions(containerId, catalog, entryByServiceId, categoryGroups, context);
     }).catch(function (error) {
       container.innerHTML = '<div class="alert">Impossible de charger les prestations, réessayez.</div>';
       window.console && window.console.error && window.console.error(error);
@@ -250,12 +300,11 @@
   // Chaque categorie est un bouton "menu burger" (☰) qui ouvre une feuille
   // avec ses prestations - meme principe que le bouton "☰ Filtres" du
   // planning (js/pages/planning.js).
-  function renderAdminServicesHtml(categoryGroups) {
-    var collabOptions = adminState.collaborators.map(function (collab) {
-      var selected = collab.id === adminState.selectedCollaboratorId ? " selected" : "";
-      return '<option value="' + collab.id + '"' + selected + ">" +
-        utils.escapeHtml(collab.name) + "</option>";
-    }).join("");
+  function renderServicesHtml(categoryGroups, context) {
+    var pickerHtml = context.collabOptionsHtml
+      ? '<label for="servicesCollabSelect">Collaboratrice</label><select id="servicesCollabSelect" class="field">' +
+        context.collabOptionsHtml + "</select>"
+      : "";
 
     var categoriesHtml = categoryGroups.length
       ? '<div class="service-category-menu">' + categoryGroups.map(function (group, index) {
@@ -267,15 +316,36 @@
       : '<p class="tiny">Aucune prestation dans le catalogue pour le moment.</p>';
 
     return [
-      '<label for="servicesCollabSelect">Collaboratrice</label>',
-      '<select id="servicesCollabSelect" class="field">' + collabOptions + "</select>",
-      '<button id="addCatalogServiceButton" class="secondary" style="width:100%;margin:10px 0" type="button">+ Nouvelle prestation au catalogue</button>',
+      pickerHtml,
+      '<button id="addCatalogServiceButton" class="secondary" style="width:100%;margin:10px 0" type="button">' +
+        context.addButtonLabel + "</button>",
       '<div id="adminServiceMsg"></div>',
       categoriesHtml
     ].join("");
   }
 
-  function openAdminCategorySheet(group, catalog, entryByServiceId, containerId) {
+  function bindServicesActions(containerId, catalog, entryByServiceId, categoryGroups, context) {
+    var picker = ui.byId("servicesCollabSelect");
+    if (picker) {
+      picker.addEventListener("change", function (event) {
+        adminState.selectedCollaboratorId = event.target.value;
+        renderAdminServicesBody(containerId);
+      });
+    }
+
+    ui.byId("addCatalogServiceButton").addEventListener("click", function () {
+      openCatalogServiceForm(catalog, containerId, context);
+    });
+
+    document.querySelectorAll("[data-open-category]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var group = categoryGroups[Number(button.dataset.openCategory)];
+        openCategorySheet(group, catalog, entryByServiceId, containerId, context);
+      });
+    });
+  }
+
+  function openCategorySheet(group, catalog, entryByServiceId, containerId, context) {
     ui.showSheet([
       '<div class="modal-head">',
       "  <h3>" + utils.escapeHtml(group.category.name) + "</h3>",
@@ -283,7 +353,7 @@
       "</div>",
       '<div class="service-category-list">' +
         group.services.map(function (service) {
-          return renderAdminServiceRow(service, entryByServiceId[service.id]);
+          return renderServiceRow(service, entryByServiceId[service.id], context);
         }).join("") +
       "</div>"
     ].join(""));
@@ -296,28 +366,32 @@
         var entry = entryByServiceId[button.dataset.manageService] || null;
         if (service) {
           ui.closeSheet();
-          openCollaboratorServiceForm(service, entry, containerId);
+          openCollaboratorServiceForm(service, entry, containerId, context);
         }
       });
     });
 
-    ui.byId("sheetBox").querySelectorAll("[data-delete-service]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        var service = utils.findById(catalog.services, button.dataset.deleteService);
-        if (service) {
-          confirmDeleteCatalogService(service, containerId);
-        }
+    if (context.canManageCatalog) {
+      ui.byId("sheetBox").querySelectorAll("[data-delete-service]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var service = utils.findById(catalog.services, button.dataset.deleteService);
+          if (service) {
+            confirmDeleteCatalogService(service, containerId, context);
+          }
+        });
       });
-    });
+    }
   }
 
   // Retire une prestation du catalogue general (toutes collaboratrices
   // confondues) - pas seulement le tarif d'une collaboratrice (voir
-  // confirmDeleteCollaboratorService plus bas pour ce cas). Si elle est
-  // deja utilisee (au moins une collaboratrice l'a tarifee, ou au moins un
-  // rendez-vous y fait reference), on la desactive au lieu de la
-  // supprimer, pour ne jamais casser l'historique des anciens rendez-vous.
-  function confirmDeleteCatalogService(service, containerId) {
+  // confirmDeleteCollaboratorService plus bas pour ce cas). Reserve a
+  // l'admin (context.canManageCatalog), voir schema.sql (services_delete_admin/
+  // services_update_admin). Si elle est deja utilisee (au moins une
+  // collaboratrice l'a tarifee, ou au moins un rendez-vous y fait
+  // reference), on la desactive au lieu de la supprimer, pour ne jamais
+  // casser l'historique des anciens rendez-vous.
+  function confirmDeleteCatalogService(service, containerId, context) {
     supabaseData.countServiceUsage(service.id).then(function (usage) {
       var totalUsage = usage.collaboratorServices + usage.reservations;
 
@@ -339,7 +413,7 @@
         }).then(function () {
           catalogCache = null;
           ui.closeSheet();
-          renderAdminServicesBody(containerId);
+          context.refresh();
         });
       }
 
@@ -350,7 +424,7 @@
       return supabaseData.deleteService(service.id).then(function () {
         catalogCache = null;
         ui.closeSheet();
-        renderAdminServicesBody(containerId);
+        context.refresh();
       });
     }).catch(function (error) {
       window.alert("Impossible de vérifier l'utilisation de cette prestation, réessayez.");
@@ -358,7 +432,7 @@
     });
   }
 
-  function renderAdminServiceRow(service, entry) {
+  function renderServiceRow(service, entry, context) {
     var isAssigned = !!entry;
     var badges = [];
 
@@ -380,34 +454,21 @@
       '  <div class="row" style="gap:6px">',
       '    <button class="secondary" type="button" data-manage-service="' + service.id + '">' +
         (isAssigned ? "Modifier" : "Ajouter") + "</button>",
-      '    <button class="secondary danger" type="button" data-delete-service="' + service.id + '">Supprimer</button>',
+      context.canManageCatalog
+        ? '    <button class="secondary danger" type="button" data-delete-service="' + service.id + '">Supprimer</button>'
+        : "",
       "  </div>",
       "</div>"
     ].join("");
   }
 
-  function bindAdminServicesActions(containerId, catalog, entryByServiceId, categoryGroups) {
-    ui.byId("servicesCollabSelect").addEventListener("change", function (event) {
-      adminState.selectedCollaboratorId = event.target.value;
-      renderAdminServicesBody(containerId);
-    });
-
-    ui.byId("addCatalogServiceButton").addEventListener("click", function () {
-      openCatalogServiceForm(catalog, containerId);
-    });
-
-    document.querySelectorAll("[data-open-category]").forEach(function (button) {
-      button.addEventListener("click", function () {
-        var group = categoryGroups[Number(button.dataset.openCategory)];
-        openAdminCategorySheet(group, catalog, entryByServiceId, containerId);
-      });
-    });
-  }
-
-  // Ajoute une prestation totalement nouvelle au catalogue general
-  // (visible ensuite pour toutes les collaboratrices, chacune devant
-  // encore lui definir son propre prix/sa propre duree).
-  function openCatalogServiceForm(catalog, containerId) {
+  // Ajoute une prestation totalement nouvelle au catalogue general (visible
+  // ensuite pour toute l'equipe), pour ensuite laisser context.collaboratorId
+  // lui definir son propre prix/sa propre duree. Ouvert a l'admin ET a
+  // chaque collaboratrice (voir schema.sql, services_insert_authenticated) :
+  // seule la modification/suppression d'une prestation deja existante reste
+  // reservee a l'admin.
+  function openCatalogServiceForm(catalog, containerId, context) {
     var categoryOptions = catalog.categories
       .slice()
       .sort(function (a, b) { return a.displayOrder - b.displayOrder; })
@@ -450,10 +511,8 @@
       supabaseData.upsertService({ categoryId: categoryId, name: name }).then(function (service) {
         catalogCache = null;
         ui.closeModal();
-        return renderAdminServicesBody(containerId).then(function () {
-          return loadCatalog().then(function (freshCatalog) {
-            openCollaboratorServiceForm(service, null, containerId, freshCatalog);
-          });
+        return context.refresh().then(function () {
+          openCollaboratorServiceForm(service, null, containerId, context);
         });
       }).catch(function (error) {
         ui.showAlert("catalogServiceMsg", "Impossible d'ajouter cette prestation, réessayez.");
@@ -462,11 +521,10 @@
     });
   }
 
-  // Definit (ou modifie) le prix/la duree d'UNE collaboratrice pour UN
+  // Definit (ou modifie) le prix/la duree de context.collaboratorId pour UN
   // service du catalogue. C'est ici, et seulement ici, que le tarif est
   // propre a chaque collaboratrice.
-  function openCollaboratorServiceForm(service, entry, containerId) {
-    var collaborator = utils.findById(adminState.collaborators, adminState.selectedCollaboratorId);
+  function openCollaboratorServiceForm(service, entry, containerId, context) {
     var isEdit = !!entry;
 
     ui.showModal([
@@ -474,7 +532,7 @@
       "  <h3>" + utils.escapeHtml(service.name) + "</h3>",
       '  <button id="closeServiceEntryModal" class="x" type="button">x</button>',
       "</div>",
-      '<p class="tiny">Pour ' + utils.escapeHtml(collaborator ? collaborator.name : "") + "</p>",
+      '<p class="tiny">Pour ' + utils.escapeHtml(context.collaboratorName || "") + "</p>",
       '<div id="serviceEntryMsg"></div>',
       '<div class="grid2">',
       '  <div><label for="sePrice">Prix (EUR)</label><input id="sePrice" class="field" type="number" min="0" step="0.5" value="' +
@@ -508,14 +566,14 @@
 
       supabaseData.upsertCollaboratorService({
         id: entry ? entry.id : undefined,
-        collaboratorId: adminState.selectedCollaboratorId,
+        collaboratorId: context.collaboratorId,
         serviceId: service.id,
         price: price,
         duration: duration,
         active: ui.byId("seActive").checked
       }).then(function () {
         ui.closeModal();
-        renderAdminServicesBody(containerId);
+        context.refresh();
       }).catch(function (error) {
         ui.showAlert("serviceEntryMsg", "Impossible d'enregistrer, réessayez.");
         window.console && window.console.error && window.console.error(error);
@@ -525,7 +583,7 @@
     var deleteButton = ui.byId("deleteServiceEntryButton");
     if (deleteButton) {
       deleteButton.addEventListener("click", function () {
-        confirmDeleteCollaboratorService(entry, containerId);
+        confirmDeleteCollaboratorService(entry, containerId, context);
       });
     }
   }
@@ -533,8 +591,8 @@
   // Une prestation deja utilisee dans au moins un rendez-vous (passe ou a
   // venir) ne doit jamais etre supprimee : les anciens rendez-vous doivent
   // pouvoir continuer a l'afficher. On la desactive a la place.
-  function confirmDeleteCollaboratorService(entry, containerId) {
-    supabaseData.countReservationsForService(adminState.selectedCollaboratorId, entry.serviceId).then(function (count) {
+  function confirmDeleteCollaboratorService(entry, containerId, context) {
+    supabaseData.countReservationsForService(context.collaboratorId, entry.serviceId).then(function (count) {
       if (count > 0) {
         if (!window.confirm(
           "Cette prestation a déjà " + count + " rendez-vous enregistré(s). " +
@@ -545,14 +603,14 @@
 
         return supabaseData.upsertCollaboratorService({
           id: entry.id,
-          collaboratorId: adminState.selectedCollaboratorId,
+          collaboratorId: context.collaboratorId,
           serviceId: entry.serviceId,
           price: entry.price,
           duration: entry.duration,
           active: false
         }).then(function () {
           ui.closeModal();
-          renderAdminServicesBody(containerId);
+          context.refresh();
         });
       }
 
@@ -562,78 +620,10 @@
 
       return supabaseData.deleteCollaboratorService(entry.id).then(function () {
         ui.closeModal();
-        renderAdminServicesBody(containerId);
+        context.refresh();
       });
     }).catch(function (error) {
       ui.showAlert("serviceEntryMsg", "Impossible de vérifier l'historique, réessayez.");
-      window.console && window.console.error && window.console.error(error);
-    });
-  }
-
-  // ---- Vue collaboratrice (lecture seule) : ses propres prestations,
-  // regroupees par categorie, avec son tarif et sa duree a elle. ----
-
-  function renderMyServiceRow(item) {
-    return [
-      '<div class="service-admin-row">',
-      '  <div class="grow">',
-      "    <b>" + utils.escapeHtml(item.name) + "</b>",
-      '    <div class="row" style="margin-top:4px;flex-wrap:wrap;gap:6px">',
-      '      <span class="badge">' + item.price + " EUR</span>",
-      '      <span class="badge">' + item.duration + " min</span>",
-      item.active === false ? '<span class="badge status-cancel">Inactive</span>' : "",
-      "    </div>",
-      "  </div>",
-      "</div>"
-    ].join("");
-  }
-
-  function openMyCategorySheet(group) {
-    ui.showSheet([
-      '<div class="modal-head">',
-      "  <h3>" + utils.escapeHtml(group.name) + "</h3>",
-      '  <button id="closeMyCategorySheetButton" class="x" type="button">x</button>',
-      "</div>",
-      '<div class="service-category-list">' +
-        group.items.map(renderMyServiceRow).join("") +
-      "</div>"
-    ].join(""));
-
-    ui.byId("closeMyCategorySheetButton").addEventListener("click", ui.closeSheet);
-  }
-
-  // Meme menu burger que l'ecran admin, en lecture seule (chaque
-  // categorie ouvre une feuille avec ses prestations).
-  function renderMyServicesSection(containerId, user) {
-    var container = ui.byId(containerId);
-    if (!container) {
-      return;
-    }
-
-    container.innerHTML = '<p class="tiny">Chargement de mes prestations...</p>';
-
-    loadCollaboratorEntries(user.id).then(function (entries) {
-      var groups = groupByCategory(entries);
-
-      if (!groups.length) {
-        container.innerHTML = '<p class="tiny">Aucune prestation ne vous a encore ete attribuee. Contactez l administrateur.</p>';
-        return;
-      }
-
-      container.innerHTML = '<div class="service-category-menu">' + groups.map(function (group, index) {
-        return '<button class="secondary service-category-burger" type="button" data-open-my-category="' + index + '">' +
-          "<span>☰ " + utils.escapeHtml(group.name) + "</span>" +
-          '<span class="tiny">(' + group.items.length + ")</span>" +
-          "</button>";
-      }).join("") + "</div>";
-
-      container.querySelectorAll("[data-open-my-category]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          openMyCategorySheet(groups[Number(button.dataset.openMyCategory)]);
-        });
-      });
-    }).catch(function (error) {
-      container.innerHTML = '<div class="alert">Impossible de charger vos prestations, réessayez.</div>';
       window.console && window.console.error && window.console.error(error);
     });
   }
@@ -642,7 +632,7 @@
     if (auth.isAdmin(user)) {
       renderAdminServicesSection(containerId);
     } else {
-      renderMyServicesSection(containerId, user);
+      renderOwnServicesSection(containerId, user);
     }
   }
 

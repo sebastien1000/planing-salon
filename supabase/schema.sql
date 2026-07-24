@@ -413,11 +413,30 @@ create policy "services_select_authenticated"
   on services for select
   using (auth.uid() is not null);
 
+-- Ajouter une prestation NEUVE au catalogue general (ex: une specialite pas
+-- encore proposee par personne) est ouvert a toute collaboratrice connectee,
+-- pour qu'elle puisse ensuite s'y attribuer son propre tarif sans dependre
+-- de l'admin (voir js/core/form-services.js, renderOwnServicesSection).
+-- Modifier ou retirer une prestation DEJA existante du catalogue (utilisee
+-- par toute l'equipe) reste reserve a l'admin, pour eviter qu'une
+-- collaboratrice modifie/supprime par erreur une prestation dont dependent
+-- ses collegues.
 drop policy if exists "services_write_admin" on services;
-create policy "services_write_admin"
-  on services for all
+drop policy if exists "services_insert_authenticated" on services;
+create policy "services_insert_authenticated"
+  on services for insert
+  with check (auth.uid() is not null);
+
+drop policy if exists "services_update_admin" on services;
+create policy "services_update_admin"
+  on services for update
   using (is_admin())
   with check (is_admin());
+
+drop policy if exists "services_delete_admin" on services;
+create policy "services_delete_admin"
+  on services for delete
+  using (is_admin());
 
 -- collaborator_services : l'admin voit/gere tout ; chaque collaboratrice ne
 -- voit et ne modifie QUE ses propres tarifs/durees, jamais ceux d'une autre.
