@@ -356,7 +356,7 @@
       return;
     }
 
-    services.loadCollaboratorServiceEntries(collabId).then(function (entries) {
+    services.loadCollaboratorEntries(collabId).then(function (entries) {
       var stillSameCollab = supabaseData.resolveCollabId(state.profiles, ui.byId("fCollab").value) === collabId;
       var match = entries.find(function (entry) {
         return entry.active && entry.serviceActive && entry.name === client.prestation;
@@ -673,7 +673,7 @@
       "  </div>",
       '<div class="grid2">',
       '  <div><label for="pDuration">Duree</label><input id="pDuration" class="field" type="number" value="' + client.duration + '"></div>',
-      '  <div><label for="pRoom">Salle</label><input id="pRoom" class="field" readonly value="' + utils.escapeHtml(room) + '"></div>',
+      '  <div><label for="pRoom">Salle</label><select id="pRoom" class="field">' + buildRoomOptionsHtml(state, proposalCollab, room) + "</select></div>",
       "</div>",
       '<label for="pPrice">Prix (EUR)</label><input id="pPrice" class="field" type="number" min="0" step="0.5"' +
         (isAdmin ? "" : " readonly") + ' value="0">',
@@ -719,7 +719,7 @@
       return;
     }
 
-    services.loadCollaboratorServiceEntries(collabId).then(function (entries) {
+    services.loadCollaboratorEntries(collabId).then(function (entries) {
       var stillSameCollab = ui.byId("pCollab") &&
         supabaseData.resolveCollabId(state.profiles, ui.byId("pCollab").value) === collabId;
       var match = entries.find(function (entry) {
@@ -775,13 +775,18 @@
       : "";
   }
 
+  // Meme raison que updateReservationRoom/refreshCollabRestrictedFields dans
+  // le formulaire de RDV classique : la resolution automatique (ancien
+  // catalogue local par categorie) echoue tres souvent avec le nouveau
+  // systeme de prestations (noms differents). pRoom doit donc rester un
+  // menu deroulant modifiable (pas un champ en lecture seule comme
+  // auparavant) pour que la collaboratrice puisse toujours choisir
+  // manuellement si la suggestion est vide ou fausse.
   function updateProposalRoom() {
     var state = formState.state;
     var collab = ui.byId("pCollab").value;
     var room = domain.roomFor(state.db, collab, ui.byId("pPrestButton").textContent);
-    if (room) {
-      ui.byId("pRoom").value = room;
-    }
+    ui.byId("pRoom").innerHTML = buildRoomOptionsHtml(state, collab, room || ui.byId("pRoom").value);
   }
 
   function saveProposal(clientId) {
