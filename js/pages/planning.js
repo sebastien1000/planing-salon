@@ -319,8 +319,7 @@
         .filter(function (item) { return matchesCollabFilter(item.collab); });
 
       var slotsHtml = roomReservations.map(function (reservation) {
-        var canSee = auth.canSeeReservation(user, reservation);
-        var who = canSee ? reservation.client : "Réservé - " + reservation.collab;
+        var who = reservation.client;
         var endTime = domain.addMinutes(reservation.time, reservation.duration);
 
         return [
@@ -593,9 +592,7 @@
             var colorVars = collabColorVars(collabUser);
             var textColor = collabUser && collabUser.color ? "color:" + utils.readableTextColor(collabUser.color) + ";" : "";
             var dotStyle = colorVars ? ' style="' + colorVars + textColor + '"' : "";
-            var label = auth.canSeeReservation(user, reservation)
-              ? reservation.client
-              : "Réservé - " + reservation.collab;
+            var label = reservation.client;
             return '<span class="' + dotClassName + '"' + dotStyle + '>' + utils.escapeHtml(label + " - " + reservation.time) + "</span>";
           }).join(""),
           blockedDotsHtml(blocked),
@@ -697,10 +694,10 @@
       var reservation = event;
       var isMine = reservation.collab === user.name;
       var canSee = auth.canSeeReservation(user, reservation);
-      // Seules les infos clientes (nom, tel, email, notes) sont
-      // confidentielles pour un RDV d'une autre collaboratrice : la
-      // prestation, elle, reste toujours visible (voir showPrestation).
-      var title = canSee ? reservation.client : "Réservé - " + reservation.collab;
+      // Le nom du client reste toujours visible, meme sur un RDV d'une
+      // autre collaboratrice : seuls le tel/email/notes (voir la modale,
+      // clickAttr) restent confidentiels pour les non-proprietaires.
+      var title = reservation.client;
       var endTime = domain.addMinutes(reservation.time, reservation.duration);
       var collabUser = utils.findByName(profiles, reservation.collab);
       var colorVars = collabColorVars(collabUser);
