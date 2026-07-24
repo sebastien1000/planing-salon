@@ -20,6 +20,7 @@
   var db = data.loadDb();
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
   var reservations = [];
+  var holidays = [];
 
   function virtualDb() {
     return { reservations: reservations, prestations: db.prestations };
@@ -71,15 +72,23 @@
   }
 
   function openHolidaySheet(account) {
-    var items = forms.holidaysForCollab(db, account.name);
+    var items = forms.holidaysForCollab(holidays, account.name);
     var isAdmin = auth.isAdmin(user);
 
     function refreshWhileOpen() {
-      render();
-      openHolidaySheet(account);
+      render().then(function () {
+        openHolidaySheet(account);
+      });
     }
 
-    forms.configure({ db: db, refresh: refreshWhileOpen, selectedDate: selectedDate, user: user, reservations: reservations });
+    forms.configure({
+      db: db,
+      refresh: refreshWhileOpen,
+      selectedDate: selectedDate,
+      user: user,
+      reservations: reservations,
+      holidays: holidays
+    });
 
     ui.showSheet([
       '<div class="modal-head">',
@@ -93,7 +102,14 @@
     ].join(""));
 
     ui.byId("closeHolidaySheetButton").addEventListener("click", function () {
-      forms.configure({ db: db, refresh: render, selectedDate: selectedDate, user: user, reservations: reservations });
+      forms.configure({
+        db: db,
+        refresh: render,
+        selectedDate: selectedDate,
+        user: user,
+        reservations: reservations,
+        holidays: holidays
+      });
       ui.closeSheet();
     });
     forms.bindHolidayCardActions(ui.byId("holidayList"));
@@ -245,7 +261,7 @@
   }
 
   function renderOwnCard() {
-    var myHolidays = forms.holidaysForCollab(db, user.name);
+    var myHolidays = forms.holidaysForCollab(holidays, user.name);
 
     return [
       '<div class="card">',
@@ -326,9 +342,14 @@
     // a jour la fiche locale de chacun avant d'afficher quoi que ce soit.
     var profilesPromise = auth.isAdmin(user) ? supabaseData.listProfiles() : Promise.resolve(null);
 
-    Promise.all([supabaseData.listAllReservations(), profilesPromise]).then(function (results) {
+    return Promise.all([
+      supabaseData.listAllReservations(),
+      profilesPromise,
+      supabaseData.listBlockedPeriods()
+    ]).then(function (results) {
       reservations = results[0];
       var profiles = results[1];
+      holidays = results[2].filter(function (item) { return item.kind === "holiday"; });
 
       if (profiles) {
         auth.syncProfilesToLocal(profiles);
@@ -340,7 +361,8 @@
         refresh: render,
         selectedDate: selectedDate,
         user: user,
-        reservations: reservations
+        reservations: reservations,
+        holidays: holidays
       });
 
       if (auth.isAdmin(user)) {

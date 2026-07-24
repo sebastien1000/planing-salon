@@ -3,6 +3,7 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var formState = window.SalonFormState;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
@@ -11,8 +12,8 @@
     return pair ? pair[1] : category;
   }
 
-  function holidaysForCollab(db, collabName) {
-    return db.holidays
+  function holidaysForCollab(holidays, collabName) {
+    return holidays
       .filter(function (item) { return item.collab === collabName; })
       .sort(function (a, b) { return a.startDate.localeCompare(b.startDate); });
   }
@@ -71,7 +72,7 @@
     }
 
     var holiday = holidayId
-      ? utils.findById(state.db.holidays, holidayId)
+      ? utils.findById(state.holidays, holidayId)
       : {
           id: "",
           collab: presetCollab || "",
@@ -145,9 +146,18 @@
       return;
     }
 
+    var collabName = ui.byId("hoCollab").value;
+    var collabUser = utils.findByName(state.db.users, collabName);
+
+    if (!collabUser) {
+      ui.showAlert("holidayMsg", "Collaborateur introuvable, réessayez.");
+      return;
+    }
+
     var holiday = {
-      id: holidayId || utils.uid("h"),
-      collab: ui.byId("hoCollab").value,
+      kind: "holiday",
+      collab: collabName,
+      collabId: collabUser.id,
       startDate: ui.byId("hoStartDate").value,
       startTime: ui.byId("hoStartTime").value || "00:00",
       endDate: ui.byId("hoEndDate").value,
@@ -174,17 +184,21 @@
       return;
     }
 
-    if (holidayId) {
-      var current = utils.findById(state.db.holidays, holidayId);
-      if (current) {
-        Object.assign(current, holiday);
-      }
-    } else {
-      state.db.holidays.push(holiday);
-    }
+    var saveButton = ui.byId("saveHolidayButton");
+    saveButton.disabled = true;
 
-    ui.closeModal();
-    formState.saveAndRefresh();
+    var writePromise = holidayId
+      ? supabaseData.updateBlockedPeriod(holidayId, holiday)
+      : supabaseData.createBlockedPeriod(holiday);
+
+    writePromise.then(function () {
+      ui.closeModal();
+      state.refresh();
+    }).catch(function (error) {
+      saveButton.disabled = false;
+      ui.showAlert("holidayMsg", "Erreur, impossible d'enregistrer ce congé.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   function deleteHoliday(holidayId) {
@@ -199,12 +213,13 @@
       return;
     }
 
-    state.db.holidays = state.db.holidays.filter(function (item) {
-      return item.id !== holidayId;
+    supabaseData.deleteBlockedPeriod(holidayId).then(function () {
+      ui.closeModal();
+      state.refresh();
+    }).catch(function (error) {
+      window.alert("Erreur, impossible de supprimer ce congé.");
+      window.console && window.console.error && window.console.error(error);
     });
-
-    ui.closeModal();
-    formState.saveAndRefresh();
   }
 
   window.SalonHolidayForms = {

@@ -535,3 +535,110 @@ grant select on reservations_public to authenticated;
 -- Les insertions/modifications passent par la table reservations elle-meme
 -- (RLS ci-dessus), la vue sert uniquement a la lecture masquee.
 grant insert, update on reservations to authenticated;
+
+-- 10. Table blocked_periods (conges + absences des collaborateurs)
+--
+-- Remplace l'ancien stockage 100% localStorage (db.holidays / db.absences,
+-- voir js/core/data.js) : un conge/une absence n'existait alors que sur
+-- l'appareil qui l'avait cree, invisible pour les autres collaboratrices ou
+-- l'admin sur un autre appareil - c'est exactement ce que ce script corrige.
+create table if not exists blocked_periods (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('holiday', 'absence')),
+  collab_id uuid not null references profiles(id) on delete cascade,
+  category text not null,
+  start_date date not null,
+  start_time time not null default '00:00',
+  end_date date not null,
+  end_time time not null default '23:59',
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint blocked_periods_range_check check (
+    end_date > start_date or (end_date = start_date and end_time > start_time)
+  )
+);
+
+create index if not exists blocked_periods_collab_id_idx on blocked_periods (collab_id);
+
+drop trigger if exists set_updated_at on blocked_periods;
+create trigger set_updated_at
+  before update on blocked_periods
+  for each row execute function set_updated_at();
+
+alter table blocked_periods enable row level security;
+
+-- SELECT restreint sur la table brute (meme principe que "reservations") :
+-- la lecture "grand public" masquee passe par la vue blocked_periods_public
+-- plus bas, qui s'execute avec les privileges de son proprietaire.
+drop policy if exists "blocked_periods_select_admin_or_own" on blocked_periods;
+create policy "blocked_periods_select_admin_or_own"
+  on blocked_periods for select
+  using (is_admin() or collab_id = auth.uid());
+
+-- Conges (vacances) : seul l'admin peut creer/modifier/supprimer (regle deja
+-- appliquee cote JavaScript dans js/core/form-holidays.js, desormais aussi
+-- garantie cote base).
+-- Absences : l'admin peut gerer celles de tout le monde ; une collaboratrice
+-- ne peut gerer que les siennes (regle deja appliquee cote JavaScript dans
+-- js/core/form-absences.js, desormais aussi garantie cote base).
+drop policy if exists "blocked_periods_insert_authorized" on blocked_periods;
+create policy "blocked_periods_insert_authorized"
+  on blocked_periods for insert
+  with check (
+    (kind = 'holiday' and is_admin())
+    or (kind = 'absence' and (is_admin() or collab_id = auth.uid()))
+  );
+
+drop policy if exists "blocked_periods_update_authorized" on blocked_periods;
+create policy "blocked_periods_update_authorized"
+  on blocked_periods for update
+  using (
+    (kind = 'holiday' and is_admin())
+    or (kind = 'absence' and (is_admin() or collab_id = auth.uid()))
+  )
+  with check (
+    (kind = 'holiday' and is_admin())
+    or (kind = 'absence' and (is_admin() or collab_id = auth.uid()))
+  );
+
+drop policy if exists "blocked_periods_delete_authorized" on blocked_periods;
+create policy "blocked_periods_delete_authorized"
+  on blocked_periods for delete
+  using (
+    (kind = 'holiday' and is_admin())
+    or (kind = 'absence' and (is_admin() or collab_id = auth.uid()))
+  );
+
+-- Vue "grand public" : tout le monde doit voir qu'un creneau est bloque
+-- (sinon impossible de reperer un conflit ou d'afficher le planning
+-- correctement), mais le detail (motif/notes) d'une ABSENCE reste prive a
+-- l'admin et a la collaboratrice concernee - seul "Indisponible" est montre
+-- aux autres cote JavaScript (voir js/pages/planning.js,
+-- canSeeBlockedDetail). Les conges, eux, restent toujours visibles en clair
+-- pour tout le monde (motif "Vacances" etc. jamais sensible).
+drop view if exists blocked_periods_public;
+create or replace view blocked_periods_public as
+select
+  bp.id,
+  bp.kind,
+  bp.collab_id,
+  p.name as collab_name,
+  case when bp.kind = 'holiday' or is_admin() or bp.collab_id = auth.uid()
+    then bp.category
+    else null
+  end as category,
+  bp.start_date,
+  bp.start_time,
+  bp.end_date,
+  bp.end_time,
+  case when bp.kind = 'holiday' or is_admin() or bp.collab_id = auth.uid()
+    then bp.notes
+    else null
+  end as notes
+from blocked_periods bp
+join profiles p on p.id = bp.collab_id;
+
+grant select on blocked_periods to authenticated;
+grant select on blocked_periods_public to authenticated;
+grant insert, update, delete on blocked_periods to authenticated;

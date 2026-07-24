@@ -78,12 +78,14 @@
     }
   });
 
-  // Clientes/rendez-vous/profils viennent de Supabase, rafraichis a chaque
-  // render() ; le reste (collaborateurs, prestations, absences, conges)
+  // Clientes/rendez-vous/profils/absences/conges viennent de Supabase,
+  // rafraichis a chaque render() ; le reste (collaborateurs, prestations)
   // reste dans localStorage via db.
   var reservations = [];
   var clients = [];
   var profiles = [];
+  var holidays = [];
+  var absences = [];
 
   function loadShowTypes() {
     try {
@@ -164,17 +166,17 @@
   }
 
   function blockedPeriodsOnDate(date) {
-    var absences = showTypes.absences
-      ? db.absences
+    var absencesOnDate = showTypes.absences
+      ? absences
         .filter(function (item) { return domain.periodCoversDate(item, date) && matchesCollabFilter(item.collab); })
         .map(function (item) { return Object.assign({ type: "absence" }, item); })
       : [];
-    var holidays = showTypes.holidays
-      ? db.holidays
+    var holidaysOnDate = showTypes.holidays
+      ? holidays
         .filter(function (item) { return domain.periodCoversDate(item, date) && matchesCollabFilter(item.collab); })
         .map(function (item) { return Object.assign({ type: "holiday" }, item); })
       : [];
-    return absences.concat(holidays);
+    return absencesOnDate.concat(holidaysOnDate);
   }
 
   // Vue mois : un badge distinct par type de blocage plutot qu'un "Blocage
@@ -736,11 +738,14 @@
     return Promise.all([
       supabaseData.listReservationsForDates(dates),
       supabaseData.listClients(),
-      supabaseData.listProfiles()
+      supabaseData.listProfiles(),
+      supabaseData.listBlockedPeriods()
     ]).then(function (results) {
       reservations = results[0];
       clients = results[1];
       profiles = results[2];
+      holidays = results[3].filter(function (item) { return item.kind === "holiday"; });
+      absences = results[3].filter(function (item) { return item.kind === "absence"; });
 
       forms.configure({
         db: db,
@@ -749,7 +754,9 @@
         user: user,
         clients: clients,
         reservations: reservations,
-        profiles: profiles
+        profiles: profiles,
+        holidays: holidays,
+        absences: absences
       });
 
       var content = renderHeader(filteredReservations(dates));

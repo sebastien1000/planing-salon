@@ -430,22 +430,6 @@
     }).length;
   }
 
-  // Clientes/rendez-vous n'ont plus besoin d'etre parcourus ici : Supabase
-  // les relie a un collaborateur par id (collab_id), pas par nom - un
-  // renommage n'y touche donc rien, le nom affiche vient de profiles.name.
-  function renameCollaborator(db, oldName, newName) {
-    db.absences.forEach(function (absence) {
-      if (absence.collab === oldName) {
-        absence.collab = newName;
-      }
-    });
-
-    db.holidays.forEach(function (holiday) {
-      if (holiday.collab === oldName) {
-        holiday.collab = newName;
-      }
-    });
-  }
 
   window.SalonDomain = {
     assignmentError: assignmentError,
@@ -468,7 +452,6 @@
     isRoomAllowedForUser: isRoomAllowedForUser,
     normalizeStatus: normalizeStatus,
     periodCoversDate: periodCoversDate,
-    renameCollaborator: renameCollaborator,
     revenueFor: revenueFor,
     roomFor: roomFor,
     roomStatus: roomStatus,

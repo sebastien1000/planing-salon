@@ -11,16 +11,17 @@
 
   // Assemble un objet ayant la forme attendue par domain.js (conflits,
   // restrictions salle/prestation) a partir de l'etat courant : les
-  // collaborateurs/prestations/absences/conges restent dans localStorage,
-  // les clientes/rendez-vous viennent de Supabase. reservationsOverride
-  // permet de remplacer state.reservations (qui ne contient que les dates
-  // deja chargees par la vue planning courante) par une liste fraiche.
+  // collaborateurs/prestations restent dans localStorage, le reste
+  // (clientes/rendez-vous/absences/conges) vient de Supabase.
+  // reservationsOverride permet de remplacer state.reservations (qui ne
+  // contient que les dates deja chargees par la vue planning courante) par
+  // une liste fraiche.
   function buildVirtualDb(state, reservationsOverride) {
     return {
       users: state.db.users,
       prestations: state.db.prestations,
-      absences: state.db.absences,
-      holidays: state.db.holidays,
+      absences: state.absences,
+      holidays: state.holidays,
       reservations: reservationsOverride || state.reservations,
       clients: state.clients
     };

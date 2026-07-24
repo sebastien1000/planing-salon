@@ -60,14 +60,9 @@
         { id: "p7", name: "Baby spa", cat: "baby", duration: 60, price: 40 },
         { id: "p8", name: "Prestation exterieure", cat: "outside", duration: 120, price: 60 }
       ],
-      // Clientes et rendez-vous ne sont plus stockes ici : ils vivent dans
-      // Supabase (voir supabase/schema.sql et js/core/supabase-data.js),
-      // avec droits verifies cote serveur.
-      // Absences : idem, plus d'absence de demonstration fixe ici - elle
-      // revenait a chaque reinitialisation du localStorage (date "demain"
-      // recalculee a chaque fois, donc jamais vraiment "supprimee").
-      absences: [],
-      holidays: []
+      // Clientes, rendez-vous, absences et conges ne sont plus stockes ici :
+      // ils vivent dans Supabase (voir supabase/schema.sql et
+      // js/core/supabase-data.js), avec droits verifies cote serveur.
     };
   }
 
@@ -85,57 +80,17 @@
     return user;
   }
 
-  function timeToMinutes(time) {
-    var parts = String(time || "00:00").split(":").map(Number);
-    return (parts[0] || 0) * 60 + (parts[1] || 0);
-  }
-
-  function minutesToTime(totalMinutes) {
-    var capped = Math.max(0, Math.min(23 * 60 + 59, totalMinutes));
-    var hours = Math.floor(capped / 60);
-    var minutes = capped % 60;
-    return (hours < 10 ? "0" : "") + hours + ":" + (minutes < 10 ? "0" : "") + minutes;
-  }
-
-  function sanitizeBlockedPeriod(item) {
-    var safeItem = item && typeof item === "object" ? item : {};
-
-    if (!safeItem.startDate && safeItem.date) {
-      safeItem = {
-        id: safeItem.id,
-        collab: safeItem.collab,
-        startDate: safeItem.date,
-        startTime: safeItem.time || "00:00",
-        endDate: safeItem.date,
-        endTime: minutesToTime(timeToMinutes(safeItem.time || "00:00") + Number(safeItem.duration || 0)),
-        category: "autre",
-        notes: safeItem.label || ""
-      };
-    }
-
-    return {
-      id: safeItem.id || utils.uid("a"),
-      collab: safeItem.collab || "",
-      startDate: safeItem.startDate || utils.today(),
-      startTime: safeItem.startTime || "00:00",
-      endDate: safeItem.endDate || safeItem.startDate || utils.today(),
-      endTime: safeItem.endTime || "23:59",
-      category: safeItem.category || "autre",
-      notes: safeItem.notes || ""
-    };
-  }
-
   function sanitizeDb(db) {
     var safe = db && typeof db === "object" ? db : {};
     safe.users = (Array.isArray(safe.users) ? safe.users : buildDefault().users).map(sanitizeUser);
     safe.prestations = Array.isArray(safe.prestations) ? safe.prestations : buildDefault().prestations;
-    safe.absences = (Array.isArray(safe.absences) ? safe.absences : []).map(sanitizeBlockedPeriod);
-    safe.holidays = (Array.isArray(safe.holidays) ? safe.holidays : []).map(sanitizeBlockedPeriod);
-    // Nettoyage : clientes/rendez-vous vivent desormais dans Supabase, et
-    // les photos "planning papier" (fonctionnalite retiree) ne doivent pas
-    // trainer en double dans le localStorage existant.
+    // Nettoyage : clientes/rendez-vous/absences/conges vivent desormais dans
+    // Supabase, et les photos "planning papier" (fonctionnalite retiree) ne
+    // doivent pas trainer en double dans le localStorage existant.
     delete safe.clients;
     delete safe.reservations;
+    delete safe.absences;
+    delete safe.holidays;
     delete safe.photos;
     // Migration : retire les anciennes fiches de demonstration (Julie/
     // Marion/admin fixes avec id "u0"/"u1"/"u2" et email vide) qu'un ancien
@@ -146,13 +101,6 @@
     var LEGACY_DEMO_USER_IDS = { u0: true, u1: true, u2: true };
     safe.users = safe.users.filter(function (user) {
       return !(LEGACY_DEMO_USER_IDS[user.id] && !user.email);
-    });
-    // Meme migration pour l'ancienne absence de demonstration fixe (id
-    // "a1", jamais genere par utils.uid("a") qui produit toujours 8
-    // caracteres) : sans ca elle "revenait" a chaque reinitialisation du
-    // localStorage, avec une date recalculee a "demain" a chaque fois.
-    safe.absences = safe.absences.filter(function (absence) {
-      return absence.id !== "a1";
     });
     return safe;
   }

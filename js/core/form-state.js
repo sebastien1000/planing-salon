@@ -7,11 +7,14 @@
     user: null,
     selectedDate: utils.today(),
     refresh: function () {},
-    // Clientes/rendez-vous/profils vivent desormais dans Supabase (pas dans
-    // db) : ces tableaux sont rafraichis par chaque page avant de rendre.
+    // Clientes/rendez-vous/profils/absences/conges vivent desormais dans
+    // Supabase (pas dans db) : ces tableaux sont rafraichis par chaque page
+    // avant de rendre.
     clients: [],
     reservations: [],
-    profiles: []
+    profiles: [],
+    holidays: [],
+    absences: []
   };
 
   function configure(options) {
@@ -30,6 +33,14 @@
 
     if (options.profiles) {
       state.profiles = options.profiles;
+    }
+
+    if (options.holidays) {
+      state.holidays = options.holidays;
+    }
+
+    if (options.absences) {
+      state.absences = options.absences;
     }
   }
 

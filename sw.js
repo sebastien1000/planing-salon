@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v44-accents-today-reset";
+const CACHE_NAME = "salon-mvp-v45-conges-absences-supabase";
 
 const APP_ASSETS = [
   "./",

@@ -281,7 +281,6 @@
       return;
     }
 
-    var oldName = user.name;
     var newName = ui.byId("uName").value.trim() || user.name;
 
     user.name = newName;
@@ -308,10 +307,6 @@
       user.color = ui.byId("uColor").value;
       user.rooms = readCheckedValues("uRoom");
       user.prestations = readCheckedValues("uPrestation");
-    }
-
-    if (oldName !== newName) {
-      domain.renameCollaborator(state.db, oldName, newName);
     }
 
     ui.closeModal();

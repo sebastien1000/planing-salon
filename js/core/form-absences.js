@@ -3,6 +3,7 @@
   var data = window.SalonData;
   var domain = window.SalonDomain;
   var formState = window.SalonFormState;
+  var supabaseData = window.SalonSupabaseData;
   var ui = window.SalonUI;
   var utils = window.SalonUtils;
 
@@ -75,7 +76,7 @@
   function openAbsenceForm(absenceId) {
     var state = formState.state;
     var absence = absenceId
-      ? utils.findById(state.db.absences, absenceId)
+      ? utils.findById(state.absences, absenceId)
       : {
           id: "",
           collab: auth.isAdmin(state.user) ? defaultCollabName(state) : state.user.name,
@@ -149,7 +150,7 @@
 
   function saveAbsence(absenceId) {
     var state = formState.state;
-    var current = absenceId ? utils.findById(state.db.absences, absenceId) : null;
+    var current = absenceId ? utils.findById(state.absences, absenceId) : null;
 
     if (absenceId && (!current || !canManageAbsence(current))) {
       ui.showAlert("absenceMsg", "Vous ne pouvez pas modifier cette absence.");
@@ -157,9 +158,19 @@
     }
 
     var collab = auth.isAdmin(state.user) ? ui.byId("abCollab").value : state.user.name;
+    var collabId = auth.isAdmin(state.user)
+      ? (utils.findByName(state.db.users, collab) || {}).id
+      : state.user.id;
+
+    if (!collabId) {
+      ui.showAlert("absenceMsg", "Collaborateur introuvable, réessayez.");
+      return;
+    }
+
     var absence = {
-      id: absenceId || utils.uid("a"),
+      kind: "absence",
       collab: collab,
+      collabId: collabId,
       startDate: ui.byId("abStartDate").value,
       startTime: ui.byId("abStartTime").value || "00:00",
       endDate: ui.byId("abEndDate").value,
@@ -191,19 +202,26 @@
       return;
     }
 
-    if (absenceId) {
-      Object.assign(current, absence);
-    } else {
-      state.db.absences.push(absence);
-    }
+    var saveButton = ui.byId("saveAbsenceButton");
+    saveButton.disabled = true;
 
-    ui.closeModal();
-    formState.saveAndRefresh();
+    var writePromise = absenceId
+      ? supabaseData.updateBlockedPeriod(absenceId, absence)
+      : supabaseData.createBlockedPeriod(absence);
+
+    writePromise.then(function () {
+      ui.closeModal();
+      state.refresh();
+    }).catch(function (error) {
+      saveButton.disabled = false;
+      ui.showAlert("absenceMsg", "Erreur, impossible d'enregistrer cette absence.");
+      window.console && window.console.error && window.console.error(error);
+    });
   }
 
   function deleteAbsence(absenceId) {
     var state = formState.state;
-    var absence = utils.findById(state.db.absences, absenceId);
+    var absence = utils.findById(state.absences, absenceId);
 
     if (!absence) {
       return;
@@ -218,12 +236,13 @@
       return;
     }
 
-    state.db.absences = state.db.absences.filter(function (item) {
-      return item.id !== absenceId;
+    supabaseData.deleteBlockedPeriod(absenceId).then(function () {
+      ui.closeModal();
+      state.refresh();
+    }).catch(function (error) {
+      window.alert("Erreur, impossible de supprimer cette absence.");
+      window.console && window.console.error && window.console.error(error);
     });
-
-    ui.closeModal();
-    formState.saveAndRefresh();
   }
 
   window.SalonAbsenceForms = {
