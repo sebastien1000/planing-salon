@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-24
+
+### Ajoute
+
+- conges et absences des collaborateurs migres vers Supabase (table `blocked_periods`, RLS) : visibles par toute l'equipe, plus jamais coinces sur l'appareil qui les a crees
+- chaque collaboratrice peut desormais creer/modifier/supprimer ses propres conges (auparavant reserve a l'admin), comme elle le faisait deja pour ses absences
+- chaque collaboratrice peut ajouter une prestation neuve au catalogue et s'y attribuer son propre tarif, en plus de modifier ses prestations existantes (auparavant en lecture seule)
+- couleur de profil par collaboratrice, synchronisee via Supabase et appliquee dans tout le planning (RDV pleins/haches, conges/absences) pour reperer d'un coup d'oeil qui a quel rendez-vous
+- salle proposee par defaut par collaboratrice (ex. Marion -> Salle Ongles 2), reglable par l'admin, modifiable a tout moment dans le formulaire de RDV
+- les stats "Mes RDV affiches"/"Mes termines" du planning sont cliquables (recap detaille), et ne comptent plus que les RDV de la personne connectee
+- conges/absences positionnes et dimensionnes dans la grille horaire jour/semaine selon leur vraie duree (au lieu d'une carte texte ne refletant pas l'horaire reel)
+
+### Corrige
+
+- le bandeau du bas (barre d'onglets) disparaissait sur grand ecran/web des que le contenu depassait la hauteur de l'ecran
+- mismatch d'identifiant pour les comptes crees via "Ajouter un collaborateur" : bloquait silencieusement tout enregistrement de conge/absence/prestation par la collaboratrice elle-meme (auto-repare a la reconnexion)
+- Julie/Marion apparaissaient en double dans les selecteurs de collaboratrice (fiche cliente notamment)
+- la fiche cliente n'affichait qu'une seule collaboratrice meme si plusieurs etaient cochees
+- la page Recherche n'affichait pas ses resultats par ordre chronologique
+- proposition de prochain RDV (apres avoir termine un rendez-vous) : la prestation habituelle ne se preremplissait jamais (appel a une fonction inexistante), et le champ Salle etait en lecture seule sans possibilite de le corriger
+- le bouton accueil ne ramenait pas toujours Marion sur la vue mois du planning si elle avait change de vue auparavant
+
+### A configurer
+
+- si ce n'est pas deja fait, executer `supabase/schema.sql` dans Supabase (idempotent, peut etre relance sans risque) pour les nouvelles tables/colonnes (`blocked_periods`, `profiles.color`, `profiles.default_room`, policies `services`)
+
 ## 2026-07-08 (7)
 
 ### Ajoute
