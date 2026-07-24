@@ -390,13 +390,15 @@
 
   // Pas de bornage par date : la recherche doit pouvoir retrouver un
   // rendez-vous ancien ou a venir, comme le faisait la version localStorage.
+  // Meme tri chronologique (date puis heure) que les autres listes (voir
+  // sortReservationsByDateTime ci-dessus) : un tri inverse trainait ici par
+  // erreur, la page Recherche n'affichait donc pas ses resultats dans
+  // l'ordre chronologique attendu.
   function listAllReservations() {
     return unwrap(
-      client().from("reservations_public").select("*").order("date", { ascending: false }).order("time", { ascending: false })
+      client().from("reservations_public").select("*").order("date").order("time")
     ).then(function (rows) {
-      return rows.map(mapReservationRow).sort(function (a, b) {
-        return window.SalonDomain.compareReservationsByDateTime(b, a);
-      });
+      return sortReservationsByDateTime(rows.map(mapReservationRow));
     });
   }
 
