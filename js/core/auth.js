@@ -274,6 +274,17 @@
     return user;
   }
 
+  // URL publique reelle de l'app (deploiement Vercel) : le lien envoye par
+  // email doit toujours pointer ici, jamais sur "window.location.href" au
+  // moment de la demande. Sur l'appli Android/Capacitor par exemple, la
+  // page est servie depuis https://localhost/... - un lien de
+  // reinitialisation construit sur cette base-la est inutilisable une fois
+  // ouvert depuis l'email sur le telephone (ce localhost n'existe qu'a
+  // l'interieur de l'appli). Doit aussi correspondre a une URL autorisee
+  // dans Supabase (Authentication -> URL Configuration -> Redirect URLs),
+  // sinon Supabase refuse la redirection meme si l'email part correctement.
+  var APP_BASE_URL = "https://planning-salon.vercel.app/";
+
   // Envoie un vrai email de reinitialisation via Supabase Auth. Reponse
   // toujours neutre cote appelant : ne jamais reveler si l'email existe.
   function requestPasswordReset(email) {
@@ -281,11 +292,8 @@
       return Promise.resolve({ error: { message: "Supabase n'est pas configure." } });
     }
 
-    var here = window.location.href.split(/[?#]/)[0];
-    var base = here.slice(0, here.lastIndexOf("/") + 1);
-
     return supabaseClient.auth.resetPasswordForEmail(String(email || "").trim(), {
-      redirectTo: base + "reset-password.html"
+      redirectTo: APP_BASE_URL + "reset-password.html"
     });
   }
 
