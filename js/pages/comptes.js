@@ -21,9 +21,29 @@
   var selectedDate = sessionStorage.getItem("planning:date") || utils.today();
   var reservations = [];
   var holidays = [];
+  // Mois affiche par les boutons/l'historique "Mois" (statgrid) : separe de
+  // selectedDate (qui sert au planning/aux conges) pour permettre un petit
+  // historique - remonter un mois passe sans toucher a la date courante
+  // utilisee ailleurs sur la page. "YYYY-MM", mois en cours par defaut.
+  var statsMonth = utils.today().slice(0, 7);
 
   function virtualDb() {
     return { reservations: reservations, prestations: db.prestations };
+  }
+
+  function referenceDateFor(range) {
+    return range === "month" ? statsMonth + "-01" : selectedDate;
+  }
+
+  function statsMonthLabel() {
+    return utils.dateObj(statsMonth + "-01").toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric"
+    });
+  }
+
+  function historyLabelFor(range) {
+    return range === "month" ? statsMonthLabel() : RANGE_LABELS[range];
   }
 
   var RANGE_LABELS = { day: "Aujourd'hui", week: "Semaine", month: "Mois" };
@@ -31,13 +51,13 @@
   function renderStatButton(collab, range) {
     return '<button class="stat" type="button" data-history-collab="' + utils.escapeHtml(collab) +
       '" data-history-range="' + range + '">' +
-      "<b>" + domain.revenueFor(virtualDb(), collab, range, selectedDate) + "EUR</b>" +
+      "<b>" + domain.revenueFor(virtualDb(), collab, range, referenceDateFor(range)) + "EUR</b>" +
       "<span>" + RANGE_LABELS[range] + "</span>" +
       "</button>";
   }
 
   function openHistorySheet(collab, range) {
-    var items = domain.doneReservationsFor(virtualDb(), collab, range, selectedDate);
+    var items = domain.doneReservationsFor(virtualDb(), collab, range, referenceDateFor(range));
     var total = items.reduce(function (sum, item) { return sum + item.price; }, 0);
 
     var rows = items.length
@@ -57,7 +77,7 @@
 
     ui.showSheet([
       '<div class="modal-head">',
-      "  <h3>Historique - " + RANGE_LABELS[range] + "</h3>",
+      "  <h3>Historique - " + utils.escapeHtml(historyLabelFor(range)) + "</h3>",
       '  <button id="closeHistoryButton" class="x" type="button">x</button>',
       "</div>",
       '<p class="tiny">' + utils.escapeHtml(collab) + "</p>",
@@ -273,7 +293,8 @@
         photoSrc: user.photo
       }),
       '  <div class="tiny">Tu vois uniquement ton propre compte.</div>',
-      '  <div class="statgrid">',
+      '  <div style="margin-top:10px">' + statsMonthPickerHtml() + "</div>",
+      '  <div class="statgrid" style="margin-top:10px">',
       renderStatButton(user.name, "day"),
       renderStatButton(user.name, "week"),
       renderStatButton(user.name, "month"),
@@ -293,6 +314,14 @@
   }
 
   function bindActions() {
+    var statsMonthInput = ui.byId("statsMonthInput");
+    if (statsMonthInput) {
+      statsMonthInput.addEventListener("change", function () {
+        statsMonth = statsMonthInput.value || utils.today().slice(0, 7);
+        renderContent();
+      });
+    }
+
     var addButton = ui.byId("addAccountButton");
     if (addButton) {
       addButton.addEventListener("click", function () {
@@ -350,6 +379,60 @@
     window.console && window.console.error && window.console.error(error);
   }
 
+  // Selecteur de mois partage par tous les boutons/historiques "Mois" de la
+  // page : un seul champ en haut, pas un par carte collaboratrice.
+  function statsMonthPickerHtml() {
+    return [
+      '<label for="statsMonthInput">Mois affiche (recette totale, historique)</label>',
+      '<input id="statsMonthInput" class="field" type="month" value="' + statsMonth + '" max="' + utils.today().slice(0, 7) + '">'
+    ].join("");
+  }
+
+  // Change de mois affiche = juste recalculer/reafficher (renderContent),
+  // sans redemander reservations/profils/conges a Supabase : les donnees
+  // deja chargees couvrent tous les mois passes.
+  function renderContent() {
+    forms.configure({
+      db: db,
+      refresh: render,
+      selectedDate: selectedDate,
+      user: user,
+      reservations: reservations,
+      holidays: holidays
+    });
+
+    if (auth.isAdmin(user)) {
+      var collabs = db.users.filter(function (account) {
+        return account.role === "collab";
+      });
+      var admins = db.users.filter(function (account) {
+        return account.role === "admin";
+      });
+
+      ui.setMain([
+        '<div class="card">',
+        "  <h3>Comptes collaborateurs</h3>",
+        '  <div class="tiny">L admin voit les recettes de chaque collaborateur individuellement.</div>',
+        '  <div style="margin-top:10px">' + statsMonthPickerHtml() + "</div>",
+        '  <button id="addAccountButton" class="primary" style="width:100%;margin-top:10px" type="button">Ajouter un collaborateur</button>',
+        "</div>",
+        '<div class="cards">',
+        collabs.map(renderUserCard).join(""),
+        "</div>",
+        '<div class="card">',
+        "  <h3>Comptes administrateurs</h3>",
+        "</div>",
+        '<div class="cards">',
+        admins.map(renderAdminCard).join(""),
+        "</div>"
+      ].join(""));
+    } else {
+      ui.setMain(renderOwnCard());
+    }
+
+    bindActions();
+  }
+
   function render() {
     // L'admin doit voir tous les comptes, pas seulement ceux qui se sont
     // deja connectes sur cet appareil (chaque appareil a son propre
@@ -371,44 +454,7 @@
         db = data.loadDb();
       }
 
-      forms.configure({
-        db: db,
-        refresh: render,
-        selectedDate: selectedDate,
-        user: user,
-        reservations: reservations,
-        holidays: holidays
-      });
-
-      if (auth.isAdmin(user)) {
-        var collabs = db.users.filter(function (account) {
-          return account.role === "collab";
-        });
-        var admins = db.users.filter(function (account) {
-          return account.role === "admin";
-        });
-
-        ui.setMain([
-          '<div class="card">',
-          "  <h3>Comptes collaborateurs</h3>",
-          '  <div class="tiny">L admin voit les recettes de chaque collaborateur individuellement.</div>',
-          '  <button id="addAccountButton" class="primary" style="width:100%;margin-top:10px" type="button">Ajouter un collaborateur</button>',
-          "</div>",
-          '<div class="cards">',
-          collabs.map(renderUserCard).join(""),
-          "</div>",
-          '<div class="card">',
-          "  <h3>Comptes administrateurs</h3>",
-          "</div>",
-          '<div class="cards">',
-          admins.map(renderAdminCard).join(""),
-          "</div>"
-        ].join(""));
-      } else {
-        ui.setMain(renderOwnCard());
-      }
-
-      bindActions();
+      renderContent();
     }).catch(showLoadError);
   }
 
