@@ -122,7 +122,7 @@
       clientId ? '<label>Historique des rendez-vous</label><div id="clientHistory" class="stack"><p class="tiny">Chargement...</p></div>' : "",
       '<div class="row" style="margin-top:14px">',
       manageable ? '  <button id="saveClientButton" class="primary grow" type="button">Enregistrer</button>' : "",
-      (manageable && clientId) ? '  <button id="deleteClientButton" class="secondary danger" type="button">Supprimer</button>' : "",
+      (manageable && clientId && auth.isAdmin(state.user)) ? '  <button id="deleteClientButton" class="secondary danger" type="button">Supprimer</button>' : "",
       "</div>"
     ].join(""));
 

@@ -272,10 +272,18 @@ create policy "clients_update_authenticated"
 -- (sans "on delete cascade") bloque deja la suppression cote base si des
 -- rendez-vous y font encore reference : l'application le verifie d'abord
 -- pour afficher un message clair (voir js/core/form-clients.js).
+--
+-- Contrairement au SELECT/UPDATE ci-dessus (partage volontaire, voir
+-- commentaire "clients : fiche commune a toute l'equipe"), la suppression
+-- est IRREVERSIBLE (pas de corbeille) : reservee a l'admin depuis l'audit
+-- de securite du 2026-08-18 (avant ca, n'importe quelle collaboratrice
+-- connectee pouvait effacer definitivement la fiche de n'importe quelle
+-- cliente, y compris celles d'une autre collaboratrice).
 drop policy if exists "clients_delete_authenticated" on clients;
-create policy "clients_delete_authenticated"
+drop policy if exists "clients_delete_admin" on clients;
+create policy "clients_delete_admin"
   on clients for delete
-  using (auth.uid() is not null);
+  using (is_admin());
 
 -- reservations
 --
