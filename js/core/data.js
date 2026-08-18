@@ -149,7 +149,11 @@
 
   function defaultSettings() {
     return {
-      autoProposeNextRdv: true
+      autoProposeNextRdv: true,
+      // "" = pas de preference : le planning garde son ancien defaut
+      // integre (vue jour, sauf Marion en vue mois - voir js/pages/planning.js).
+      // Une valeur "day"/"week"/"month" ici prend le dessus sur ce defaut.
+      defaultPlanningView: ""
     };
   }
 

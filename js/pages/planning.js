@@ -18,10 +18,15 @@
   }
 
   var db = data.loadDb();
-  // Marion prefere ouvrir le planning directement sur la vue mois plutot
-  // que jour ; un choix de vue deja fait avant (sessionStorage) reste
-  // toujours prioritaire.
-  var view = sessionStorage.getItem("planning:view") || (user.name === "Marion" ? "month" : "day");
+  // Priorite : choix deja fait pendant la session (sessionStorage) > vue
+  // par defaut choisie dans Plus > Parametres (data.loadSettings().
+  // defaultPlanningView) > ancien defaut integre (Marion ouvrait deja sur
+  // la vue mois avant que ce reglage existe, pour qui n'a jamais touche
+  // Plus > Parametres).
+  var configuredDefaultView = data.loadSettings().defaultPlanningView;
+  var view = sessionStorage.getItem("planning:view") ||
+    configuredDefaultView ||
+    (user.name === "Marion" ? "month" : "day");
   var roomFilter = sessionStorage.getItem("planning:room") || "Toutes";
   // Toutes les collaboratrices (et l'admin) voient par defaut TOUS les RDV
   // (les siens en clair, ceux des autres hachures/anonymises via

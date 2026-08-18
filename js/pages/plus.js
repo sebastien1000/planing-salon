@@ -31,31 +31,60 @@
     return list.slice().sort(function (a, b) { return a.startDate.localeCompare(b.startDate); });
   }
 
-  // Une ligne par option activable/desactivable (voir js/core/data.js,
+  // Une entree par option configurable depuis Plus (voir js/core/data.js,
   // loadSettings/saveSettings) : ajouter une future option = ajouter une
-  // entree ici, pas de nouvelle carte a creer.
-  var SETTINGS_TOGGLES = [
+  // entree ici (type "checkbox" ou "select"), pas de nouvelle carte a creer.
+  var SETTINGS_FIELDS = [
     {
       key: "autoProposeNextRdv",
+      type: "checkbox",
       label: "Proposer automatiquement le prochain RDV",
       hint: "A la fin d'un rendez-vous (bouton \"Terminer\"), ouvre une proposition de prochaine visite pour la cliente."
+    },
+    {
+      key: "defaultPlanningView",
+      type: "select",
+      label: "Vue du planning par defaut",
+      hint: "Vue affichee a l'ouverture du Planning (un changement de vue pendant la session reste toujours prioritaire).",
+      options: [
+        ["", "Automatique"],
+        ["day", "Jour"],
+        ["week", "Semaine"],
+        ["month", "Mois"]
+      ]
     }
   ];
 
-  function settingsCardHtml() {
-    var rows = SETTINGS_TOGGLES.map(function (toggle) {
-      return [
-        '<label class="row" style="align-items:flex-start;gap:10px;margin-top:10px">',
-        '  <input type="checkbox" data-setting-key="' + toggle.key + '"' + (settings[toggle.key] ? " checked" : "") + '>',
-        '  <span class="grow"><b>' + toggle.label + '</b><div class="tiny">' + toggle.hint + '</div></span>',
-        "</label>"
-      ].join("");
-    }).join("");
+  function settingsFieldHtml(field) {
+    if (field.type === "select") {
+      var optionsHtml = field.options.map(function (option) {
+        var selected = settings[field.key] === option[0] ? " selected" : "";
+        return '<option value="' + option[0] + '"' + selected + ">" + option[1] + "</option>";
+      }).join("");
 
+      return [
+        '<div style="margin-top:10px">',
+        '  <label for="setting-' + field.key + '"><b>' + field.label + "</b></label>",
+        '  <div class="tiny">' + field.hint + "</div>",
+        '  <select id="setting-' + field.key + '" class="field" data-setting-key="' + field.key + '" style="margin-top:6px">' +
+          optionsHtml + "</select>",
+        "</div>"
+      ].join("");
+    }
+
+    return [
+      '<label class="row" style="align-items:flex-start;gap:10px;margin-top:10px">',
+      '  <input type="checkbox" data-setting-key="' + field.key + '"' + (settings[field.key] ? " checked" : "") + '>',
+      '  <span class="grow"><b>' + field.label + '</b><div class="tiny">' + field.hint + '</div></span>',
+      "</label>"
+    ].join("");
+  }
+
+  function settingsCardHtml() {
     return [
       '<div class="card">',
       "  <h3>Paramètres</h3>",
-      rows,
+      SETTINGS_FIELDS.map(settingsFieldHtml).join(""),
       "</div>"
     ].join("");
   }
@@ -72,9 +101,9 @@
       forms.bindAbsenceCardActions(teamAbsenceList);
     }
 
-    document.querySelectorAll("[data-setting-key]").forEach(function (checkbox) {
-      checkbox.addEventListener("change", function () {
-        settings[checkbox.dataset.settingKey] = checkbox.checked;
+    document.querySelectorAll("[data-setting-key]").forEach(function (field) {
+      field.addEventListener("change", function () {
+        settings[field.dataset.settingKey] = field.type === "checkbox" ? field.checked : field.value;
         settings = data.saveSettings(settings);
       });
     });
