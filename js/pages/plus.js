@@ -18,6 +18,7 @@
   var db = data.loadDb();
   var selectedDate = sessionStorage.getItem("planning:date") || window.SalonUtils.today();
   var absences = [];
+  var settings = data.loadSettings();
 
   forms.configure({
     db: db,
@@ -28,6 +29,35 @@
 
   function sortByStartDate(list) {
     return list.slice().sort(function (a, b) { return a.startDate.localeCompare(b.startDate); });
+  }
+
+  // Une ligne par option activable/desactivable (voir js/core/data.js,
+  // loadSettings/saveSettings) : ajouter une future option = ajouter une
+  // entree ici, pas de nouvelle carte a creer.
+  var SETTINGS_TOGGLES = [
+    {
+      key: "autoProposeNextRdv",
+      label: "Proposer automatiquement le prochain RDV",
+      hint: "A la fin d'un rendez-vous (bouton \"Terminer\"), ouvre une proposition de prochaine visite pour la cliente."
+    }
+  ];
+
+  function settingsCardHtml() {
+    var rows = SETTINGS_TOGGLES.map(function (toggle) {
+      return [
+        '<label class="row" style="align-items:flex-start;gap:10px;margin-top:10px">',
+        '  <input type="checkbox" data-setting-key="' + toggle.key + '"' + (settings[toggle.key] ? " checked" : "") + '>',
+        '  <span class="grow"><b>' + toggle.label + '</b><div class="tiny">' + toggle.hint + '</div></span>',
+        "</label>"
+      ].join("");
+    }).join("");
+
+    return [
+      '<div class="card">',
+      "  <h3>Paramètres</h3>",
+      rows,
+      "</div>"
+    ].join("");
   }
 
   function bindActions() {
@@ -41,6 +71,13 @@
     if (teamAbsenceList) {
       forms.bindAbsenceCardActions(teamAbsenceList);
     }
+
+    document.querySelectorAll("[data-setting-key]").forEach(function (checkbox) {
+      checkbox.addEventListener("change", function () {
+        settings[checkbox.dataset.settingKey] = checkbox.checked;
+        settings = data.saveSettings(settings);
+      });
+    });
   }
 
   function showLoadError(error) {
@@ -87,6 +124,7 @@
 
     ui.setMain([
       '<div class="cards">',
+      settingsCardHtml(),
       '  <div class="card"><h3>Notifications internes</h3><p>' + waiting + ' cliente(s) sans prochain RDV valide.</p></div>',
       '  <div class="card">',
       "    <h3>" + (auth.isAdmin(user) ? "Prestations par collaboratrice" : "Mes prestations") + "</h3>",

@@ -586,7 +586,7 @@
     supabaseData.updateReservation(reservationId, patch).then(function (updated) {
       state.refresh();
 
-      if (status === "done" && !wasAlreadyDone) {
+      if (status === "done" && !wasAlreadyDone && data.loadSettings().autoProposeNextRdv) {
         openProposal(updated);
       }
     }).catch(function (error) {

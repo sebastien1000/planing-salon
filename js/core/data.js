@@ -139,6 +139,35 @@
     return persistDb(sanitizeDb(db));
   }
 
+  // Options activables/desactivables depuis l'onglet Plus (voir
+  // js/pages/plus.js). Stockees a part de "db" (localStorage separe) :
+  // ce sont des preferences d'appareil, pas des donnees metier partagees
+  // via Supabase. Ajouter une nouvelle option = ajouter sa cle ici avec sa
+  // valeur par defaut (le comportement actuel, pour ne rien changer pour
+  // qui ne touche jamais l'onglet Plus).
+  var SETTINGS_KEY = "salonSettingsV1";
+
+  function defaultSettings() {
+    return {
+      autoProposeNextRdv: true
+    };
+  }
+
+  function loadSettings() {
+    try {
+      var raw = localStorage.getItem(SETTINGS_KEY);
+      return Object.assign(defaultSettings(), raw ? JSON.parse(raw) : {});
+    } catch (error) {
+      return defaultSettings();
+    }
+  }
+
+  function saveSettings(settings) {
+    var safe = Object.assign(defaultSettings(), settings);
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(safe));
+    return safe;
+  }
+
   window.SalonData = {
     ABSENCE_CATEGORIES: ABSENCE_CATEGORIES,
     HOLIDAY_CATEGORIES: HOLIDAY_CATEGORIES,
@@ -147,6 +176,8 @@
     STORAGE_KEY: STORAGE_KEY,
     buildDefault: buildDefault,
     loadDb: loadDb,
-    saveDb: saveDb
+    loadSettings: loadSettings,
+    saveDb: saveDb,
+    saveSettings: saveSettings
   };
 }());
