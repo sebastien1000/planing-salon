@@ -95,6 +95,48 @@
     ].join("");
   }
 
+  function matchesQuery(client, text) {
+    return [
+      client.name,
+      client.phone,
+      client.notes,
+      client.prestation
+    ].join(" ").toLowerCase().includes(text);
+  }
+
+  // Ordre alphabetique par defaut (le tri demande) : Supabase renvoie sinon
+  // les clientes dans leur ordre de creation, difficile a parcourir des que
+  // la liste grandit.
+  function sortedClients(list) {
+    return list.slice().sort(function (a, b) {
+      return (a.name || "").localeCompare(b.name || "", "fr");
+    });
+  }
+
+  function renderList(query) {
+    var root = ui.byId("clientResults");
+    if (!root) {
+      return;
+    }
+
+    var text = query.toLowerCase();
+    var visible = sortedClients(
+      text ? clients.filter(function (client) { return matchesQuery(client, text); }) : clients
+    );
+
+    root.innerHTML = visible.length
+      ? visible.map(clientCard).join("")
+      : (text
+        ? '<div class="empty">Aucune cliente ne correspond a la recherche.</div>'
+        : '<div class="empty">Aucune cliente visible pour votre compte.</div>');
+
+    root.querySelectorAll("[data-client-id]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        forms.openClientForm(button.dataset.clientId);
+      });
+    });
+  }
+
   function render() {
     Promise.all([
       supabaseData.listClients(),
@@ -114,11 +156,8 @@
       var content = [
         '<button id="addClientButton" class="primary list-actions" type="button">Ajouter cliente</button>',
         counterHtml(),
-        '<div class="cards">',
-        clients.length
-          ? clients.map(clientCard).join("")
-          : '<div class="empty">Aucune cliente visible pour votre compte.</div>',
-        "</div>"
+        '<input id="clientSearchInput" class="field search-box" placeholder="Rechercher une cliente">',
+        '<div id="clientResults" class="cards"></div>'
       ].join("");
 
       ui.setMain(content);
@@ -127,11 +166,11 @@
         forms.openClientForm();
       });
 
-      document.querySelectorAll("[data-client-id]").forEach(function (button) {
-        button.addEventListener("click", function () {
-          forms.openClientForm(button.dataset.clientId);
-        });
+      var field = ui.byId("clientSearchInput");
+      field.addEventListener("input", function () {
+        renderList(field.value || "");
       });
+      renderList("");
     }).catch(showLoadError);
   }
 
