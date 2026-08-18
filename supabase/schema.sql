@@ -569,6 +569,19 @@ grant select on reservations_public to authenticated;
 -- (RLS ci-dessus), la vue sert uniquement a la lecture masquee.
 grant insert, update on reservations to authenticated;
 
+-- CRITIQUE : reservations_public appartient a "postgres" (proprietaire du
+-- schema), qui bypass RLS. Postgres verifie les droits sur une table sous-
+-- jacente d'une vue avec les privileges du PROPRIETAIRE de la vue, pas du
+-- role qui interroge - la policy RLS de "reservations" est donc totalement
+-- ignoree pour QUICONQUE a un SELECT sur cette vue. Supabase accorde SELECT
+-- a "anon" par defaut sur tout nouvel objet du schema public : sans ce
+-- revoke explicite, n'importe qui sur Internet, sans compte ni connexion,
+-- peut lire noms clients/RDV/prix avec la seule cle "anon" publique
+-- (presente en clair dans js/core/supabase-client.js). Verifie et corrige
+-- le 2026-08-18 (faille active en production, aucune authentification
+-- requise pour l'exploiter).
+revoke all on reservations_public from anon;
+
 -- 10. Table blocked_periods (conges + absences des collaborateurs)
 --
 -- Remplace l'ancien stockage 100% localStorage (db.holidays / db.absences,
@@ -663,3 +676,8 @@ join profiles p on p.id = bp.collab_id;
 grant select on blocked_periods to authenticated;
 grant select on blocked_periods_public to authenticated;
 grant insert, update, delete on blocked_periods to authenticated;
+
+-- Meme faille et meme raison que reservations_public plus haut : vue
+-- proprietaire "postgres" -> bypass RLS -> lisible par "anon" par defaut
+-- sans ce revoke. Corrige le 2026-08-18.
+revoke all on blocked_periods_public from anon;
