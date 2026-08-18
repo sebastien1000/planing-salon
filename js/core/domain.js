@@ -273,12 +273,12 @@
     return String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
   }
 
-  // Grille horaire (vues jour/semaine) : 08h-20h par defaut (horaires
+  // Grille horaire (vues jour/semaine) : 07h-21h par defaut (horaires
   // habituels du salon), elargie automatiquement (arrondie a l'heure
   // pleine) si un rendez-vous deborde de cette plage, pour ne jamais
   // couper un RDV existant hors champ.
-  var DAY_GRID_DEFAULT_START = 8 * 60;
-  var DAY_GRID_DEFAULT_END = 20 * 60;
+  var DAY_GRID_DEFAULT_START = 7 * 60;
+  var DAY_GRID_DEFAULT_END = 21 * 60;
   var DAY_GRID_SLOT_MINUTES = 30;
 
   function minutesToTime(totalMinutes) {
