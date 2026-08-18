@@ -29,8 +29,15 @@
   // une salle deja prise et eviter une double reservation. Filtrer sur une
   // seule collaboratrice reste possible via le menu "Filtres", mais n'est
   // plus jamais le choix par defaut. Un choix de filtre deja fait avant
-  // (sessionStorage) reste toujours prioritaire.
-  var collabFilter = sessionStorage.getItem("planning:collab") || "Toutes";
+  // (sessionStorage) reste toujours prioritaire. Cle "v2" (et non
+  // "planning:collab") : avant ce changement, le defaut ecrit ici pour une
+  // collaboratrice etait son propre nom (jamais "Toutes"), et persistState()
+  // le sauvegardait des la premiere action sur la page, meme sans toucher au
+  // menu Filtres. Sur un appareil deja utilise (session WebView longue duree
+  // en PWA/Android), cet ancien choix restait donc coince indefiniment et
+  // masquait les RDV des autres malgre ce nouveau defaut. Nouvelle cle =
+  // ancienne valeur ignoree, chacune repart sur "Toutes" une fois.
+  var collabFilter = sessionStorage.getItem("planning:collabV2") || "Toutes";
   // Contrairement a la vue/aux filtres, la date affichee ne doit jamais
   // rester "bloquee" d'un chargement de page a l'autre : chaque arrivee sur
   // le planning (bouton accueil, changement de page puis retour, nouveau
@@ -120,7 +127,7 @@
   function persistState() {
     sessionStorage.setItem("planning:view", view);
     sessionStorage.setItem("planning:room", roomFilter);
-    sessionStorage.setItem("planning:collab", collabFilter);
+    sessionStorage.setItem("planning:collabV2", collabFilter);
     sessionStorage.setItem("planning:showTypes", JSON.stringify(showTypes));
     sessionStorage.setItem("planning:roomOccupancy", JSON.stringify(roomOccupancyFilter));
   }
