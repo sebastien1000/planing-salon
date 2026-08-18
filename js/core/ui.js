@@ -90,7 +90,7 @@
       '    <div class="header-center app-header-center header-brand">',
       '      <div class="title-copy">',
       '          <div class="title">' + pageTitle + "</div>",
-      '          <div class="header-user-row">' +
+      '          <div id="headerAccountLink" class="header-user-row" role="button" tabindex="0" style="cursor:pointer">' +
         renderUserProfile(user.name, {
           className: "profile-user-inline",
           avatarClassName: "profile-avatar-sm",
@@ -127,6 +127,22 @@
     });
 
     byId("logoutButton").addEventListener("click", auth.logout);
+
+    // Clic sur le logo/nom de profil en en-tete -> page Comptes (deja la
+    // page "mon compte" de l'app), meme comportement que les onglets du bas
+    // (bindTabs plus bas) qui naviguent aussi sans se soucier d'etre deja
+    // sur la page active. Pas d'effet sur les autres usages de
+    // renderUserProfile (liste des comptes dans comptes.js).
+    byId("headerAccountLink").addEventListener("click", function () {
+      window.location.href = "comptes.html";
+    });
+    byId("headerAccountLink").addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        window.location.href = "comptes.html";
+      }
+    });
+
     bindProfileAvatars(container);
   }
 
