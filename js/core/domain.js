@@ -287,6 +287,15 @@
     return String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
   }
 
+  // Un conge/une absence sur une journee entiere vaut par defaut 00:00-23:59
+  // (voir supabase/schema.sql) : sans ce clamp, une seule absence "toute la
+  // journee" forcerait dayGridRange a toujours afficher minuit-minuit,
+  // annulant la plage horaire par defaut (7h-21h) pour toute la journee de
+  // planning, meme sans aucun RDV hors de ces heures.
+  function clampToDayGridDefaults(minutes) {
+    return Math.max(DAY_GRID_DEFAULT_START, Math.min(DAY_GRID_DEFAULT_END, minutes));
+  }
+
   function dayGridRange(reservations) {
     var start = DAY_GRID_DEFAULT_START;
     var end = DAY_GRID_DEFAULT_END;
@@ -502,6 +511,7 @@
     layoutDayGridEvents: layoutDayGridEvents,
     layoutDayGridEventsByCollab: layoutDayGridEventsByCollab,
     minutesToTime: minutesToTime,
+    clampToDayGridDefaults: clampToDayGridDefaults,
     DAY_GRID_SLOT_MINUTES: DAY_GRID_SLOT_MINUTES,
     doneReservationsFor: doneReservationsFor,
     findBlockingPeriod: findBlockingPeriod,

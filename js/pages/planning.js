@@ -634,10 +634,15 @@
   function blockedPeriodGridEvent(item, date) {
     var startTime = date === item.startDate ? item.startTime : "00:00";
     var endTime = date === item.endDate ? item.endTime : "23:59";
-    var duration = Math.max(utils.mins(endTime) - utils.mins(startTime), 0);
+    // Ecrete aux horaires par defaut du planning (7h-21h, voir domain.js) :
+    // sinon une absence "toute la journee" (00:00-23:59 par defaut) forcerait
+    // la grille a toujours s'afficher minuit-minuit.
+    var clampedStart = domain.clampToDayGridDefaults(utils.mins(startTime));
+    var clampedEnd = domain.clampToDayGridDefaults(utils.mins(endTime));
+    var duration = Math.max(clampedEnd - clampedStart, 0);
 
     return Object.assign({}, item, {
-      time: startTime,
+      time: domain.minutesToTime(clampedStart),
       duration: duration
     });
   }
