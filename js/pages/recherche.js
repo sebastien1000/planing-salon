@@ -41,6 +41,29 @@
     });
   }
 
+  function matchesClientQuery(client, text) {
+    return [
+      client.name,
+      client.phone,
+      client.notes,
+      client.prestation
+    ].join(" ").toLowerCase().includes(text);
+  }
+
+  // Uniquement quand la recherche n'est pas vide : sans ca, chaque cliente
+  // (meme sans aucun RDV a venir) apparaitrait ici des l'ouverture de la
+  // page, en plus de la liste complete deja proposee par la page Clients.
+  function filteredClients(query) {
+    var text = query.toLowerCase();
+    if (!text) {
+      return [];
+    }
+
+    return clients.filter(function (client) {
+      return matchesClientQuery(client, text);
+    });
+  }
+
   function reservationPrice(reservation) {
     if (reservation.price != null) {
       return reservation.price;
@@ -101,19 +124,46 @@
     ].join("");
   }
 
+  function renderClientCard(client) {
+    return [
+      '<div class="card">',
+      '  <div class="row">',
+      '    <div class="grow">',
+      "      <h3>" + utils.escapeHtml(client.name) + "</h3>",
+      '      <div class="tiny">' + utils.escapeHtml(client.phone || "") + "</div>",
+      "    </div>",
+      '    <button class="secondary" type="button" data-client-id="' + client.id + '">Ouvrir</button>',
+      "  </div>",
+      "</div>"
+    ].join("");
+  }
+
   function renderResults(query) {
     var root = ui.byId("results");
     if (!root) {
       return;
     }
 
+    var matchingClients = filteredClients(query);
     var results = filteredReservations(query);
 
-    root.innerHTML = results.length
-      ? results.map(renderSearchCard).join("")
+    var clientsHtml = matchingClients.length
+      ? '<h3 class="section-title">Clientes</h3>' + matchingClients.map(renderClientCard).join("")
+      : "";
+    var reservationsHtml = results.length
+      ? (clientsHtml ? '<h3 class="section-title">Rendez-vous</h3>' : "") + results.map(renderSearchCard).join("")
+      : "";
+
+    root.innerHTML = clientsHtml || reservationsHtml
+      ? clientsHtml + reservationsHtml
       : '<div class="empty">Aucun resultat</div>';
 
     forms.bindReservationCardActions(root);
+    root.querySelectorAll("[data-client-id]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        forms.openClientForm(button.dataset.clientId);
+      });
+    });
   }
 
   function showLoadError(error) {
