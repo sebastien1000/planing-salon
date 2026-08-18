@@ -144,6 +144,13 @@
       return;
     }
 
+    // Champ vide : rien a afficher (plus les 332 RDV d'un coup au chargement
+    // de la page) tant que l'utilisatrice n'a pas commence a taper.
+    if (!query.trim()) {
+      root.innerHTML = '<div class="empty">Tapez pour rechercher une cliente ou un rendez-vous.</div>';
+      return;
+    }
+
     var matchingClients = filteredClients(query);
     var results = filteredReservations(query);
 
