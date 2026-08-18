@@ -22,10 +22,12 @@
   var clients = [];
   var profiles = [];
 
+  // Le nom de la collaboratrice est volontairement exclu de cette recherche :
+  // taper "Julie" doit trouver une cliente nommee Julie, pas remonter tous
+  // les RDV de la collaboratrice Julie (confondait les deux).
   function matchesQuery(reservation, text) {
     return [
       reservation.client,
-      reservation.collab,
       reservation.prestation,
       reservation.room,
       reservation.notes,
