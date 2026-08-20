@@ -18,6 +18,12 @@
       mode: "automatic",
       theme: "default",
       animationsEnabled: true,
+      // Choix personnel, propre a cet appareil/cette collaboratrice - ne
+      // part JAMAIS vers Supabase (voir setPersonalOverride) : n'importe
+      // qui peut forcer "Normal" pour soi sans changer le theme choisi par
+      // l'admin pour le reste du salon. null = suit le reglage du salon
+      // (automatique ou impose par l'admin) ; "default" = force Normal ici.
+      personalOverride: null,
       // Dernier theme reellement applique a l'ecran (calcule ou manuel) :
       // permet au petit script inline de <head> de le reappliquer
       // instantanement au chargement suivant, avant meme que ce fichier ne
@@ -53,6 +59,10 @@
   }
 
   function effectiveTheme() {
+    if (state.personalOverride === "default") {
+      return "default";
+    }
+
     if (state.mode === "manual" && config.isValidThemeId(state.theme)) {
       return state.theme;
     }
@@ -185,11 +195,23 @@
     pushToSupabase({ animations_enabled: !!enabled });
   }
 
+  // Ouvert a tout le monde (pas seulement l'admin, voir js/pages/plus.js) :
+  // "Normal" force le theme par defaut sur CET appareil uniquement, sans
+  // jamais toucher a Supabase ni au reglage du salon - une collaboratrice
+  // qui n'aime pas le theme du moment peut le desactiver pour elle-meme,
+  // "Theme du jour" revient a suivre le reglage du salon.
+  function setPersonalOverride(value) {
+    state.personalOverride = value === "default" ? "default" : null;
+    saveLocalState(state);
+    apply();
+  }
+
   function getState() {
     return {
       mode: state.mode,
       theme: state.theme,
       animationsEnabled: state.animationsEnabled,
+      personalOverride: state.personalOverride,
       effectiveTheme: effectiveTheme()
     };
   }
@@ -199,7 +221,8 @@
     getState: getState,
     setAutomaticMode: setAutomaticMode,
     setManualTheme: setManualTheme,
-    setAnimationsEnabled: setAnimationsEnabled
+    setAnimationsEnabled: setAnimationsEnabled,
+    setPersonalOverride: setPersonalOverride
   };
 
   init();

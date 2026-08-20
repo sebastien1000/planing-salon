@@ -90,9 +90,12 @@
   }
 
   // Carte "Apparence" (theme saisonnier anime, voir js/themes/theme-manager.js
-  // et js/themes/theme-config.js) : reservee a l'admin, comme "Absences de
-  // l'equipe" plus bas - le theme s'applique a tout le salon (Supabase),
-  // pas seulement a cet appareil. N'affecte jamais les donnees metier.
+  // et js/themes/theme-config.js) : ouverte a tout le monde pour la partie
+  // "Mon theme" (Normal / Theme du jour - ne change que cet appareil,
+  // jamais envoye a Supabase). Le choix du theme pour TOUT le salon
+  // (Automatique + les 9 themes + animations) reste reserve a l'admin,
+  // comme "Absences de l'equipe" plus bas. N'affecte jamais les donnees
+  // metier.
   function appearanceCardHtml() {
     var themeApi = window.SalonTheme;
     var themeConfig = window.SalonThemeConfig;
@@ -102,6 +105,28 @@
     }
 
     var state = themeApi.getState();
+    var personalValue = state.personalOverride === "default" ? "default" : "auto";
+
+    var personalHtml = [
+      '<div style="margin-top:10px">',
+      '  <label for="myThemeSelect"><b>Mon thème</b></label>',
+      '  <div class="tiny">Ne change que l\'affichage sur cet appareil, pour vous seul(e).</div>',
+      '  <select id="myThemeSelect" class="field" style="margin-top:6px">',
+      '    <option value="auto"' + (personalValue === "auto" ? " selected" : "") + ">Thème du jour</option>",
+      '    <option value="default"' + (personalValue === "default" ? " selected" : "") + ">Normal</option>",
+      "  </select>",
+      "</div>"
+    ].join("");
+
+    if (!auth.isAdmin(user)) {
+      return [
+        '<div class="card">',
+        "  <h3>Apparence</h3>",
+        personalHtml,
+        "</div>"
+      ].join("");
+    }
+
     var themeSelectValue = state.mode === "manual" ? state.theme : "automatic";
 
     var themeOptionsHtml = ['<option value="automatic"' + (themeSelectValue === "automatic" ? " selected" : "") + ">Automatique</option>"]
@@ -114,9 +139,10 @@
     return [
       '<div class="card">',
       "  <h3>Apparence</h3>",
-      '  <div class="tiny">Le thème choisi ici s\'applique à toute l\'application, pour toute l\'équipe.</div>',
+      personalHtml,
+      '  <div class="tiny" style="margin-top:16px">Réglages ci-dessous : s\'appliquent à toute l\'équipe.</div>',
       '  <div style="margin-top:10px">',
-      '    <label for="themeSelect"><b>Thème de l\'application</b></label>',
+      '    <label for="themeSelect"><b>Thème du salon</b></label>',
       '    <select id="themeSelect" class="field" style="margin-top:6px">' + themeOptionsHtml + "</select>",
       "  </div>",
       '  <div style="margin-top:10px">',
@@ -135,6 +161,13 @@
     var themeApi = window.SalonTheme;
     if (!themeApi) {
       return;
+    }
+
+    var myThemeSelect = ui.byId("myThemeSelect");
+    if (myThemeSelect) {
+      myThemeSelect.addEventListener("change", function () {
+        themeApi.setPersonalOverride(myThemeSelect.value === "default" ? "default" : null);
+      });
     }
 
     var themeSelect = ui.byId("themeSelect");
@@ -220,7 +253,7 @@
 
     ui.setMain([
       '<div class="cards">',
-      auth.isAdmin(user) ? appearanceCardHtml() : "",
+      appearanceCardHtml(),
       settingsCardHtml(),
       '  <div class="card"><h3>Notifications internes</h3><p>' + waiting + ' cliente(s) sans prochain RDV valide.</p></div>',
       '  <div class="card">',
