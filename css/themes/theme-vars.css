@@ -27,127 +27,167 @@
   --tabs-bg: color-mix(in srgb, var(--card) 92%, transparent);
 }
 
-[data-theme="halloween"] {
-  --bg: #0d0d0f;
-  --card: #1c1420;
-  --ink: #f3e6cf;
-  --muted: #b79a86;
-  --line: #3a2a44;
-  --pink: #c9581f;
-  --pink-2: #3c2a4a;
-  --danger: #ff6b6b;
-  --ok: #6fbf7b;
+[data-theme="tropical"] {
+  --bg: #e8f7f2;
+  --card: #ffffff;
+  --ink: #0f3d38;
+  --muted: #4f8a80;
+  --line: #cdeee5;
+  --pink: #ff8552;
+  --pink-2: #d7f3ea;
+  --danger: #c2534a;
+  --ok: #1fb8a3;
+  --shadow: 0 16px 35px rgba(15, 90, 80, 0.14);
+  --brand-1: #ff8552;
+  --brand-2: #1fb8a3;
+  --app-accent: #1fb8a3;
+  --app-accent-2: #ffce54;
+  --app-glow: rgba(31, 184, 163, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-palm);
+}
+
+[data-theme="plage"] {
+  --bg: #eaf4fb;
+  --card: #ffffff;
+  --ink: #1c3c52;
+  --muted: #6d93ab;
+  --line: #d3e8f5;
+  --pink: #f2994a;
+  --pink-2: #dceffa;
+  --danger: #c2534a;
+  --ok: #2f9a86;
+  --shadow: 0 16px 35px rgba(20, 70, 90, 0.12);
+  --brand-1: #f2994a;
+  --brand-2: #5ec8e0;
+  --app-accent: #5ec8e0;
+  --app-accent-2: #f6c453;
+  --app-glow: rgba(94, 200, 224, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-sun);
+}
+
+[data-theme="cocooning"] {
+  --bg: #f7ede1;
+  --card: #fffaf3;
+  --ink: #4a2f1c;
+  --muted: #9a7a5c;
+  --line: #ecdbc4;
+  --pink: #c17a3f;
+  --pink-2: #f0e0c9;
+  --danger: #a13a3a;
+  --ok: #6a8a4f;
+  --shadow: 0 16px 35px rgba(90, 60, 20, 0.16);
+  --brand-1: #c17a3f;
+  --brand-2: #8a5a3a;
+  --app-accent: #e0a95c;
+  --app-accent-2: #8a5a3a;
+  --app-glow: rgba(224, 169, 92, 0.45);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-candle);
+}
+
+[data-theme="disco"] {
+  --bg: #150b1f;
+  --card: #221230;
+  --ink: #f6e9ff;
+  --muted: #b79ac9;
+  --line: #3c2350;
+  --pink: #e0219e;
+  --pink-2: #3c2350;
+  --danger: #ff6b9e;
+  --ok: #6fe0c0;
   --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
-  --brand-1: #e87518;
-  --brand-2: #6a3c83;
-  --app-accent: #d8aa67;
-  --app-accent-2: #e87518;
-  --app-glow: rgba(232, 117, 24, 0.5);
+  --brand-1: #e0219e;
+  --brand-2: #8b3ff0;
+  --app-accent: #8b3ff0;
+  --app-accent-2: #20e3d2;
+  --app-glow: rgba(224, 33, 158, 0.5);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --theme-icon: var(--icon-pumpkin);
+  --theme-icon: var(--icon-discoball);
 }
 
-[data-theme="christmas"] {
-  --bg: #0d1912;
-  --card: #132318;
-  --ink: #f5ede0;
-  --muted: #a9c2ab;
-  --line: #254a33;
-  --pink: #b23a44;
-  --pink-2: #1c3a26;
+[data-theme="galaxy"] {
+  --bg: #0a0e2a;
+  --card: #131a3d;
+  --ink: #eef0ff;
+  --muted: #8f97c9;
+  --line: #262f5c;
+  --pink: #5b5fe0;
+  --pink-2: #1c2450;
   --danger: #ff6b6b;
-  --ok: #7fd28c;
-  --shadow: 0 16px 35px rgba(0, 0, 0, 0.5);
-  --brand-1: #b23a44;
-  --brand-2: #1f6b3c;
-  --app-accent: #d4af6a;
-  --app-accent-2: #eaeaea;
-  --app-glow: rgba(212, 175, 106, 0.5);
+  --ok: #6fd0a8;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #5b5fe0;
+  --brand-2: #8f6fff;
+  --app-accent: #8f6fff;
+  --app-accent-2: #4fd1ff;
+  --app-glow: rgba(143, 111, 255, 0.5);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --theme-icon: var(--icon-tree);
+  --theme-icon: var(--icon-planet);
 }
 
-[data-theme="valentine"] {
-  --bg: #fbe3e7;
-  --card: #fff7f8;
-  --ink: #4a1f2b;
-  --muted: #9b6a76;
-  --line: #f3d9de;
-  --pink: #b23a5c;
-  --pink-2: #f6dde3;
+[data-theme="floral"] {
+  --bg: #fdf1f4;
+  --card: #fffafb;
+  --ink: #4a2230;
+  --muted: #a1707f;
+  --line: #f5dbe3;
+  --pink: #c76386;
+  --pink-2: #f7e3ea;
   --danger: #a4324f;
   --ok: #4c8a5a;
-  --shadow: 0 16px 35px rgba(120, 40, 60, 0.16);
-  --brand-1: #d5647e;
-  --brand-2: #b23a5c;
-  --app-accent: #d5647e;
-  --app-accent-2: #e3a6ae;
-  --app-glow: rgba(213, 100, 126, 0.45);
+  --shadow: 0 16px 35px rgba(120, 40, 60, 0.14);
+  --brand-1: #e39ab1;
+  --brand-2: #c76386;
+  --app-accent: #e39ab1;
+  --app-accent-2: #f4c9a0;
+  --app-glow: rgba(199, 99, 134, 0.4);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --theme-icon: var(--icon-heart);
+  --theme-icon: var(--icon-flower);
 }
 
-[data-theme="easter"] {
-  --bg: #f5ecf1;
-  --card: #fffdf9;
-  --ink: #4a4536;
-  --muted: #8f8a72;
-  --line: #eae1cd;
-  --pink: #8e7bb0;
-  --pink-2: #eef0e2;
-  --danger: #b2555a;
-  --ok: #6a9c6f;
-  --shadow: 0 16px 35px rgba(90, 80, 50, 0.14);
-  --brand-1: #9c88bd;
-  --brand-2: #7fae86;
-  --app-accent: #e3c76f;
-  --app-accent-2: #c9a8d6;
-  --app-glow: rgba(156, 136, 189, 0.4);
+[data-theme="nouvel-an"] {
+  --bg: #0b0b0d;
+  --card: #17151a;
+  --ink: #f5efe0;
+  --muted: #b6ac96;
+  --line: #2c2a24;
+  --pink: #8a6a2e;
+  --pink-2: #231f16;
+  --danger: #ff7a7a;
+  --ok: #7fd28c;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #c9a24a;
+  --brand-2: #8a6a2e;
+  --app-accent: #e8c874;
+  --app-accent-2: #d7d7d7;
+  --app-glow: rgba(232, 200, 116, 0.5);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --theme-icon: var(--icon-egg);
+  --theme-icon: var(--icon-sparkle);
 }
 
-[data-theme="spring"] {
-  --bg: #e9f5e1;
+[data-theme="printemps"] {
+  --bg: #eef8e6;
   --card: #ffffff;
-  --ink: #3c4a37;
-  --muted: #7f9078;
-  --line: #e1ecd8;
-  --pink: #c68aa8;
+  --ink: #33472e;
+  --muted: #7c9a72;
+  --line: #d9edcc;
+  --pink: #d47ba0;
   --pink-2: #e7f2df;
   --danger: #b2555a;
   --ok: #4f9a5c;
   --shadow: 0 16px 35px rgba(60, 90, 40, 0.12);
   --brand-1: #8fc48a;
-  --brand-2: #c68aa8;
+  --brand-2: #d47ba0;
   --app-accent: #b9a6dd;
-  --app-accent-2: #8fc48a;
-  --app-glow: rgba(143, 196, 138, 0.4);
+  --app-accent-2: #f3b6cf;
+  --app-glow: rgba(212, 123, 160, 0.4);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --theme-icon: var(--icon-flower);
+  --theme-icon: var(--icon-blossom);
 }
 
-[data-theme="summer"] {
-  --bg: #dff4f1;
-  --card: #ffffff;
-  --ink: #183a3c;
-  --muted: #5f8a8a;
-  --line: #d7ece9;
-  --pink: #e0862f;
-  --pink-2: #dff3f1;
-  --danger: #c2534a;
-  --ok: #2f9a86;
-  --shadow: 0 16px 35px rgba(20, 90, 90, 0.12);
-  --brand-1: #28b8ac;
-  --brand-2: #e0862f;
-  --app-accent: #3ec7d9;
-  --app-accent-2: #f2c14e;
-  --app-glow: rgba(62, 199, 217, 0.4);
-  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --theme-icon: var(--icon-sun);
-}
-
-[data-theme="autumn"] {
+[data-theme="automne"] {
   --bg: #f6e3cd;
   --card: #fffaf5;
   --ink: #3f2a1e;
@@ -167,24 +207,64 @@
   --theme-icon: var(--icon-leaf);
 }
 
-[data-theme="new-year"] {
-  --bg: #0b0b0d;
-  --card: #161619;
-  --ink: #f3ecd9;
-  --muted: #b8b0a0;
-  --line: #2e2c26;
-  --pink: #8a6a2e;
-  --pink-2: #242019;
+[data-theme="hiver"] {
+  --bg: #eaf2f7;
+  --card: #ffffff;
+  --ink: #1e3b4c;
+  --muted: #6f93a5;
+  --line: #d3e6ee;
+  --pink: #4a90b8;
+  --pink-2: #dcedf4;
+  --danger: #c2534a;
+  --ok: #4c8a7a;
+  --shadow: 0 16px 35px rgba(20, 60, 90, 0.12);
+  --brand-1: #4a90b8;
+  --brand-2: #a8d8e8;
+  --app-accent: #a8d8e8;
+  --app-accent-2: #eef7fb;
+  --app-glow: rgba(74, 144, 184, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-snowflake);
+}
+
+[data-theme="chic-noir"] {
+  --bg: #0c0c0c;
+  --card: #171717;
+  --ink: #f2e6c8;
+  --muted: #a99b74;
+  --line: #2a2a2a;
+  --pink: #b8912e;
+  --pink-2: #211f18;
   --danger: #ff7a7a;
   --ok: #7fd28c;
-  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
-  --brand-1: #c9a24a;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.6);
+  --brand-1: #b8912e;
   --brand-2: #8a6a2e;
-  --app-accent: #e4c674;
-  --app-accent-2: #d7d7d7;
-  --app-glow: rgba(228, 198, 116, 0.5);
+  --app-accent: #e8c874;
+  --app-accent-2: #c9c9c9;
+  --app-glow: rgba(232, 200, 116, 0.5);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --theme-icon: var(--icon-sparkle);
+  --theme-icon: var(--icon-diamond);
+}
+
+[data-theme="rose-gold"] {
+  --bg: #fbeee7;
+  --card: #fff8f4;
+  --ink: #4a2f2a;
+  --muted: #a3806f;
+  --line: #f0dcd0;
+  --pink: #c98a6e;
+  --pink-2: #f6e2d5;
+  --danger: #b2555a;
+  --ok: #6a8a4f;
+  --shadow: 0 16px 35px rgba(90, 50, 30, 0.14);
+  --brand-1: #c98a6e;
+  --brand-2: #e0a98a;
+  --app-accent: #e0a98a;
+  --app-accent-2: #f0c9a0;
+  --app-glow: rgba(224, 169, 138, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-gem);
 }
 
 /* Fond d'ecran (login/shell) et bouton primaire/FAB : remplace les
@@ -326,12 +406,12 @@
   ) !important;
 }
 
-/* Themes saisonniers uniquement (le theme Normal garde le rendu pale
-   ci-dessus, inchange) : la carte RDV prend une teinte plus soutenue,
-   melange de la couleur de la collaboratrice ET de l'accent du theme
-   (--pink, deja garanti lisible avec du texte sombre/clair selon le theme -
-   voir --ink ci-dessus) - plus "en theme" sans jamais perdre le reperage
-   par collaboratrice (sa teinte reste dominante dans le melange). */
+/* Themes uniquement (le theme Normal garde le rendu pale ci-dessus,
+   inchange) : la carte RDV prend une teinte plus soutenue, melange de la
+   couleur de la collaboratrice ET de l'accent du theme (--pink, deja
+   garanti lisible avec du texte sombre/clair selon le theme - voir --ink
+   ci-dessus) - plus "en theme" sans jamais perdre le reperage par
+   collaboratrice (sa teinte reste dominante dans le melange). */
 [data-theme]:not([data-theme="default"]) .grid-event--mine {
   background-color: color-mix(in srgb, var(--collab-tint-soft, var(--card)) 60%, var(--pink) 24%);
 }

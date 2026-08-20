@@ -4,94 +4,39 @@
    Un seul jeu de règles par "data-decor", coloré via les variables du
    thème actif (--app-accent, --app-accent-2, --app-glow, --pink, --pink-2,
    voir css/themes/theme-vars.css) : pas de bloc par thème à dupliquer.
-   Tout est CSS/gradients/clip-path, aucun emoji, aucune image lourde. */
+   Tout est CSS/gradients/masques SVG inline, aucune image lourde. */
 
-/* Formes reutilisees a la fois par les particules flottantes ci-dessous et
-   par les motifs statiques (coin de l'en-tete planning, coin des cartes
-   RDV, voir plus bas) : une seule definition par forme. */
+/* Formes CSS pures reutilisees par les particules flottantes petal/leaf/star
+   ci-dessous : une seule definition par forme. */
 :root {
-  --shape-bat: polygon(50% 35%, 60% 15%, 66% 30%, 82% 8%, 76% 34%, 100% 24%,
-    68% 48%, 88% 62%, 58% 52%, 50% 72%, 42% 52%, 12% 62%, 32% 48%, 0% 24%,
-    24% 34%, 18% 8%, 34% 30%, 40% 15%);
   --shape-star: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
   --shape-leaf: 0 100% 0 100%;
   --shape-petal: 70% 30% 70% 30% / 60% 40% 60% 40%;
-  --shape-heart: polygon(50% 28%, 61% 12%, 76% 8%, 90% 20%, 92% 36%, 50% 78%,
-    8% 36%, 10% 20%, 24% 8%, 39% 12%);
-  --shape-egg: 50% 50% 50% 50% / 62% 62% 38% 38%;
-  --shape-sun: polygon(50% 0%, 61% 18%, 82% 8%, 78% 30%, 100% 35%, 84% 50%,
-    100% 65%, 78% 70%, 82% 92%, 61% 82%, 50% 100%, 39% 82%, 18% 92%, 22% 70%,
-    0% 65%, 16% 50%, 0% 35%, 22% 30%, 18% 8%, 39% 18%);
-  --shape-diamond: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 
   /* Icones SVG (inline, en data URI - aucun fichier image) utilisees comme
-     masque CSS (mask-image) : contrairement aux formes ci-dessus (CSS pur),
-     un vrai contour vectoriel avec courbes/details, colore via
-     background-color (voir --theme-icon assigne par theme dans
-     css/themes/theme-vars.css). Une icone = citrouille, sapin, coeur,
-     oeuf, fleur, soleil, feuille, etincelle - reutilisee pour l'avatar de
-     chaque carte RDV, le motif d'en-tete et l'icone de coin, pour une
-     identite visuelle coherente par theme. */
-  --icon-pumpkin: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M46%2014h8v14h-8z%20M54%2018c6-6%2014-6%2018-2-6%200-12%202-16%208z%20M12%2060c0-20%2017-34%2038-34s38%2014%2038%2034-17%2032-38%2032-38-12-38-32z%20M48%2032l3%2056h2l3-56z%22/%3E%3C/svg%3E");
-  --icon-tree: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%206%2024%2038h14L16%2062h16L8%2090h84L68%2062h16L62%2038h14z%22/%3E%3C/svg%3E");
-  --icon-heart: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%2090C10%2062%2010%2030%2033%2017c12-7%2017%204%2017%2013%200-9%205-20%2017-13%2023%2013%2023%2045-17%2073z%22/%3E%3C/svg%3E");
-  --icon-egg: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M50%208C26%208%2012%2042%2012%2064c0%2020%2017%2030%2038%2030s38-10%2038-30C88%2042%2074%208%2050%208z%20M14%2048h72v10H14z%20M20%2074h60v9H20z%22/%3E%3C/svg%3E");
-  --icon-flower: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2228%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2274%22%20cy%3D%2243%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2265%22%20cy%3D%2271%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2271%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2226%22%20cy%3D%2243%22%20r%3D%2217%22/%3E%3C/g%3E%3C/svg%3E");
+     masque CSS (mask-image) : un vrai contour vectoriel avec courbes/
+     details, colore via background-color (voir --theme-icon assigne par
+     theme dans css/themes/theme-vars.css). Une icone par theme - palmier,
+     soleil, bougie, boule disco, planete, fleur, etincelle, fleur de
+     cerisier, feuille, flocon, diamant, pierre precieuse - reutilisee pour
+     l'avatar de chaque carte RDV, le motif d'en-tete et le micro-effet au
+     clic, pour une identite visuelle coherente par theme. */
+  --icon-palm: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M48%2040c2-16%202-30-6-38%2012%202%2018%2014%2016%2030%2010-12%2022-16%2034-12-8%206-20%2010-26%2018%2014-2%2026%204%2032%2016-10-2-22%200-30%206%2010%204%2018%2012%2020%2022-10-6-20-8-28-6%204%208%204%2018%200%2026-4-10-4-20%200-28-8%204-16%2012-18%2022-2-10%200-20%206-28-10%202-18%208-22%2016%200-10%204-20%2012-26-10-4-22-2-30%204%204-10%2014-18%2024-20-8-4-18-4-26%200%206-8%2016-12%2026-10-6-6-16-8-24-6%206-6%2014-8%2022-6-4-6-8-14-6-22%204%208%2010%2014%2016%2018-4-16%200-30%208-36-2%2010%200%2024%206%2032z%22/%3E%3C/svg%3E");
   --icon-sun: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2221%22/%3E%3Cg%20stroke%3D%22%23000%22%20stroke-width%3D%229%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%203v15M50%2082v15M3%2050h15M82%2050h15M17%2017l11%2011M72%2072l11%2011M17%2083l11-11M72%2028l11-11%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  --icon-leaf: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M50%208C85%2014%2092%2054%2066%2080c-9%209-23%209-32%201C14%2062%2015%2028%2050%208z%20M49%2022l1%2062h3l-1-62z%22/%3E%3C/svg%3E");
+  --icon-candle: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M40%2040h20v52H40z%20M50%208c8%2010%2012%2018%208%2026-2%204-6%206-8%206s-6-2-8-6c-4-8%200-16%208-26z%22/%3E%3C/svg%3E");
+  --icon-discoball: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M50%208a42%2042%200%20100%2084%2042%2042%200%20000-84z%20M14%2047h72v6H14z%20M47%2014h6v72h-6z%22/%3E%3C/svg%3E");
+  --icon-planet: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ccircle%20cx%3D%2242%22%20cy%3D%2252%22%20r%3D%2226%22%20fill%3D%22%23000%22/%3E%3Cellipse%20cx%3D%2242%22%20cy%3D%2252%22%20rx%3D%2246%22%20ry%3D%2212%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%226%22%20transform%3D%22rotate%28-20%2042%2052%29%22/%3E%3Ccircle%20cx%3D%2278%22%20cy%3D%2218%22%20r%3D%224%22%20fill%3D%22%23000%22/%3E%3Ccircle%20cx%3D%2286%22%20cy%3D%2234%22%20r%3D%222.5%22%20fill%3D%22%23000%22/%3E%3C/svg%3E");
+  --icon-flower: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2228%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2274%22%20cy%3D%2243%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2265%22%20cy%3D%2271%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2271%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2226%22%20cy%3D%2243%22%20r%3D%2217%22/%3E%3C/g%3E%3C/svg%3E");
   --icon-sparkle: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%202l9%2039%2039%209-39%209-9%2039-9-39-39-9%2039-9z%22/%3E%3C/svg%3E");
+  --icon-blossom: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M50%2055C42%2040%2042%2020%2050%208c8%2012%208%2032%200%2047z%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2226%22%20r%3D%2212%22/%3E%3Ccircle%20cx%3D%2266%22%20cy%3D%2238%22%20r%3D%2212%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2258%22%20r%3D%2212%22/%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%2258%22%20r%3D%2212%22/%3E%3Ccircle%20cx%3D%2234%22%20cy%3D%2238%22%20r%3D%2212%22/%3E%3C/g%3E%3C/svg%3E");
+  --icon-leaf: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M50%208C85%2014%2092%2054%2066%2080c-9%209-23%209-32%201C14%2062%2015%2028%2050%208z%20M49%2022l1%2062h3l-1-62z%22/%3E%3C/svg%3E");
+  --icon-snowflake: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20stroke%3D%22%23000%22%20stroke-width%3D%227%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%205v90M12%2027.5l76%2045M12%2072.5l76-45%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M50%205l-8%2012h16zM50%2095l-8-12h16zM12%2027.5l14%201-7%2012zM88%2072.5l-14-1%207-12zM12%2072.5l14-1-7-12zM88%2027.5l-14%201%207%2012z%22/%3E%3C/g%3E%3C/svg%3E");
+  --icon-diamond: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M20%2030%2050%208l30%2022-30%2062z%22/%3E%3C/svg%3E");
+  --icon-gem: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%206c14%200%2026%2010%2030%2024L50%2092%2020%2030C24%2016%2036%206%2050%206z%22/%3E%3C/svg%3E");
 }
 
-/* ---- Halloween : brume, chauve-souris, araignée ---- */
-
-.theme-particle[data-decor="fog"] {
-  top: auto;
-  bottom: -8%;
-  left: calc(var(--x, 50%) - 35vw);
-  width: 70vw;
-  height: 30vh;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--pink-2) 55%, transparent), transparent 72%);
-  filter: blur(18px);
-  opacity: 0.55;
-}
-
-.theme-particle[data-decor="bat"] {
-  top: calc(6% + (var(--i, 0) * 9%));
-  width: 22px;
-  height: 12px;
-  background: #140f18;
-  opacity: 0.8;
-  clip-path: var(--shape-bat);
-}
-
-.theme-particle[data-decor="spider"] {
-  top: 0;
-  left: 78%;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #140f18;
-  box-shadow:
-    -5px -2px 0 -3.5px #140f18,
-    5px -2px 0 -3.5px #140f18,
-    -5px 3px 0 -3.5px #140f18,
-    5px 3px 0 -3.5px #140f18;
-}
-
-.theme-particle[data-decor="spider"]::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 100%;
-  width: 1px;
-  height: 22vh;
-  background: linear-gradient(var(--muted), transparent);
-  transform: translateX(-50%);
-}
-
-/* ---- Étincelles génériques (halloween, saint-valentin, été, automne,
-   nouvel an) ---- */
+/* ---- Etincelles generiques (cocooning, disco, galaxy, tropical,
+   automne, nouvel an, chic noir, rose gold...) ---- */
 
 .theme-particle[data-decor="ember"] {
   width: 5px;
@@ -101,7 +46,7 @@
   box-shadow: 0 0 8px 2px var(--app-glow);
 }
 
-/* ---- Noël : neige, guirlande, étoiles ---- */
+/* ---- Hiver : neige ---- */
 
 .theme-particle[data-decor="snow"] {
   width: 6px;
@@ -112,15 +57,7 @@
   box-shadow: 0 0 4px rgba(255, 255, 255, 0.85);
 }
 
-.theme-particle[data-decor="garland"] {
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 5px;
-  background: repeating-linear-gradient(90deg, var(--app-accent) 0 10px, transparent 10px 22px);
-  box-shadow: 0 0 12px var(--app-glow);
-  opacity: 0.9;
-}
+/* ---- Galaxy, Nouvel An : etoiles ---- */
 
 .theme-particle[data-decor="star"] {
   width: 9px;
@@ -129,7 +66,7 @@
   clip-path: var(--shape-star);
 }
 
-/* ---- Fleurs / pétales (saint-valentin, pâques, printemps) ---- */
+/* ---- Fleurs / petales (floral, printemps, tropical) ---- */
 
 .theme-particle[data-decor="petal"] {
   width: 10px;
@@ -184,7 +121,7 @@
   transform-origin: left center;
 }
 
-/* ---- Été : reflet lumineux ---- */
+/* ---- Plage, Rose Gold : reflet lumineux ---- */
 
 .theme-particle[data-decor="shimmer"] {
   top: 16%;
@@ -195,7 +132,7 @@
   filter: blur(6px);
 }
 
-/* ---- Nouvel An : confettis discrets ---- */
+/* ---- Nouvel An, Disco, Chic Noir : confettis discrets ---- */
 
 .theme-particle[data-decor="confetti"] {
   width: 6px;
@@ -209,47 +146,15 @@
 }
 
 /* ---- Micro-effet au clic sur un rendez-vous (voir spawnClickEffect dans
-   js/themes/theme-decorations.js), une variante par thème via
-   THEME_EFFECTS[...].click ---- */
+   js/themes/theme-decorations.js) : "ripple" neutre pour le theme Normal,
+   "icon" (la silhouette du theme) pour tous les autres. ---- */
 
 .theme-click-effect[data-click="ripple"] {
   background: transparent;
   border: 2px solid var(--pink);
 }
 
-.theme-click-effect[data-click="shadow"] {
-  background: radial-gradient(circle, rgba(0, 0, 0, 0.55), transparent 70%);
-}
-
-.theme-click-effect[data-click="spark"] {
-  background: radial-gradient(circle, var(--app-accent), transparent 70%);
-  box-shadow: 0 0 14px var(--app-glow);
-}
-
-.theme-click-effect[data-click="shimmer"] {
-  background: radial-gradient(circle, color-mix(in srgb, var(--app-accent) 60%, white), transparent 70%);
-}
-
-.theme-click-effect[data-click="pastel"] {
-  background: radial-gradient(circle, var(--app-accent-2), transparent 70%);
-}
-
-.theme-click-effect[data-click="petal"] {
-  width: 14px;
-  height: 18px;
-  background: var(--app-accent);
-  border-radius: var(--shape-petal);
-}
-
-.theme-click-effect[data-click="leaf"] {
-  width: 14px;
-  height: 14px;
-  background: var(--app-accent);
-  border-radius: var(--shape-leaf);
-}
-
-.theme-click-effect[data-click="heart"],
-.theme-click-effect[data-click="sun"] {
+.theme-click-effect[data-click="icon"] {
   width: 20px;
   height: 20px;
   background: var(--app-accent);
@@ -290,10 +195,9 @@
 }
 
 /* Icone signature du theme (--theme-icon, assignee par theme dans
-   css/themes/theme-vars.css) : citrouille/sapin/coeur/oeuf/fleur/soleil/
-   feuille/etincelle, en grand format dans l'en-tete - la meme icone que
-   sur les cartes RDV et le coin ci-dessous, pour une identite visuelle
-   coherente et reconnaissable au premier coup d'oeil. */
+   css/themes/theme-vars.css), en grand format dans l'en-tete - la meme
+   icone que sur les cartes RDV et le coin ci-dessous, pour une identite
+   visuelle coherente et reconnaissable au premier coup d'oeil. */
 [data-theme]:not([data-theme="default"]) .page-header-card::after {
   content: "";
   position: absolute;

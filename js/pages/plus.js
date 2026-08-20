@@ -93,7 +93,7 @@
   // et js/themes/theme-config.js) : ouverte a tout le monde pour la partie
   // "Mon theme" (Normal / Theme du jour - ne change que cet appareil,
   // jamais envoye a Supabase). Le choix du theme pour TOUT le salon
-  // (Automatique + les 9 themes + animations) reste reserve a l'admin,
+  // (Automatique + les 12 themes + animations) reste reserve a l'admin,
   // comme "Absences de l'equipe" plus bas. N'affecte jamais les donnees
   // metier.
   function appearanceCardHtml() {
