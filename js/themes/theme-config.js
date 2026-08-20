@@ -53,7 +53,7 @@
         { type: "ember", count: 8 }
       ],
       fab: "valentine",
-      click: "shimmer"
+      click: "heart"
     },
     "easter": {
       decor: [
@@ -78,7 +78,7 @@
         { type: "ember", count: 10 }
       ],
       fab: "summer",
-      click: "shimmer"
+      click: "sun"
     },
     "autumn": {
       decor: [

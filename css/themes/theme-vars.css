@@ -66,8 +66,8 @@
 }
 
 [data-theme="valentine"] {
-  --bg: #fdf3f2;
-  --card: #fffaf9;
+  --bg: #fbe3e7;
+  --card: #fff7f8;
   --ink: #4a1f2b;
   --muted: #9b6a76;
   --line: #f3d9de;
@@ -85,8 +85,8 @@
 }
 
 [data-theme="easter"] {
-  --bg: #faf6ef;
-  --card: #fffdf8;
+  --bg: #f5ecf1;
+  --card: #fffdf9;
   --ink: #4a4536;
   --muted: #8f8a72;
   --line: #eae1cd;
@@ -104,7 +104,7 @@
 }
 
 [data-theme="spring"] {
-  --bg: #f7faf3;
+  --bg: #e9f5e1;
   --card: #ffffff;
   --ink: #3c4a37;
   --muted: #7f9078;
@@ -123,7 +123,7 @@
 }
 
 [data-theme="summer"] {
-  --bg: #f4faf9;
+  --bg: #dff4f1;
   --card: #ffffff;
   --ink: #183a3c;
   --muted: #5f8a8a;
@@ -142,7 +142,7 @@
 }
 
 [data-theme="autumn"] {
-  --bg: #fbf3ec;
+  --bg: #f6e3cd;
   --card: #fffaf5;
   --ink: #3f2a1e;
   --muted: #8a6a52;

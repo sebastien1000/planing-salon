@@ -16,6 +16,13 @@
   --shape-star: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
   --shape-leaf: 0 100% 0 100%;
   --shape-petal: 70% 30% 70% 30% / 60% 40% 60% 40%;
+  --shape-heart: polygon(50% 28%, 61% 12%, 76% 8%, 90% 20%, 92% 36%, 50% 78%,
+    8% 36%, 10% 20%, 24% 8%, 39% 12%);
+  --shape-egg: 50% 50% 50% 50% / 62% 62% 38% 38%;
+  --shape-sun: polygon(50% 0%, 61% 18%, 82% 8%, 78% 30%, 100% 35%, 84% 50%,
+    100% 65%, 78% 70%, 82% 92%, 61% 82%, 50% 100%, 39% 82%, 18% 92%, 22% 70%,
+    0% 65%, 16% 50%, 0% 35%, 22% 30%, 18% 8%, 39% 18%);
+  --shape-diamond: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
 /* ---- Halloween : brume, chauve-souris, araignée ---- */
@@ -224,6 +231,20 @@
   border-radius: var(--shape-leaf);
 }
 
+.theme-click-effect[data-click="heart"] {
+  width: 16px;
+  height: 16px;
+  background: var(--app-accent);
+  clip-path: var(--shape-heart);
+}
+
+.theme-click-effect[data-click="sun"] {
+  width: 16px;
+  height: 16px;
+  background: var(--app-accent);
+  clip-path: var(--shape-sun);
+}
+
 /* ---- Motif de coin dans l'en-tete du planning (carte "Vue planning
    modifiable", voir renderHeader dans js/pages/planning.js - classe
    .page-header-card deja presente dans le HTML existant, rien a changer
@@ -274,24 +295,23 @@
 
 [data-theme="valentine"] .page-header-card::after {
   background: var(--app-accent);
-  border-radius: var(--shape-petal);
+  clip-path: var(--shape-heart);
 }
 
 [data-theme="easter"] .page-header-card::after {
   background: var(--app-accent-2);
-  border-radius: 50%;
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--app-accent) 45%, transparent);
+  border-radius: var(--shape-egg);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-accent) 45%, transparent);
 }
 
 [data-theme="spring"] .page-header-card::after {
   background: var(--app-accent);
-  border-radius: var(--shape-leaf);
+  border-radius: var(--shape-petal);
 }
 
 [data-theme="summer"] .page-header-card::after {
-  background: radial-gradient(circle, var(--app-accent), transparent 70%);
-  border-radius: 50%;
-  opacity: 0.55;
+  background: var(--app-accent);
+  clip-path: var(--shape-sun);
 }
 
 [data-theme="autumn"] .page-header-card::after {
@@ -301,7 +321,7 @@
 
 [data-theme="new-year"] .page-header-card::after {
   background: var(--app-accent);
-  clip-path: var(--shape-star);
+  clip-path: var(--shape-diamond);
 }
 
 /* ---- Meme principe, en plus discret, sur chaque carte RDV de la grille
@@ -351,23 +371,23 @@
 
 [data-theme="valentine"] .grid-event::after {
   background: var(--pink);
-  border-radius: var(--shape-petal);
+  clip-path: var(--shape-heart);
 }
 
 [data-theme="easter"] .grid-event::after {
   background: var(--pink);
-  border-radius: 50%;
+  border-radius: var(--shape-egg);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 40%, transparent);
 }
 
 [data-theme="spring"] .grid-event::after {
   background: var(--pink);
-  border-radius: var(--shape-leaf);
+  border-radius: var(--shape-petal);
 }
 
 [data-theme="summer"] .grid-event::after {
-  background: radial-gradient(circle, var(--pink), transparent 70%);
-  border-radius: 50%;
+  background: var(--pink);
+  clip-path: var(--shape-sun);
 }
 
 [data-theme="autumn"] .grid-event::after {
@@ -377,5 +397,5 @@
 
 [data-theme="new-year"] .grid-event::after {
   background: var(--pink);
-  clip-path: var(--shape-star);
+  clip-path: var(--shape-diamond);
 }
