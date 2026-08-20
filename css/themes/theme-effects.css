@@ -309,14 +309,33 @@
    silhouette en coin bas-droit, jamais superposee au texte (aligne sur le
    coin, le texte reste cale a gauche). ---- */
 
+[data-theme]:not([data-theme="default"]) .grid-event {
+  padding-left: 32px;
+}
+
+[data-theme]:not([data-theme="default"]) .grid-event::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pink) 70%, var(--app-accent) 30%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--card) 60%, transparent);
+  pointer-events: none;
+}
+
 [data-theme]:not([data-theme="default"]) .grid-event::after {
   content: "";
   position: absolute;
   bottom: 4px;
   right: 4px;
-  width: 14px;
-  height: 14px;
-  opacity: 0.3;
+  width: 22px;
+  height: 22px;
+  opacity: 0.55;
   pointer-events: none;
 }
 

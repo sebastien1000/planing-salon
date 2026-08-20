@@ -272,6 +272,26 @@
   box-shadow: 0 6px 16px -4px var(--app-glow);
 }
 
+/* Selecteur Jour/Semaine/Mois (voir renderHeader dans js/pages/planning.js) :
+   piste arrondie type "segmented control", plus proche d'une pastille de
+   navigation que d'une simple liste de chips. Scope a .page-header-card
+   uniquement : les autres ".chips" de l'app (filtres, salles...) gardent
+   leur style actuel. */
+.page-header-card .chips {
+  background: color-mix(in srgb, var(--bg) 55%, var(--card) 45%);
+  border-radius: 999px;
+  padding: 5px;
+  gap: 4px;
+  overflow: visible;
+}
+
+.page-header-card .chip {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+}
+
 /* Cartes RDV/absences de la grille horaire (le plus important a rester
    lisible, voir js/pages/planning.js) : fond blanc fixe en secours quand
    aucune couleur de collaboratrice n'est definie (--collab-tint-soft),
@@ -293,6 +313,26 @@
     -45deg,
     color-mix(in srgb, var(--card) 92%, transparent) 0px,
     color-mix(in srgb, var(--card) 92%, transparent) 8px,
+    var(--collab-tint, rgba(232, 167, 182, 0.28)) 8px,
+    var(--collab-tint, rgba(232, 167, 182, 0.28)) 16px
+  ) !important;
+}
+
+/* Themes saisonniers uniquement (le theme Normal garde le rendu pale
+   ci-dessus, inchange) : la carte RDV prend une teinte plus soutenue,
+   melange de la couleur de la collaboratrice ET de l'accent du theme
+   (--pink, deja garanti lisible avec du texte sombre/clair selon le theme -
+   voir --ink ci-dessus) - plus "en theme" sans jamais perdre le reperage
+   par collaboratrice (sa teinte reste dominante dans le melange). */
+[data-theme]:not([data-theme="default"]) .grid-event--mine {
+  background-color: color-mix(in srgb, var(--collab-tint-soft, var(--card)) 60%, var(--pink) 24%);
+}
+
+[data-theme]:not([data-theme="default"]) .grid-event--other {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--card) 80%, var(--pink) 10%) 0px,
+    color-mix(in srgb, var(--card) 80%, var(--pink) 10%) 8px,
     var(--collab-tint, rgba(232, 167, 182, 0.28)) 8px,
     var(--collab-tint, rgba(232, 167, 182, 0.28)) 16px
   ) !important;
