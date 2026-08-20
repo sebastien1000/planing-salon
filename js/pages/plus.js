@@ -89,6 +89,73 @@
     ].join("");
   }
 
+  // Carte "Apparence" (theme saisonnier anime, voir js/themes/theme-manager.js
+  // et js/themes/theme-config.js) : reservee a l'admin, comme "Absences de
+  // l'equipe" plus bas - le theme s'applique a tout le salon (Supabase),
+  // pas seulement a cet appareil. N'affecte jamais les donnees metier.
+  function appearanceCardHtml() {
+    var themeApi = window.SalonTheme;
+    var themeConfig = window.SalonThemeConfig;
+
+    if (!themeApi || !themeConfig) {
+      return "";
+    }
+
+    var state = themeApi.getState();
+    var themeSelectValue = state.mode === "manual" ? state.theme : "automatic";
+
+    var themeOptionsHtml = ['<option value="automatic"' + (themeSelectValue === "automatic" ? " selected" : "") + ">Automatique</option>"]
+      .concat(themeConfig.THEME_LIST.map(function (theme) {
+        var selected = themeSelectValue === theme.id ? " selected" : "";
+        return '<option value="' + theme.id + '"' + selected + ">" + theme.label + "</option>";
+      }))
+      .join("");
+
+    return [
+      '<div class="card">',
+      "  <h3>Apparence</h3>",
+      '  <div class="tiny">Le thème choisi ici s\'applique à toute l\'application, pour toute l\'équipe.</div>',
+      '  <div style="margin-top:10px">',
+      '    <label for="themeSelect"><b>Thème de l\'application</b></label>',
+      '    <select id="themeSelect" class="field" style="margin-top:6px">' + themeOptionsHtml + "</select>",
+      "  </div>",
+      '  <div style="margin-top:10px">',
+      '    <label for="themeAnimationsSelect"><b>Animations du thème</b></label>',
+      '    <div class="tiny">Les couleurs et décorations restent, seuls les mouvements s\'arrêtent.</div>',
+      '    <select id="themeAnimationsSelect" class="field" style="margin-top:6px">',
+      '      <option value="on"' + (state.animationsEnabled ? " selected" : "") + ">Activées</option>",
+      '      <option value="off"' + (!state.animationsEnabled ? " selected" : "") + ">Désactivées</option>",
+      "    </select>",
+      "  </div>",
+      "</div>"
+    ].join("");
+  }
+
+  function bindAppearanceCardActions() {
+    var themeApi = window.SalonTheme;
+    if (!themeApi) {
+      return;
+    }
+
+    var themeSelect = ui.byId("themeSelect");
+    if (themeSelect) {
+      themeSelect.addEventListener("change", function () {
+        if (themeSelect.value === "automatic") {
+          themeApi.setAutomaticMode();
+        } else {
+          themeApi.setManualTheme(themeSelect.value);
+        }
+      });
+    }
+
+    var animationsSelect = ui.byId("themeAnimationsSelect");
+    if (animationsSelect) {
+      animationsSelect.addEventListener("change", function () {
+        themeApi.setAnimationsEnabled(animationsSelect.value === "on");
+      });
+    }
+  }
+
   function bindActions() {
     ui.byId("addAbsenceButton").addEventListener("click", function () {
       forms.openAbsenceForm();
@@ -153,6 +220,7 @@
 
     ui.setMain([
       '<div class="cards">',
+      auth.isAdmin(user) ? appearanceCardHtml() : "",
       settingsCardHtml(),
       '  <div class="card"><h3>Notifications internes</h3><p>' + waiting + ' cliente(s) sans prochain RDV valide.</p></div>',
       '  <div class="card">',
@@ -183,6 +251,7 @@
     ].join(""));
 
     bindActions();
+    bindAppearanceCardActions();
     forms.renderServicesSection("servicesSection", user);
   }
 
