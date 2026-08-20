@@ -6,6 +6,18 @@
    voir css/themes/theme-vars.css) : pas de bloc par thème à dupliquer.
    Tout est CSS/gradients/clip-path, aucun emoji, aucune image lourde. */
 
+/* Formes reutilisees a la fois par les particules flottantes ci-dessous et
+   par les motifs statiques (coin de l'en-tete planning, coin des cartes
+   RDV, voir plus bas) : une seule definition par forme. */
+:root {
+  --shape-bat: polygon(50% 35%, 60% 15%, 66% 30%, 82% 8%, 76% 34%, 100% 24%,
+    68% 48%, 88% 62%, 58% 52%, 50% 72%, 42% 52%, 12% 62%, 32% 48%, 0% 24%,
+    24% 34%, 18% 8%, 34% 30%, 40% 15%);
+  --shape-star: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  --shape-leaf: 0 100% 0 100%;
+  --shape-petal: 70% 30% 70% 30% / 60% 40% 60% 40%;
+}
+
 /* ---- Halloween : brume, chauve-souris, araignée ---- */
 
 .theme-particle[data-decor="fog"] {
@@ -26,9 +38,7 @@
   height: 12px;
   background: #140f18;
   opacity: 0.8;
-  clip-path: polygon(50% 35%, 60% 15%, 66% 30%, 82% 8%, 76% 34%, 100% 24%,
-    68% 48%, 88% 62%, 58% 52%, 50% 72%, 42% 52%, 12% 62%, 32% 48%, 0% 24%,
-    24% 34%, 18% 8%, 34% 30%, 40% 15%);
+  clip-path: var(--shape-bat);
 }
 
 .theme-particle[data-decor="spider"] {
@@ -92,7 +102,7 @@
   width: 9px;
   height: 9px;
   background: var(--app-accent-2);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  clip-path: var(--shape-star);
 }
 
 /* ---- Fleurs / pétales (saint-valentin, pâques, printemps) ---- */
@@ -101,7 +111,7 @@
   width: 10px;
   height: 14px;
   background: var(--app-accent);
-  border-radius: 70% 30% 70% 30% / 60% 40% 60% 40%;
+  border-radius: var(--shape-petal);
   opacity: 0.8;
 }
 
@@ -118,7 +128,7 @@
   width: 12px;
   height: 12px;
   background: var(--app-accent);
-  border-radius: 0 100% 0 100%;
+  border-radius: var(--shape-leaf);
   opacity: 0.85;
 }
 
@@ -204,12 +214,149 @@
   width: 14px;
   height: 18px;
   background: var(--app-accent);
-  border-radius: 70% 30% 70% 30% / 60% 40% 60% 40%;
+  border-radius: var(--shape-petal);
 }
 
 .theme-click-effect[data-click="leaf"] {
   width: 14px;
   height: 14px;
   background: var(--app-accent);
-  border-radius: 0 100% 0 100%;
+  border-radius: var(--shape-leaf);
+}
+
+/* ---- Motif de coin dans l'en-tete du planning (carte "Vue planning
+   modifiable", voir renderHeader dans js/pages/planning.js - classe
+   .page-header-card deja presente dans le HTML existant, rien a changer
+   cote JS) : une lueur douce commune + une silhouette signature par theme,
+   posees derriere les boutons precedent/suivant. Purement decoratif
+   (pointer-events:none), jamais au-dessus du texte/des boutons. ---- */
+
+.page-header-card {
+  position: relative;
+  isolation: isolate;
+}
+
+[data-theme]:not([data-theme="default"]) .page-header-card::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--app-glow), transparent 70%);
+  opacity: 0.6;
+  pointer-events: none;
+  z-index: -1;
+}
+
+[data-theme]:not([data-theme="default"]) .page-header-card::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: -1;
+}
+
+[data-theme="halloween"] .page-header-card::after {
+  background: var(--app-accent-2);
+  clip-path: var(--shape-bat);
+}
+
+[data-theme="christmas"] .page-header-card::after {
+  background: var(--app-accent-2);
+  clip-path: var(--shape-star);
+}
+
+[data-theme="valentine"] .page-header-card::after {
+  background: var(--app-accent);
+  border-radius: var(--shape-petal);
+}
+
+[data-theme="easter"] .page-header-card::after {
+  background: var(--app-accent-2);
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--app-accent) 45%, transparent);
+}
+
+[data-theme="spring"] .page-header-card::after {
+  background: var(--app-accent);
+  border-radius: var(--shape-leaf);
+}
+
+[data-theme="summer"] .page-header-card::after {
+  background: radial-gradient(circle, var(--app-accent), transparent 70%);
+  border-radius: 50%;
+  opacity: 0.55;
+}
+
+[data-theme="autumn"] .page-header-card::after {
+  background: var(--app-accent);
+  border-radius: var(--shape-leaf);
+}
+
+[data-theme="new-year"] .page-header-card::after {
+  background: var(--app-accent);
+  clip-path: var(--shape-star);
+}
+
+/* ---- Meme principe, en plus discret, sur chaque carte RDV de la grille
+   horaire (.grid-event, voir js/pages/planning.js:timeGridHtml) : petite
+   silhouette en coin bas-droit, jamais superposee au texte (aligne sur le
+   coin, le texte reste cale a gauche). ---- */
+
+[data-theme]:not([data-theme="default"]) .grid-event::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+[data-theme="halloween"] .grid-event::after {
+  background: var(--pink);
+  clip-path: var(--shape-bat);
+}
+
+[data-theme="christmas"] .grid-event::after {
+  background: var(--pink);
+  clip-path: var(--shape-star);
+}
+
+[data-theme="valentine"] .grid-event::after {
+  background: var(--pink);
+  border-radius: var(--shape-petal);
+}
+
+[data-theme="easter"] .grid-event::after {
+  background: var(--pink);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 40%, transparent);
+}
+
+[data-theme="spring"] .grid-event::after {
+  background: var(--pink);
+  border-radius: var(--shape-leaf);
+}
+
+[data-theme="summer"] .grid-event::after {
+  background: radial-gradient(circle, var(--pink), transparent 70%);
+  border-radius: 50%;
+}
+
+[data-theme="autumn"] .grid-event::after {
+  background: var(--pink);
+  border-radius: var(--shape-leaf);
+}
+
+[data-theme="new-year"] .grid-event::after {
+  background: var(--pink);
+  clip-path: var(--shape-star);
 }

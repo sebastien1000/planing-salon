@@ -43,6 +43,7 @@
   --app-accent: #d8aa67;
   --app-accent-2: #e87518;
   --app-glow: rgba(232, 117, 24, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 [data-theme="christmas"] {
@@ -61,6 +62,7 @@
   --app-accent: #d4af6a;
   --app-accent-2: #eaeaea;
   --app-glow: rgba(212, 175, 106, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 [data-theme="valentine"] {
@@ -79,6 +81,7 @@
   --app-accent: #d5647e;
   --app-accent-2: #e3a6ae;
   --app-glow: rgba(213, 100, 126, 0.45);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 [data-theme="easter"] {
@@ -97,6 +100,7 @@
   --app-accent: #e3c76f;
   --app-accent-2: #c9a8d6;
   --app-glow: rgba(156, 136, 189, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 [data-theme="spring"] {
@@ -115,6 +119,7 @@
   --app-accent: #b9a6dd;
   --app-accent-2: #8fc48a;
   --app-glow: rgba(143, 196, 138, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 [data-theme="summer"] {
@@ -133,6 +138,7 @@
   --app-accent: #3ec7d9;
   --app-accent-2: #f2c14e;
   --app-glow: rgba(62, 199, 217, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 [data-theme="autumn"] {
@@ -151,6 +157,7 @@
   --app-accent: #c98a4b;
   --app-accent-2: #8a3b2e;
   --app-glow: rgba(201, 138, 75, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 [data-theme="new-year"] {
@@ -169,6 +176,7 @@
   --app-accent: #e4c674;
   --app-accent-2: #d7d7d7;
   --app-glow: rgba(228, 198, 116, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
 }
 
 /* Fond d'ecran (login/shell) et bouton primaire/FAB : remplace les
@@ -210,8 +218,10 @@
   background: color-mix(in srgb, var(--card) 92%, transparent);
 }
 
-.brand {
+.brand,
+.title {
   color: var(--ink);
+  font-family: var(--app-font-display, inherit);
 }
 
 .sub {
@@ -259,6 +269,7 @@
    components.css), donc reutilise ici plutot qu'une nouvelle variable. */
 .chip.active {
   background: var(--pink);
+  box-shadow: 0 6px 16px -4px var(--app-glow);
 }
 
 /* Cartes RDV/absences de la grille horaire (le plus important a rester
