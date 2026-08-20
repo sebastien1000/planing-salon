@@ -1,0 +1,190 @@
+/* Theme Engine - calque de décorations + animations réutilisables communes
+   à tous les thèmes (voir js/themes/theme-decorations.js pour la génération
+   des particules et css/themes/theme-effects.css pour leur forme/couleur
+   par thème). Rien ici n'est spécifique à une saison : chaque thème
+   réutilise ces keyframes au lieu d'en redéfinir. */
+
+#theme-decorations {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout style paint;
+}
+
+.theme-particle {
+  position: absolute;
+  left: var(--x, 50%);
+  top: calc(4% + (var(--i, 0) * 7%));
+  opacity: 0.85;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.theme-click-effect {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Animations ON (reglage Admin > Apparence > Animations, voir
+   js/themes/theme-manager.js) : les particules bougent. */
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="fog"] { animation: seasonal-drift 14s ease-in-out infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="bat"] { animation: seasonal-drift var(--dur) ease-in-out var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="spider"] { animation: seasonal-descend 6s ease-in-out infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="ember"] { animation: seasonal-sparkle var(--dur) ease-in-out var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="snow"] { animation: seasonal-fall var(--dur) linear var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="garland"] { animation: seasonal-glow 3.4s ease-in-out infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="star"] { animation: seasonal-sparkle var(--dur) ease-in-out var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="petal"] { animation: seasonal-fall var(--dur) ease-in-out var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="flower"] { animation: seasonal-float var(--dur) ease-in-out var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="leaf"] { animation: seasonal-fall var(--dur) ease-in-out var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="butterfly"] { animation: seasonal-drift var(--dur) ease-in-out var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="shimmer"] { animation: seasonal-shimmer 7s ease-in-out infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="confetti"] { animation: seasonal-fall var(--dur) linear var(--delay) infinite; }
+
+/* Animations OFF (ou prefers-reduced-motion) : le theme-manager pose
+   data-animations="off" et theme-decorations.js ajoute .is-static - les
+   decorations restent visibles (couleurs/formes) mais figees, comme
+   demande. */
+#theme-decorations.is-static .theme-particle,
+[data-animations="off"] .theme-particle {
+  animation: none !important;
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-particle,
+  .theme-click-effect,
+  .fab::after {
+    animation: none !important;
+  }
+}
+
+/* Effet au clic sur un rendez-vous (voir spawnClickEffect dans
+   js/themes/theme-decorations.js) : toujours anime tant qu'il existe (il
+   n'est cree que si les animations sont actives), duree courte et fixe. */
+.theme-click-effect {
+  animation: seasonal-click-burst 0.7s ease-out both;
+}
+
+/* Halo autour du bouton "+" : couleur pilotee par --app-glow (une valeur
+   par theme, voir css/themes/theme-vars.css), donc pas besoin d'une regle
+   par theme ici. */
+.fab {
+  position: fixed;
+}
+
+.fab::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 26px;
+  background: radial-gradient(circle, var(--app-glow), transparent 70%);
+  z-index: -1;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+[data-animations="on"] .fab::after {
+  animation: seasonal-pulse 2.6s ease-in-out infinite;
+}
+
+/* Transition douce entre deux thèmes (section "transitions entre thèmes") :
+   jamais de flash brutal au changement de --bg/--card/--pink/etc. */
+body,
+.phone,
+.login-shell,
+.card,
+.top,
+.tabs,
+.primary,
+.secondary,
+.ghost,
+.fab,
+.chip,
+.tab,
+.badge,
+.modal-box,
+.grid-event,
+input,
+select,
+textarea {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Thème "Normal" : très légères transitions d'interface (section 6), pas de
+   décorations - juste une apparition douce des cartes/RDV au rendu. */
+[data-animations="on"] .card,
+[data-animations="on"] .grid-event,
+[data-animations="on"] .month-cell {
+  animation: seasonal-fade 0.35s ease both;
+}
+
+/* ---- Keyframes réutilisables (communs à tous les thèmes) ---- */
+
+@keyframes seasonal-fall {
+  0% { transform: translate3d(0, -12vh, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.9; }
+  90% { opacity: 0.8; }
+  100% { transform: translate3d(var(--drift, 20px), 118vh, 0) rotate(60deg); opacity: 0; }
+}
+
+@keyframes seasonal-float {
+  0%, 100% { transform: translateY(0) scale(var(--scale, 1)); opacity: 0.7; }
+  50% { transform: translateY(-10px) scale(var(--scale, 1)); opacity: 1; }
+}
+
+@keyframes seasonal-drift {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(var(--drift, 20px), -6px); }
+  50% { transform: translate(0, -12px); }
+  75% { transform: translate(calc(var(--drift, 20px) * -1), -6px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes seasonal-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.2); opacity: 0.9; }
+}
+
+@keyframes seasonal-glow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes seasonal-sparkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes seasonal-shimmer {
+  0% { transform: translateX(-30%); opacity: 0; }
+  50% { opacity: 0.55; }
+  100% { transform: translateX(130%); opacity: 0; }
+}
+
+@keyframes seasonal-descend {
+  0%, 100% { transform: translateY(-6px); }
+  50% { transform: translateY(14px); }
+}
+
+@keyframes seasonal-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes seasonal-click-burst {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+}
+
+@keyframes seasonal-shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}

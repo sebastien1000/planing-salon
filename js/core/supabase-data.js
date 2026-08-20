@@ -519,6 +519,22 @@
     return unwrap(client().from("blocked_periods").delete().eq("id", id));
   }
 
+  // ---- Reglage d'apparence partage pour tout le salon (theme saisonnier,
+  // voir js/themes/theme-manager.js) : une seule ligne (id = 1), creee par
+  // supabase/migrations/2026-08-20_app_settings_theme.sql. Purement
+  // cosmetique - n'est jamais lu ni ecrit par la logique metier
+  // (rendez-vous/clients/etc). Si la table n'existe pas encore (migration
+  // pas appliquee), ces appels rejettent et le theme-manager retombe
+  // silencieusement sur le reglage local/automatique.
+  function getAppSettings() {
+    return unwrap(client().from("app_settings").select("*").eq("id", 1).maybeSingle());
+  }
+
+  function saveAppSettings(patch) {
+    var row = Object.assign({ id: 1, updated_at: new Date().toISOString() }, patch);
+    return unwrap(client().from("app_settings").upsert(row).select().maybeSingle());
+  }
+
   window.SalonSupabaseData = {
     countReservationsForService: countReservationsForService,
     countServiceUsage: countServiceUsage,
@@ -529,6 +545,7 @@
     deleteCollaboratorService: deleteCollaboratorService,
     deleteService: deleteService,
     findOrCreateClient: findOrCreateClient,
+    getAppSettings: getAppSettings,
     listAllReservations: listAllReservations,
     listBlockedPeriods: listBlockedPeriods,
     listClients: listClients,
@@ -540,6 +557,7 @@
     listServices: listServices,
     resolveCollabId: resolveCollabId,
     resolveCollabName: resolveCollabName,
+    saveAppSettings: saveAppSettings,
     updateBlockedPeriod: updateBlockedPeriod,
     updateClient: updateClient,
     updateReservation: updateReservation,

@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v64-sync-profils-planning";
+const CACHE_NAME = "salon-mvp-v65-themes-saisonniers-animes";
 
 const APP_ASSETS = [
   "./",
@@ -19,10 +19,16 @@ const APP_ASSETS = [
   "./css/layout.css",
   "./css/components.css",
   "./css/pages.css",
+  "./css/themes/theme-vars.css",
+  "./css/themes/animations-common.css",
+  "./css/themes/theme-effects.css",
   "./js/core/utils.js",
   "./js/core/data.js",
   "./js/core/supabase-client.js",
   "./js/core/supabase-data.js",
+  "./js/themes/theme-config.js",
+  "./js/themes/theme-decorations.js",
+  "./js/themes/theme-manager.js",
   "./js/core/auth.js",
   "./js/core/domain.js",
   "./js/core/ui.js",

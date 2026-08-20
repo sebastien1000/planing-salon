@@ -1,0 +1,351 @@
+/* Theme Engine - variables de couleur (voir js/themes/theme-config.js pour
+   la liste des thèmes et css/themes/animations-common.css /
+   theme-effects.css pour les animations/décorations qui les utilisent).
+
+   Les 10 premières variables (--bg, --card, --ink, --muted, --line, --pink,
+   --pink-2, --danger, --ok, --shadow) existent déjà dans css/base.css et
+   sont utilisées dans tout components.css : les redéfinir ici par
+   [data-theme="..."] re-thème donc automatiquement l'app entière sans
+   dupliquer ce CSS. Les variables --brand-1/--brand-2 remplacent les 2
+   gradients roses codés en dur de components.css (.primary/.fab) ; le reste
+   (--shell-*, --header-bg, --tabs-bg, --page-bg) est calculé une seule fois
+   via color-mix() à partir de --bg/--card/--line, donc jamais à redéfinir
+   par thème. */
+
+:root {
+  --brand-1: #e999ac;
+  --brand-2: #d97b93;
+  --app-accent: #d97b93;
+  --app-accent-2: #f0bdc7;
+  --app-glow: rgba(217, 123, 147, 0.45);
+
+  --page-bg: color-mix(in srgb, var(--bg) 90%, black 10%);
+  --shell-grad-1: color-mix(in srgb, var(--card) 86%, var(--bg) 14%);
+  --shell-grad-2: var(--bg);
+  --shell-border: color-mix(in srgb, var(--line) 85%, transparent);
+  --header-bg: color-mix(in srgb, var(--bg) 85%, transparent);
+  --tabs-bg: color-mix(in srgb, var(--card) 92%, transparent);
+}
+
+[data-theme="halloween"] {
+  --bg: #0d0d0f;
+  --card: #1c1420;
+  --ink: #f3e6cf;
+  --muted: #b79a86;
+  --line: #3a2a44;
+  --pink: #c9581f;
+  --pink-2: #3c2a4a;
+  --danger: #ff6b6b;
+  --ok: #6fbf7b;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #e87518;
+  --brand-2: #6a3c83;
+  --app-accent: #d8aa67;
+  --app-accent-2: #e87518;
+  --app-glow: rgba(232, 117, 24, 0.5);
+}
+
+[data-theme="christmas"] {
+  --bg: #0d1912;
+  --card: #132318;
+  --ink: #f5ede0;
+  --muted: #a9c2ab;
+  --line: #254a33;
+  --pink: #b23a44;
+  --pink-2: #1c3a26;
+  --danger: #ff6b6b;
+  --ok: #7fd28c;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.5);
+  --brand-1: #b23a44;
+  --brand-2: #1f6b3c;
+  --app-accent: #d4af6a;
+  --app-accent-2: #eaeaea;
+  --app-glow: rgba(212, 175, 106, 0.5);
+}
+
+[data-theme="valentine"] {
+  --bg: #fdf3f2;
+  --card: #fffaf9;
+  --ink: #4a1f2b;
+  --muted: #9b6a76;
+  --line: #f3d9de;
+  --pink: #b23a5c;
+  --pink-2: #f6dde3;
+  --danger: #a4324f;
+  --ok: #4c8a5a;
+  --shadow: 0 16px 35px rgba(120, 40, 60, 0.16);
+  --brand-1: #d5647e;
+  --brand-2: #b23a5c;
+  --app-accent: #d5647e;
+  --app-accent-2: #e3a6ae;
+  --app-glow: rgba(213, 100, 126, 0.45);
+}
+
+[data-theme="easter"] {
+  --bg: #faf6ef;
+  --card: #fffdf8;
+  --ink: #4a4536;
+  --muted: #8f8a72;
+  --line: #eae1cd;
+  --pink: #8e7bb0;
+  --pink-2: #eef0e2;
+  --danger: #b2555a;
+  --ok: #6a9c6f;
+  --shadow: 0 16px 35px rgba(90, 80, 50, 0.14);
+  --brand-1: #9c88bd;
+  --brand-2: #7fae86;
+  --app-accent: #e3c76f;
+  --app-accent-2: #c9a8d6;
+  --app-glow: rgba(156, 136, 189, 0.4);
+}
+
+[data-theme="spring"] {
+  --bg: #f7faf3;
+  --card: #ffffff;
+  --ink: #3c4a37;
+  --muted: #7f9078;
+  --line: #e1ecd8;
+  --pink: #c68aa8;
+  --pink-2: #e7f2df;
+  --danger: #b2555a;
+  --ok: #4f9a5c;
+  --shadow: 0 16px 35px rgba(60, 90, 40, 0.12);
+  --brand-1: #8fc48a;
+  --brand-2: #c68aa8;
+  --app-accent: #b9a6dd;
+  --app-accent-2: #8fc48a;
+  --app-glow: rgba(143, 196, 138, 0.4);
+}
+
+[data-theme="summer"] {
+  --bg: #f4faf9;
+  --card: #ffffff;
+  --ink: #183a3c;
+  --muted: #5f8a8a;
+  --line: #d7ece9;
+  --pink: #e0862f;
+  --pink-2: #dff3f1;
+  --danger: #c2534a;
+  --ok: #2f9a86;
+  --shadow: 0 16px 35px rgba(20, 90, 90, 0.12);
+  --brand-1: #28b8ac;
+  --brand-2: #e0862f;
+  --app-accent: #3ec7d9;
+  --app-accent-2: #f2c14e;
+  --app-glow: rgba(62, 199, 217, 0.4);
+}
+
+[data-theme="autumn"] {
+  --bg: #fbf3ec;
+  --card: #fffaf5;
+  --ink: #3f2a1e;
+  --muted: #8a6a52;
+  --line: #eddac2;
+  --pink: #a8502c;
+  --pink-2: #f3e0c8;
+  --danger: #a13a3a;
+  --ok: #6a8a4f;
+  --shadow: 0 16px 35px rgba(90, 50, 20, 0.16);
+  --brand-1: #c3672f;
+  --brand-2: #7a3b2e;
+  --app-accent: #c98a4b;
+  --app-accent-2: #8a3b2e;
+  --app-glow: rgba(201, 138, 75, 0.4);
+}
+
+[data-theme="new-year"] {
+  --bg: #0b0b0d;
+  --card: #161619;
+  --ink: #f3ecd9;
+  --muted: #b8b0a0;
+  --line: #2e2c26;
+  --pink: #8a6a2e;
+  --pink-2: #242019;
+  --danger: #ff7a7a;
+  --ok: #7fd28c;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #c9a24a;
+  --brand-2: #8a6a2e;
+  --app-accent: #e4c674;
+  --app-accent-2: #d7d7d7;
+  --app-glow: rgba(228, 198, 116, 0.5);
+}
+
+/* Fond d'ecran (login/shell) et bouton primaire/FAB : remplace les
+   gradients/couleurs codes en dur pour suivre le theme actif. Seuls
+   endroits de layout.css/components.css touches par le Theme Engine. */
+.page-shell {
+  background: var(--page-bg);
+}
+
+.login-shell,
+.phone {
+  background: linear-gradient(180deg, var(--shell-grad-1) 0%, var(--shell-grad-2) 100%);
+  border-color: var(--shell-border);
+}
+
+.top {
+  background: var(--header-bg);
+}
+
+.tabs {
+  background: var(--tabs-bg);
+}
+
+.primary,
+.fab {
+  background: linear-gradient(135deg, var(--brand-1), var(--brand-2));
+}
+
+/* .panel/.card (utilisees partout : planning, clients, comptes, plus...)
+   avaient un fond blanc fixe (rgba(255,255,255,.92)), jamais lie a
+   --card - invisible sur un theme clair mais illisible sur un theme sombre
+   (texte fonce sur presque blanc alors que le reste de l'app passe en
+   noir). Meme chose pour le texte de la marque sur l'ecran de connexion
+   (.brand/.sub, codes en dur). color-mix() reproduit exactement le rendu
+   actuel sur le theme par defaut (--card vaut deja #fff) tout en suivant
+   chaque theme sombre. */
+.panel,
+.card {
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+
+.brand {
+  color: var(--ink);
+}
+
+.sub {
+  color: var(--muted);
+}
+
+/* Meme correction que .panel/.card ci-dessus, pour le reste des surfaces
+   "blanches" de l'app (boutons secondaires, pastilles, cellules du mois,
+   champs de saisie...) : toutes codees en dur en #fff/blanc mais deja
+   affichees avec du texte en var(--ink)/var(--muted) - illisible des que
+   ces variables passent en couleur claire (themes sombres). Rendu
+   identique sur le theme par defaut (--card vaut deja blanc). */
+.secondary,
+.home,
+.x,
+.pill,
+.chip,
+.month-cell,
+.field,
+.stat,
+.conflict-slot,
+.panel.stack.login-card,
+.panel.stack {
+  background: var(--card);
+}
+
+.month-cell.has {
+  background: color-mix(in srgb, var(--card) 85%, var(--pink-2) 15%);
+}
+
+.conflict-slot {
+  color: var(--ink);
+  border-color: var(--shell-border);
+}
+
+.panel.stack.login-card,
+.panel.stack {
+  border-color: var(--shell-border);
+}
+
+/* .chip.active utilisait var(--ink) comme FOND avec du texte blanc en dur
+   (color:#fff) : correct quand --ink est fonce (theme par defaut), illisible
+   des que --ink devient clair (themes sombres). --pink est deja garanti
+   assez sature pour du texte blanc (voir .week-day-num.today/.fab dans
+   components.css), donc reutilise ici plutot qu'une nouvelle variable. */
+.chip.active {
+  background: var(--pink);
+}
+
+/* Cartes RDV/absences de la grille horaire (le plus important a rester
+   lisible, voir js/pages/planning.js) : fond blanc fixe en secours quand
+   aucune couleur de collaboratrice n'est definie (--collab-tint-soft),
+   alors que le nom/la prestation affiches dessus suivent deja var(--ink) -
+   illisible sur un theme sombre. Quand une couleur de collaboratrice EST
+   definie (--collab-tint*), elle continue de s'appliquer telle quelle :
+   ce mecanisme de reperage par collaboratrice n'est pas touche. */
+.grid-event {
+  background-color: var(--card);
+}
+
+.grid-event--mine {
+  background-color: var(--collab-tint-soft, var(--card));
+}
+
+.grid-event--other {
+  background-color: var(--card);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--card) 92%, transparent) 0px,
+    color-mix(in srgb, var(--card) 92%, transparent) 8px,
+    var(--collab-tint, rgba(232, 167, 182, 0.28)) 8px,
+    var(--collab-tint, rgba(232, 167, 182, 0.28)) 16px
+  ) !important;
+}
+
+.blocked-slot::before,
+.absence-slot::before,
+.unavailable-slot::before {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--collab-tint, rgba(232, 167, 182, 0.25)),
+    var(--collab-tint, rgba(232, 167, 182, 0.25)) 8px,
+    color-mix(in srgb, var(--card) 70%, transparent) 8px,
+    color-mix(in srgb, var(--card) 70%, transparent) 16px
+  );
+}
+
+/* Texte "prune fonce" code en dur un peu partout (labels, champs de
+   saisie, noms de profil, textes de modale...) : toutes des nuances tres
+   proches de --ink/--muted par defaut (donc rendu quasi identique sur le
+   theme par defaut), mais jamais liees a ces variables - illisibles des
+   que le fond de la carte/du champ sous ce texte s'assombrit (themes
+   sombres). Regroupees ici plutot que dans components.css pour garder le
+   Theme Engine dans un seul dossier. */
+label,
+.field-toggle-visibility:hover,
+.field-toggle-visibility:focus-visible,
+.profile-name,
+.profile-name-card {
+  color: var(--ink);
+}
+
+.field {
+  color: var(--ink);
+}
+
+.field::placeholder {
+  color: var(--muted);
+}
+
+.ghost-link,
+.profile-fallback-text {
+  color: var(--muted);
+}
+
+.conflict-title {
+  color: var(--ink);
+}
+
+.conflict-text {
+  color: var(--muted);
+}
+
+.month-cell .dot {
+  background: var(--pink-2);
+}
+
+.month-cell .dot.planning-dot-other {
+  background-color: var(--card);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--card) 92%, transparent) 0px,
+    color-mix(in srgb, var(--card) 92%, transparent) 6px,
+    var(--collab-tint, rgba(0, 0, 0, 0.06)) 6px,
+    var(--collab-tint, rgba(0, 0, 0, 0.06)) 12px
+  );
+}

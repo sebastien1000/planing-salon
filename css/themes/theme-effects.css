@@ -1,0 +1,215 @@
+/* Theme Engine - forme/couleur de chaque décoration (voir
+   js/themes/theme-config.js pour la liste "decor" par thème et
+   css/themes/animations-common.css pour les animations qu'elles utilisent).
+   Un seul jeu de règles par "data-decor", coloré via les variables du
+   thème actif (--app-accent, --app-accent-2, --app-glow, --pink, --pink-2,
+   voir css/themes/theme-vars.css) : pas de bloc par thème à dupliquer.
+   Tout est CSS/gradients/clip-path, aucun emoji, aucune image lourde. */
+
+/* ---- Halloween : brume, chauve-souris, araignée ---- */
+
+.theme-particle[data-decor="fog"] {
+  top: auto;
+  bottom: -8%;
+  left: calc(var(--x, 50%) - 35vw);
+  width: 70vw;
+  height: 30vh;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--pink-2) 55%, transparent), transparent 72%);
+  filter: blur(18px);
+  opacity: 0.55;
+}
+
+.theme-particle[data-decor="bat"] {
+  top: calc(6% + (var(--i, 0) * 9%));
+  width: 22px;
+  height: 12px;
+  background: #140f18;
+  opacity: 0.8;
+  clip-path: polygon(50% 35%, 60% 15%, 66% 30%, 82% 8%, 76% 34%, 100% 24%,
+    68% 48%, 88% 62%, 58% 52%, 50% 72%, 42% 52%, 12% 62%, 32% 48%, 0% 24%,
+    24% 34%, 18% 8%, 34% 30%, 40% 15%);
+}
+
+.theme-particle[data-decor="spider"] {
+  top: 0;
+  left: 78%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #140f18;
+  box-shadow:
+    -5px -2px 0 -3.5px #140f18,
+    5px -2px 0 -3.5px #140f18,
+    -5px 3px 0 -3.5px #140f18,
+    5px 3px 0 -3.5px #140f18;
+}
+
+.theme-particle[data-decor="spider"]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 1px;
+  height: 22vh;
+  background: linear-gradient(var(--muted), transparent);
+  transform: translateX(-50%);
+}
+
+/* ---- Étincelles génériques (halloween, saint-valentin, été, automne,
+   nouvel an) ---- */
+
+.theme-particle[data-decor="ember"] {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--app-accent);
+  box-shadow: 0 0 8px 2px var(--app-glow);
+}
+
+/* ---- Noël : neige, guirlande, étoiles ---- */
+
+.theme-particle[data-decor="snow"] {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.9;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.85);
+}
+
+.theme-particle[data-decor="garland"] {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: repeating-linear-gradient(90deg, var(--app-accent) 0 10px, transparent 10px 22px);
+  box-shadow: 0 0 12px var(--app-glow);
+  opacity: 0.9;
+}
+
+.theme-particle[data-decor="star"] {
+  width: 9px;
+  height: 9px;
+  background: var(--app-accent-2);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+
+/* ---- Fleurs / pétales (saint-valentin, pâques, printemps) ---- */
+
+.theme-particle[data-decor="petal"] {
+  width: 10px;
+  height: 14px;
+  background: var(--app-accent);
+  border-radius: 70% 30% 70% 30% / 60% 40% 60% 40%;
+  opacity: 0.8;
+}
+
+.theme-particle[data-decor="flower"] {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--app-accent-2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--app-accent) 45%, transparent);
+  opacity: 0.85;
+}
+
+.theme-particle[data-decor="leaf"] {
+  width: 12px;
+  height: 12px;
+  background: var(--app-accent);
+  border-radius: 0 100% 0 100%;
+  opacity: 0.85;
+}
+
+.theme-particle[data-decor="butterfly"] {
+  width: 14px;
+  height: 10px;
+}
+
+.theme-particle[data-decor="butterfly"]::before,
+.theme-particle[data-decor="butterfly"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 7px;
+  height: 10px;
+  background: var(--app-accent);
+  opacity: 0.8;
+  border-radius: 60% 60% 60% 60% / 80% 80% 20% 20%;
+}
+
+.theme-particle[data-decor="butterfly"]::before {
+  left: -6px;
+  transform-origin: right center;
+}
+
+.theme-particle[data-decor="butterfly"]::after {
+  right: -6px;
+  background: var(--app-accent-2);
+  transform-origin: left center;
+}
+
+/* ---- Été : reflet lumineux ---- */
+
+.theme-particle[data-decor="shimmer"] {
+  top: 16%;
+  left: -20%;
+  width: 60%;
+  height: 42%;
+  background: linear-gradient(120deg, transparent, color-mix(in srgb, var(--app-accent) 35%, transparent), transparent);
+  filter: blur(6px);
+}
+
+/* ---- Nouvel An : confettis discrets ---- */
+
+.theme-particle[data-decor="confetti"] {
+  width: 6px;
+  height: 10px;
+  background: var(--app-accent);
+  opacity: 0.85;
+}
+
+.theme-particle[data-decor="confetti"]:nth-of-type(even) {
+  background: var(--app-accent-2);
+}
+
+/* ---- Micro-effet au clic sur un rendez-vous (voir spawnClickEffect dans
+   js/themes/theme-decorations.js), une variante par thème via
+   THEME_EFFECTS[...].click ---- */
+
+.theme-click-effect[data-click="ripple"] {
+  background: transparent;
+  border: 2px solid var(--pink);
+}
+
+.theme-click-effect[data-click="shadow"] {
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.55), transparent 70%);
+}
+
+.theme-click-effect[data-click="spark"] {
+  background: radial-gradient(circle, var(--app-accent), transparent 70%);
+  box-shadow: 0 0 14px var(--app-glow);
+}
+
+.theme-click-effect[data-click="shimmer"] {
+  background: radial-gradient(circle, color-mix(in srgb, var(--app-accent) 60%, white), transparent 70%);
+}
+
+.theme-click-effect[data-click="pastel"] {
+  background: radial-gradient(circle, var(--app-accent-2), transparent 70%);
+}
+
+.theme-click-effect[data-click="petal"] {
+  width: 14px;
+  height: 18px;
+  background: var(--app-accent);
+  border-radius: 70% 30% 70% 30% / 60% 40% 60% 40%;
+}
+
+.theme-click-effect[data-click="leaf"] {
+  width: 14px;
+  height: 14px;
+  background: var(--app-accent);
+  border-radius: 0 100% 0 100%;
+}
