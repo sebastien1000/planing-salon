@@ -1,4 +1,4 @@
-const CACHE_NAME = "salon-mvp-v65-themes-saisonniers-animes";
+const CACHE_NAME = "salon-mvp-v69-live-css-refresh";
 
 const APP_ASSETS = [
   "./",
@@ -22,13 +22,31 @@ const APP_ASSETS = [
   "./css/themes/theme-vars.css",
   "./css/themes/animations-common.css",
   "./css/themes/theme-effects.css",
+  "./css/themes/premium-scenes.css",
   "./js/core/utils.js",
   "./js/core/data.js",
   "./js/core/supabase-client.js",
   "./js/core/supabase-data.js",
   "./js/themes/theme-config.js",
+  "./js/themes/seasonal-theme-resolver.js",
+  "./js/themes/theme-preferences.js",
+  "./js/themes/theme-bootstrap.js",
   "./js/themes/theme-decorations.js",
   "./js/themes/theme-manager.js",
+  "./assets/img/themes/halloween/pumpkin-botanical.png",
+  "./assets/img/themes/christmas/fir-luxury.png",
+  "./assets/img/themes/new-year/champagne.png",
+  "./assets/img/themes/winter/frost.png",
+  "./assets/img/themes/spring/flowers.png",
+  "./assets/img/themes/beach/vacation.png",
+  "./assets/img/themes/autumn/copper.png",
+  "./assets/img/themes/tropical/foliage.png",
+  "./assets/img/themes/cocooning/cozy.png",
+  "./assets/img/themes/disco/nightlife.png",
+  "./assets/img/themes/galaxy/cosmos.png",
+  "./assets/img/themes/floral/flowers.png",
+  "./assets/img/themes/chic-black-gold/luxury.png",
+  "./assets/img/themes/rose-gold/marble.png",
   "./js/core/auth.js",
   "./js/core/domain.js",
   "./js/core/ui.js",
@@ -107,14 +125,17 @@ self.addEventListener("fetch", function (event) {
     return;
   }
 
-  // Reseau d'abord pour les pages HTML (navigation) et le code JS de l'app :
+  // Reseau d'abord pour les pages HTML, le code JS et les feuilles CSS :
   // pendant le developpement (et en general), la derniere version deployee
   // doit toujours s'afficher quand le reseau est disponible. Le cache ne
   // sert que de secours hors-ligne, plus de source par defaut.
-  var isNavigationOrAppScript = event.request.mode === "navigate" ||
-    (requestUrl.origin === SAME_ORIGIN && requestUrl.pathname.endsWith(".js"));
+  var isNavigationOrAppCode = event.request.mode === "navigate" ||
+    (requestUrl.origin === SAME_ORIGIN && (
+      requestUrl.pathname.endsWith(".js") ||
+      requestUrl.pathname.endsWith(".css")
+    ));
 
-  if (isNavigationOrAppScript) {
+  if (isNavigationOrAppCode) {
     event.respondWith(
       fetch(event.request)
         .then(function (response) { return putInCache(event.request, response); })

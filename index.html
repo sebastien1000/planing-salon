@@ -1,97 +1,125 @@
 <!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#e8a7b6">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Planning Salon - Connexion</title>
-  <link rel="icon" type="image/png" href="assets/img/branding/favicon.png">
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/pages.css">
-  <link rel="stylesheet" href="css/themes/theme-vars.css">
-  <link rel="stylesheet" href="css/themes/animations-common.css">
-  <link rel="stylesheet" href="css/themes/theme-effects.css">
-  <script>
-    (function () {
-      try {
-        var raw = localStorage.getItem("salonThemeV2");
-        var state = raw ? JSON.parse(raw) : null;
-        var theme = (state && state.lastEffectiveTheme) || "default";
-        var animationsOn = !(state && state.animationsEnabled === false);
-        document.documentElement.setAttribute("data-theme", theme);
-        document.documentElement.setAttribute("data-animations", animationsOn ? "on" : "off");
-      } catch (error) {
-        document.documentElement.setAttribute("data-theme", "default");
-        document.documentElement.setAttribute("data-animations", "on");
-      }
-    }());
-  </script>
-</head>
-<body>
-  <div class="page-shell">
-    <div class="phone login-shell">
-      <section id="loginScreen" class="login">
-        <div class="brand-wrap brandWrap login-brand">
-          <div class="login-logo-wrapper">
-            <img src="assets/img/branding/logo.png" alt="Logo salon" class="login-logo logo logoHero">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#e8a7b6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <title>Planning Salon - Connexion</title>
+    <link rel="icon" type="image/png" href="assets/img/branding/favicon.png" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/pages.css" />
+    <link rel="stylesheet" href="css/themes/theme-vars.css" />
+    <link rel="stylesheet" href="css/themes/animations-common.css" />
+    <link rel="stylesheet" href="css/themes/theme-effects.css" />
+    <link rel="stylesheet" href="css/themes/premium-scenes.css" />
+    <script src="js/themes/theme-bootstrap.js"></script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <div class="phone login-shell">
+        <section id="loginScreen" class="login">
+          <div class="brand-wrap brandWrap login-brand">
+            <div class="login-logo-wrapper">
+              <img
+                src="assets/img/branding/logo.png"
+                alt="Logo salon"
+                class="login-logo logo logoHero"
+              />
+            </div>
+
+            <div class="brand-text">
+              <div class="brand">Planning<br />Salon</div>
+              <div class="sub">onglerie et beaute</div>
+            </div>
           </div>
 
-          <div class="brand-text">
-            <div class="brand">Planning<br>Salon</div>
-            <div class="sub">Maquette mobile privee - onglerie et beaute</div>
-          </div>
-        </div>
+          <div id="loginPanel" class="panel stack login-card">
+            <div id="loginMsg" class="alert hidden"></div>
 
-        <div id="loginPanel" class="panel stack login-card">
-          <div id="loginMsg" class="alert hidden"></div>
-
-          <label for="loginEmail">Email</label>
-          <input id="loginEmail" class="field" type="email" autocomplete="username" placeholder="vous@exemple.com">
-
-          <label for="loginPass">Mot de passe</label>
-          <div class="field-with-toggle">
+            <label for="loginEmail">Email</label>
             <input
-              id="loginPass"
+              id="loginEmail"
               class="field"
-              type="password"
-              autocomplete="current-password"
-              placeholder="Mot de passe"
-            >
-            <button id="loginPassToggle" class="field-toggle-visibility" type="button" aria-label="Afficher le mot de passe"></button>
+              type="email"
+              autocomplete="username"
+              placeholder="vous@exemple.com"
+            />
+
+            <label for="loginPass">Mot de passe</label>
+            <div class="field-with-toggle">
+              <input
+                id="loginPass"
+                class="field"
+                type="password"
+                autocomplete="current-password"
+                placeholder="Mot de passe"
+              />
+              <button
+                id="loginPassToggle"
+                class="field-toggle-visibility"
+                type="button"
+                aria-label="Afficher le mot de passe"
+              ></button>
+            </div>
+
+            <button id="loginSubmit" class="primary login-submit" type="button">
+              Connexion
+            </button>
+            <button id="forgotPassword" class="ghost ghost-link" type="button">
+              Mot de passe oublie ?
+            </button>
           </div>
 
-          <button id="loginSubmit" class="primary login-submit" type="button">Connexion</button>
-          <button id="forgotPassword" class="ghost ghost-link" type="button">Mot de passe oublie ?</button>
-        </div>
+          <div id="forgotPanel" class="panel stack login-card hidden">
+            <div id="forgotMsg" class="alert hidden"></div>
+            <p class="tiny">
+              Entrez votre email, un lien de reinitialisation vous sera envoye
+              si un compte existe.
+            </p>
 
-        <div id="forgotPanel" class="panel stack login-card hidden">
-          <div id="forgotMsg" class="alert hidden"></div>
-          <p class="tiny">Entrez votre email, un lien de reinitialisation vous sera envoye si un compte existe.</p>
+            <label for="forgotEmail">Email</label>
+            <input
+              id="forgotEmail"
+              class="field"
+              type="email"
+              autocomplete="username"
+              placeholder="vous@exemple.com"
+            />
 
-          <label for="forgotEmail">Email</label>
-          <input id="forgotEmail" class="field" type="email" autocomplete="username" placeholder="vous@exemple.com">
-
-          <button id="forgotSubmit" class="primary login-submit" type="button">Envoyer le lien</button>
-          <button id="backToLogin" class="ghost ghost-link" type="button">Retour a la connexion</button>
-        </div>
-      </section>
+            <button
+              id="forgotSubmit"
+              class="primary login-submit"
+              type="button"
+            >
+              Envoyer le lien
+            </button>
+            <button id="backToLogin" class="ghost ghost-link" type="button">
+              Retour a la connexion
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
-  </div>
 
-  <script src="https://unpkg.com/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
-  <script src="js/core/utils.js"></script>
-  <script src="js/core/data.js"></script>
-  <script src="js/core/supabase-client.js"></script>
-  <script src="js/core/supabase-data.js"></script>
-  <script src="js/themes/theme-config.js"></script>
-  <script src="js/themes/theme-decorations.js"></script>
-  <script src="js/themes/theme-manager.js"></script>
-  <script src="js/core/auth.js"></script>
-  <script src="js/pages/login.js"></script>
-</body>
+    <script src="https://unpkg.com/@supabase/supabase-js@2.110.1/dist/umd/supabase.js"></script>
+    <script src="js/core/utils.js"></script>
+    <script src="js/core/data.js"></script>
+    <script src="js/core/supabase-client.js"></script>
+    <script src="js/core/supabase-data.js"></script>
+    <script src="js/themes/theme-config.js"></script>
+    <script src="js/themes/seasonal-theme-resolver.js"></script>
+    <script src="js/themes/theme-preferences.js"></script>
+    <script src="js/themes/theme-decorations.js"></script>
+    <script src="js/themes/theme-manager.js"></script>
+    <script src="js/core/auth.js"></script>
+    <script src="js/pages/login.js"></script>
+  </body>
 </html>

@@ -21,6 +21,8 @@
      cerisier, feuille, flocon, diamant, pierre precieuse - reutilisee pour
      l'avatar de chaque carte RDV, le motif d'en-tete et le micro-effet au
      clic, pour une identite visuelle coherente par theme. */
+  --icon-pumpkin: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M46%2014h8v14h-8z%20M54%2018c6-6%2014-6%2018-2-6%200-12%202-16%208z%20M12%2060c0-20%2017-34%2038-34s38%2014%2038%2034-17%2032-38%2032-38-12-38-32z%20M48%2032l3%2056h2l3-56z%22/%3E%3C/svg%3E");
+  --icon-tree: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%204L27%2038h13L18%2068h25v24h14V68h25L60%2038h13z%22/%3E%3C/svg%3E");
   --icon-palm: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M48%2040c2-16%202-30-6-38%2012%202%2018%2014%2016%2030%2010-12%2022-16%2034-12-8%206-20%2010-26%2018%2014-2%2026%204%2032%2016-10-2-22%200-30%206%2010%204%2018%2012%2020%2022-10-6-20-8-28-6%204%208%204%2018%200%2026-4-10-4-20%200-28-8%204-16%2012-18%2022-2-10%200-20%206-28-10%202-18%208-22%2016%200-10%204-20%2012-26-10-4-22-2-30%204%204-10%2014-18%2024-20-8-4-18-4-26%200%206-8%2016-12%2026-10-6-6-16-8-24-6%206-6%2014-8%2022-6-4-6-8-14-6-22%204%208%2010%2014%2016%2018-4-16%200-30%208-36-2%2010%200%2024%206%2032z%22/%3E%3C/svg%3E");
   --icon-sun: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2221%22/%3E%3Cg%20stroke%3D%22%23000%22%20stroke-width%3D%229%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%203v15M50%2082v15M3%2050h15M82%2050h15M17%2017l11%2011M72%2072l11%2011M17%2083l11-11M72%2028l11-11%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   --icon-candle: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M40%2040h20v52H40z%20M50%208c8%2010%2012%2018%208%2026-2%204-6%206-8%206s-6-2-8-6c-4-8%200-16%208-26z%22/%3E%3C/svg%3E");
@@ -33,6 +35,56 @@
   --icon-snowflake: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20stroke%3D%22%23000%22%20stroke-width%3D%227%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%205v90M12%2027.5l76%2045M12%2072.5l76-45%22/%3E%3C/g%3E%3Cg%20fill%3D%22%23000%22%3E%3Cpath%20d%3D%22M50%205l-8%2012h16zM50%2095l-8-12h16zM12%2027.5l14%201-7%2012zM88%2072.5l-14-1%207-12zM12%2072.5l14-1-7-12zM88%2027.5l-14%201%207%2012z%22/%3E%3C/g%3E%3C/svg%3E");
   --icon-diamond: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M20%2030%2050%208l30%2022-30%2062z%22/%3E%3C/svg%3E");
   --icon-gem: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%206c14%200%2026%2010%2030%2024L50%2092%2020%2030C24%2016%2036%206%2050%206z%22/%3E%3C/svg%3E");
+}
+
+/* ---- Halloween : brume, chauve-souris, araignee ---- */
+
+.theme-particle[data-decor="fog"] {
+  top: auto;
+  bottom: -8%;
+  left: calc(var(--x, 50%) - 35vw);
+  width: 70vw;
+  height: 30vh;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--pink-2) 55%, transparent), transparent 72%);
+  filter: blur(18px);
+  opacity: 0.55;
+}
+
+.theme-particle[data-decor="bat"] {
+  top: calc(6% + (var(--i, 0) * 9%));
+  width: 22px;
+  height: 12px;
+  background: #140f18;
+  opacity: 0.8;
+  clip-path: polygon(50% 35%, 60% 15%, 66% 30%, 82% 8%, 76% 34%, 100% 24%,
+    68% 48%, 88% 62%, 58% 52%, 50% 72%, 42% 52%, 12% 62%, 32% 48%, 0% 24%,
+    24% 34%, 18% 8%, 34% 30%, 40% 15%);
+}
+
+.theme-particle[data-decor="spider"] {
+  top: 0;
+  left: 78%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #140f18;
+  box-shadow:
+    -5px -2px 0 -3.5px #140f18,
+    5px -2px 0 -3.5px #140f18,
+    -5px 3px 0 -3.5px #140f18,
+    5px 3px 0 -3.5px #140f18;
+}
+
+.theme-particle[data-decor="spider"]::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 1px;
+  height: 22vh;
+  background: linear-gradient(var(--muted), transparent);
+  transform: translateX(-50%);
 }
 
 /* ---- Etincelles generiques (cocooning, disco, galaxy, tropical,
@@ -55,6 +107,18 @@
   background: #fff;
   opacity: 0.9;
   box-shadow: 0 0 4px rgba(255, 255, 255, 0.85);
+}
+
+/* ---- Noel : guirlande lumineuse en haut de l'ecran ---- */
+
+.theme-particle[data-decor="garland"] {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: repeating-linear-gradient(90deg, var(--app-accent) 0 10px, transparent 10px 22px);
+  box-shadow: 0 0 12px var(--app-glow);
+  opacity: 0.9;
 }
 
 /* ---- Galaxy, Nouvel An : etoiles ---- */

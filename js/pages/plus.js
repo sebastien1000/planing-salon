@@ -89,13 +89,9 @@
     ].join("");
   }
 
-  // Carte "Apparence" (theme saisonnier anime, voir js/themes/theme-manager.js
-  // et js/themes/theme-config.js) : ouverte a tout le monde pour la partie
-  // "Mon theme" (Normal / Theme du jour - ne change que cet appareil,
-  // jamais envoye a Supabase). Le choix du theme pour TOUT le salon
-  // (Automatique + les 12 themes + animations) reste reserve a l'admin,
-  // comme "Absences de l'equipe" plus bas. N'affecte jamais les donnees
-  // metier.
+  // Apparence personnelle : disponible à chaque collaborateur et
+  // synchronisée par compte. Seul le thème saisonnier courant est présenté,
+  // accompagné des sept thèmes permanents.
   function appearanceCardHtml() {
     var themeApi = window.SalonTheme;
     var themeConfig = window.SalonThemeConfig;
@@ -105,48 +101,55 @@
     }
 
     var state = themeApi.getState();
-    var personalValue = state.personalOverride === "default" ? "default" : "auto";
+    var activation = state.currentSeasonalActivation;
 
-    var personalHtml = [
-      '<div style="margin-top:10px">',
-      '  <label for="myThemeSelect"><b>Mon thème</b></label>',
-      '  <div class="tiny">Ne change que l\'affichage sur cet appareil, pour vous seul(e).</div>',
-      '  <select id="myThemeSelect" class="field" style="margin-top:6px">',
-      '    <option value="auto"' + (personalValue === "auto" ? " selected" : "") + ">Thème du jour</option>",
-      '    <option value="default"' + (personalValue === "default" ? " selected" : "") + ">Normal</option>",
-      "  </select>",
-      "</div>"
-    ].join("");
-
-    if (!auth.isAdmin(user)) {
+    function option(theme, group) {
+      var checked = state.selectedTheme === theme.id ? " checked" : "";
       return [
-        '<div class="card">',
-        "  <h3>Apparence</h3>",
-        personalHtml,
-        "</div>"
+        '<label class="theme-choice" data-preview-theme="' + theme.id + '">',
+        '  <input type="radio" name="appearanceTheme" value="' + theme.id + '"' + checked + '>',
+        '  <span class="theme-choice-preview" aria-hidden="true"></span>',
+        '  <span class="theme-choice-copy"><b>' + theme.label + '</b><small>' + group + '</small></span>',
+        '</label>'
       ].join("");
     }
 
-    var themeSelectValue = state.mode === "manual" ? state.theme : "automatic";
+    var normal = option(themeConfig.themeById("default"), "Sobre et proche de l’application actuelle");
+    var seasonal = "";
+    if (auth.isAdmin(user)) {
+      var seasonalIds = ["nouvel-an", "hiver", "printemps", "plage", "automne", "halloween", "noel"];
+      seasonal = [
+        '<div class="theme-group-title">Thèmes saisonniers · Administrateur</div>',
+        '<div class="theme-choice-grid">',
+        seasonalIds.map(function (id) {
+          var isCurrent = activation && activation.theme === id;
+          return option(themeConfig.themeById(id), isCurrent ? "Saison actuelle" : "Aperçu administrateur");
+        }).join(""),
+        '</div>'
+      ].join("");
+    } else if (activation) {
+      var seasonalTheme = themeConfig.themeById(activation.theme);
+      seasonal = [
+        '<div class="theme-group-title">Saison actuelle</div>',
+        option(seasonalTheme, "Disponible pendant sa période")
+      ].join("");
+    }
 
-    var themeOptionsHtml = ['<option value="automatic"' + (themeSelectValue === "automatic" ? " selected" : "") + ">Automatique</option>"]
-      .concat(themeConfig.THEME_LIST.map(function (theme) {
-        var selected = themeSelectValue === theme.id ? " selected" : "";
-        return '<option value="' + theme.id + '"' + selected + ">" + theme.label + "</option>";
-      }))
-      .join("");
+    var permanent = themeConfig.PERMANENT_THEME_IDS.map(function (id) {
+      return option(themeConfig.themeById(id), "Disponible toute l’année");
+    }).join("");
 
     return [
-      '<div class="card">',
+      '<div class="card appearance-card">',
       "  <h3>Apparence</h3>",
-      personalHtml,
-      '  <div class="tiny" style="margin-top:16px">Réglages ci-dessous : s\'appliquent à toute l\'équipe.</div>',
-      '  <div style="margin-top:10px">',
-      '    <label for="themeSelect"><b>Thème du salon</b></label>',
-      '    <select id="themeSelect" class="field" style="margin-top:6px">' + themeOptionsHtml + "</select>",
-      "  </div>",
-      '  <div style="margin-top:10px">',
-      '    <label for="themeAnimationsSelect"><b>Animations du thème</b></label>',
+      '  <div class="tiny">Ce réglage vous appartient et suit votre compte sur vos appareils.</div>',
+      '  <div class="theme-group-title">Thème</div>',
+      normal,
+      seasonal,
+      '  <div class="theme-group-title">Thèmes permanents</div>',
+      '  <div class="theme-choice-grid">' + permanent + '</div>',
+      '  <div class="theme-group-title">Animations</div>',
+      '  <div class="appearance-animation-row">',
       '    <div class="tiny">Les couleurs et décorations restent, seuls les mouvements s\'arrêtent.</div>',
       '    <select id="themeAnimationsSelect" class="field" style="margin-top:6px">',
       '      <option value="on"' + (state.animationsEnabled ? " selected" : "") + ">Activées</option>",
@@ -163,23 +166,13 @@
       return;
     }
 
-    var myThemeSelect = ui.byId("myThemeSelect");
-    if (myThemeSelect) {
-      myThemeSelect.addEventListener("change", function () {
-        themeApi.setPersonalOverride(myThemeSelect.value === "default" ? "default" : null);
-      });
-    }
-
-    var themeSelect = ui.byId("themeSelect");
-    if (themeSelect) {
-      themeSelect.addEventListener("change", function () {
-        if (themeSelect.value === "automatic") {
-          themeApi.setAutomaticMode();
-        } else {
-          themeApi.setManualTheme(themeSelect.value);
+    document.querySelectorAll('input[name="appearanceTheme"]').forEach(function (radio) {
+      radio.addEventListener("change", function () {
+        if (radio.checked) {
+          themeApi.setTheme(radio.value);
         }
       });
-    }
+    });
 
     var animationsSelect = ui.byId("themeAnimationsSelect");
     if (animationsSelect) {

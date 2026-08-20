@@ -535,6 +535,17 @@
     return unwrap(client().from("app_settings").upsert(row).select().maybeSingle());
   }
 
+  // Préférence d'apparence personnelle (une ligne par auth.uid()). Les RLS
+  // de la migration user_theme_preferences empêchent toute lecture ou
+  // écriture de la préférence d'un autre collaborateur.
+  function getThemePreference(userId) {
+    return unwrap(client().from("user_theme_preferences").select("*").eq("user_id", userId).maybeSingle());
+  }
+
+  function saveThemePreference(row) {
+    return unwrap(client().from("user_theme_preferences").upsert(row, { onConflict: "user_id" }).select().maybeSingle());
+  }
+
   window.SalonSupabaseData = {
     countReservationsForService: countReservationsForService,
     countServiceUsage: countServiceUsage,
@@ -546,6 +557,7 @@
     deleteService: deleteService,
     findOrCreateClient: findOrCreateClient,
     getAppSettings: getAppSettings,
+    getThemePreference: getThemePreference,
     listAllReservations: listAllReservations,
     listBlockedPeriods: listBlockedPeriods,
     listClients: listClients,
@@ -558,6 +570,7 @@
     resolveCollabId: resolveCollabId,
     resolveCollabName: resolveCollabName,
     saveAppSettings: saveAppSettings,
+    saveThemePreference: saveThemePreference,
     updateBlockedPeriod: updateBlockedPeriod,
     updateClient: updateClient,
     updateReservation: updateReservation,

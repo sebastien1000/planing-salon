@@ -7,6 +7,8 @@
   // d'affichage souhaite.
   var THEME_LIST = [
     { id: "default", label: "Normal" },
+    { id: "halloween", label: "Halloween" },
+    { id: "noel", label: "Noël" },
     { id: "tropical", label: "Tropical" },
     { id: "plage", label: "Plage / Vacances" },
     { id: "cocooning", label: "Cocooning" },
@@ -32,6 +34,23 @@
     "default": {
       decor: [],
       click: "ripple"
+    },
+    "halloween": {
+      decor: [
+        { type: "fog", count: 2 },
+        { type: "bat", count: 3 },
+        { type: "spider", count: 1 },
+        { type: "ember", count: 12 }
+      ],
+      click: "icon"
+    },
+    "noel": {
+      decor: [
+        { type: "snow", count: 14 },
+        { type: "garland", count: 1 },
+        { type: "star", count: 6 }
+      ],
+      click: "icon"
     },
     "tropical": {
       decor: [
@@ -122,57 +141,12 @@
     }
   };
 
-  // Periodes par defaut du mode Automatique, format "MM-DD". Une periode ou
-  // start > end traverse le 31/12 -> 01/01 (geree par isWithinPeriod
-  // ci-dessous). Seuls les themes lies a une vraie saison/periode de
-  // l'annee (Nouvel An, Hiver, Printemps, Automne, Plage/ete) participent au
-  // mode Automatique ; les themes "ambiance" (Tropical, Cocooning, Disco,
-  // Galaxy, Floral, Chic Noir, Rose Gold) restent uniquement accessibles en
-  // choix manuel par l'admin. Priorite en cas de chevauchement = ordre de
-  // cette liste (Nouvel An gagne sur Hiver fin decembre/debut janvier).
-  var THEME_PERIODS = [
-    { id: "nouvel-an", start: "12-28", end: "01-02" },
-    { id: "hiver", start: "11-25", end: "01-05" },
-    { id: "printemps", start: "03-21", end: "05-31" },
-    { id: "automne", start: "09-01", end: "11-24" },
-    { id: "plage", start: "06-01", end: "08-31" }
+  var PERMANENT_THEME_IDS = [
+    "tropical", "cocooning", "disco", "galaxy", "floral", "chic-noir", "rose-gold"
   ];
 
-  function monthDayNumber(month, day) {
-    return month * 100 + day;
-  }
-
-  function parsePeriodBound(value) {
-    var parts = value.split("-");
-    return monthDayNumber(Number(parts[0]), Number(parts[1]));
-  }
-
-  function isWithinPeriod(period, monthDay) {
-    var start = parsePeriodBound(period.start);
-    var end = parsePeriodBound(period.end);
-
-    if (start <= end) {
-      return monthDay >= start && monthDay <= end;
-    }
-
-    // Periode a cheval sur le nouvel an (ex. 12-28 -> 01-02).
-    return monthDay >= start || monthDay <= end;
-  }
-
-  // Fonction centralisee de selection automatique du theme : le mode
-  // Automatique (js/themes/theme-manager.js) et les tests passent tous par
-  // ici, aucune date n'est comparee ailleurs dans le code.
-  function getSeasonalTheme(date) {
-    var reference = date instanceof Date ? date : new Date();
-    var monthDay = monthDayNumber(reference.getMonth() + 1, reference.getDate());
-
-    for (var i = 0; i < THEME_PERIODS.length; i++) {
-      if (isWithinPeriod(THEME_PERIODS[i], monthDay)) {
-        return THEME_PERIODS[i].id;
-      }
-    }
-
-    return "default";
+  function themeById(id) {
+    return THEME_LIST.find(function (theme) { return theme.id === id; }) || null;
   }
 
   function isValidThemeId(id) {
@@ -182,8 +156,8 @@
   window.SalonThemeConfig = {
     THEME_LIST: THEME_LIST,
     THEME_EFFECTS: THEME_EFFECTS,
-    THEME_PERIODS: THEME_PERIODS,
-    getSeasonalTheme: getSeasonalTheme,
+    PERMANENT_THEME_IDS: PERMANENT_THEME_IDS,
+    themeById: themeById,
     isValidThemeId: isValidThemeId
   };
 }());

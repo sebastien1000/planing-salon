@@ -4,7 +4,9 @@
   "private": true,
   "description": "Planning Salon - application web (HTML/CSS/JS + Supabase) empaquetee en application Android via Capacitor.",
   "scripts": {
-    "build:android-assets": "node scripts/build-android-assets.js"
+    "build:android-assets": "node scripts/build-android-assets.js",
+    "copy:android": "node node_modules/@capacitor/cli/bin/capacitor copy android",
+    "build:android": "npm run build:android-assets && npm run copy:android && android/gradlew -p android assembleDebug"
   },
   "dependencies": {
     "@capacitor/android": "8.4.1",

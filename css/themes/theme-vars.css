@@ -27,6 +27,46 @@
   --tabs-bg: color-mix(in srgb, var(--card) 92%, transparent);
 }
 
+[data-theme="halloween"] {
+  --bg: #0d0d0f;
+  --card: #1c1420;
+  --ink: #f3e6cf;
+  --muted: #b79a86;
+  --line: #3a2a44;
+  --pink: #c9581f;
+  --pink-2: #3c2a4a;
+  --danger: #ff6b6b;
+  --ok: #6fbf7b;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #e87518;
+  --brand-2: #6a3c83;
+  --app-accent: #d8aa67;
+  --app-accent-2: #e87518;
+  --app-glow: rgba(232, 117, 24, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-pumpkin);
+}
+
+[data-theme="noel"] {
+  --bg: #071c17;
+  --card: #102a22;
+  --ink: #fff5df;
+  --muted: #ccbda4;
+  --line: #385043;
+  --pink: #9f2f36;
+  --pink-2: #18392d;
+  --danger: #ef7378;
+  --ok: #7fbc8c;
+  --shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+  --brand-1: #9f2f36;
+  --brand-2: #c6a15b;
+  --app-accent: #d9b96e;
+  --app-accent-2: #fff0bd;
+  --app-glow: rgba(217, 185, 110, 0.48);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-tree);
+}
+
 [data-theme="tropical"] {
   --bg: #e8f7f2;
   --card: #ffffff;

@@ -1,0 +1,567 @@
+/* Scènes premium : traitements complets des composants, indépendants de la
+   logique métier. Tous les décors sont non interactifs. */
+
+/* Sélecteur Apparence commun aux collaborateurs. */
+.theme-group-title {
+  margin: 20px 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.theme-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.theme-choice {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  cursor: pointer;
+}
+
+.theme-choice:has(input:checked) {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--app-accent) 25%, transparent), 0 10px 24px var(--app-glow);
+}
+
+.theme-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.theme-choice-preview {
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 12px;
+  background: linear-gradient(145deg, #fff7f8, #e8a7b6);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.theme-choice-copy { min-width: 0; }
+.theme-choice-copy b,
+.theme-choice-copy small { display: block; }
+.theme-choice-copy small { margin-top: 2px; color: var(--muted); font-size: 9px; line-height: 1.25; }
+
+[data-preview-theme="halloween"] .theme-choice-preview { background: radial-gradient(circle at 72% 28%, #e87518 0 10%, transparent 11%), linear-gradient(145deg, #4a2754, #09090b 72%); }
+[data-preview-theme="noel"] .theme-choice-preview { background: radial-gradient(circle at 72% 30%, #d9b96e 0 6%, transparent 8%), linear-gradient(145deg, #123b2d, #9f2f36); }
+[data-preview-theme="nouvel-an"] .theme-choice-preview { background: radial-gradient(circle at 30% 32%, #f6dc91 0 4%, transparent 6%), linear-gradient(145deg, #08090a, #94702e); }
+[data-preview-theme="hiver"] .theme-choice-preview { background: radial-gradient(circle at 70% 25%, #fff 0 4%, transparent 6%), linear-gradient(145deg, #edf8ff, #76a9c6); }
+[data-preview-theme="printemps"] .theme-choice-preview { background: radial-gradient(circle at 28% 25%, #e7a2bd 0 14%, transparent 16%), linear-gradient(145deg, #f7fff0, #8fc48a); }
+[data-preview-theme="automne"] .theme-choice-preview { background: radial-gradient(ellipse at 24% 76%, #8a3b2e 0 18%, transparent 20%), linear-gradient(145deg, #f2c286, #b95e2f); }
+[data-preview-theme="plage"] .theme-choice-preview { background: linear-gradient(#9ee5ef 0 52%, #29aabd 53% 70%, #ecd099 71%); }
+[data-preview-theme="tropical"] .theme-choice-preview { background: radial-gradient(ellipse at 10% 100%, #176f59 0 28%, transparent 30%), linear-gradient(145deg, #8ce1d1, #fff2ca); }
+[data-preview-theme="cocooning"] .theme-choice-preview { background: radial-gradient(circle at 65% 65%, #f4c36a 0 10%, transparent 24%), linear-gradient(145deg, #f7ede1, #9b6542); }
+[data-preview-theme="disco"] .theme-choice-preview { background: radial-gradient(circle at 65% 25%, #fb65d1 0 10%, transparent 30%), linear-gradient(145deg, #2b0d43, #8b3ff0); }
+[data-preview-theme="galaxy"] .theme-choice-preview { background: radial-gradient(circle at 75% 24%, #fff 0 2%, transparent 4%), radial-gradient(circle at 28% 62%, #4fd1ff 0 3%, transparent 5%), linear-gradient(145deg, #091248, #5c2b83); }
+[data-preview-theme="floral"] .theme-choice-preview { background: radial-gradient(circle at 25% 25%, #e598ae 0 15%, transparent 16%), radial-gradient(circle at 80% 75%, #94af83 0 14%, transparent 15%), #fff4ee; }
+[data-preview-theme="chic-noir"] .theme-choice-preview { background: linear-gradient(135deg, transparent 46%, #c5a04a 48% 51%, transparent 53%), #0b0b0b; }
+[data-preview-theme="rose-gold"] .theme-choice-preview { background: linear-gradient(125deg, #fff8f4, #c98a6e 48%, #f5d9d0 52%, #fff); }
+
+/* Halloween : noir texturé, cuivre, aubergine et lumière chaude. */
+[data-theme="halloween"] body {
+  background:
+    radial-gradient(circle at 78% 6%, rgba(232, 117, 24, 0.12), transparent 24rem),
+    radial-gradient(circle at 12% 42%, rgba(106, 60, 131, 0.16), transparent 30rem),
+    #050607;
+}
+
+[data-theme="halloween"] .phone,
+[data-theme="halloween"] .login-shell {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    radial-gradient(circle at 84% 4%, rgba(232, 117, 24, 0.12), transparent 22rem),
+    linear-gradient(180deg, #08090a 0%, #0d0b10 48%, #070809 100%);
+  background-size: 4px 4px, auto, auto;
+  border-color: rgba(216, 170, 103, 0.32);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.72), inset 0 0 70px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="halloween"] .top {
+  background: linear-gradient(180deg, rgba(6, 7, 8, 0.96), rgba(12, 10, 14, 0.88));
+  border-color: rgba(216, 170, 103, 0.28);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+}
+
+[data-theme="halloween"] main::before {
+  content: "✦  THÈME HALLOWEEN  ✦";
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: max-content;
+  height: 34px;
+  margin: 0 auto 10px;
+  color: #e3ae70;
+  font-family: var(--app-font-display);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 16px rgba(232, 117, 24, 0.45);
+  pointer-events: none;
+}
+
+[data-theme="halloween"] .title {
+  color: #edc99e;
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  text-shadow: 0 0 18px rgba(232, 117, 24, 0.18);
+}
+
+[data-theme="halloween"] .card,
+[data-theme="halloween"] .panel {
+  border-color: rgba(216, 170, 103, 0.26);
+  background:
+    linear-gradient(135deg, rgba(62, 38, 70, 0.9), rgba(18, 15, 22, 0.94) 58%),
+    var(--card);
+  box-shadow: 0 15px 32px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 226, 180, 0.05);
+}
+
+[data-theme="halloween"] .page-header-card {
+  overflow: hidden;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 86% 2%, rgba(232, 117, 24, 0.25), transparent 36%),
+    linear-gradient(145deg, rgba(55, 31, 65, 0.96), rgba(10, 10, 12, 0.97) 72%);
+}
+
+[data-theme="halloween"] .page-header-card h3 {
+  font-family: var(--app-font-display);
+  color: #f0d2ad;
+  font-weight: 500;
+}
+
+[data-theme="halloween"] .page-header-card .chips {
+  border: 1px solid rgba(216, 170, 103, 0.32);
+  background: rgba(5, 6, 7, 0.72);
+  box-shadow: inset 0 1px 12px rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="halloween"] .page-header-card .chip.active {
+  color: #fff1dc;
+  background: linear-gradient(135deg, #53305f, #2b1c35);
+  box-shadow: inset 0 1px rgba(255, 225, 190, 0.16), 0 8px 18px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="halloween"] .secondary,
+[data-theme="halloween"] .field,
+[data-theme="halloween"] .stat {
+  border-color: rgba(216, 170, 103, 0.28);
+  background: rgba(9, 9, 11, 0.72);
+}
+
+[data-theme="halloween"] .time-grid-body {
+  border-color: rgba(216, 170, 103, 0.38);
+  background-image: repeating-linear-gradient(to bottom, rgba(216, 170, 103, 0.22) 0 1px, transparent 1px 44px);
+}
+
+[data-theme="halloween"] .grid-event {
+  border: 1px solid rgba(216, 170, 103, 0.4);
+  border-left: 4px solid var(--collab-color, #d48235);
+  border-radius: 13px;
+  color: #fff2df;
+  background: linear-gradient(112deg, #4a2b55, #25182d 72%);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="halloween"] .grid-event:nth-child(3n+2) {
+  background: linear-gradient(112deg, #a74709, #db741f);
+}
+
+[data-theme="halloween"] .grid-event:nth-child(3n) {
+  background: linear-gradient(112deg, #765023, #b27a35);
+}
+
+[data-theme="halloween"] .grid-event-time,
+[data-theme="halloween"] .grid-event-sub { color: #ead4bd; }
+
+[data-theme="halloween"] .fab {
+  color: #f4d3ac;
+  border: 1px solid #d59a55;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #5b3567, #28172f);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 24px rgba(232, 117, 24, 0.2);
+  right: auto;
+  left: max(14px, calc((100vw - 480px) / 2 + 14px));
+}
+
+[data-theme="halloween"] .tabs {
+  border: 1px solid rgba(216, 170, 103, 0.3);
+  border-bottom: 0;
+  border-radius: 25px 25px 0 0;
+  background: linear-gradient(180deg, rgba(15, 14, 17, 0.98), rgba(5, 6, 7, 0.99));
+  box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="halloween"] .tab { color: #bca087; }
+[data-theme="halloween"] .tab.active {
+  color: #f0c892;
+  background: linear-gradient(180deg, rgba(82, 45, 92, 0.82), rgba(42, 25, 50, 0.88));
+  box-shadow: inset 0 1px rgba(255, 220, 175, 0.12);
+}
+
+[data-theme="halloween"] #theme-decorations::before,
+[data-theme="halloween"] #theme-decorations::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+[data-theme="halloween"] #theme-decorations::before {
+  top: auto;
+  right: max(-20px, calc((100vw - 480px) / 2 - 16px));
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  width: clamp(118px, 34vw, 160px);
+  aspect-ratio: 4 / 3;
+  background: url("../../assets/img/themes/halloween/pumpkin-botanical.png") right bottom / contain no-repeat;
+  opacity: 0.78;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.48));
+  transform-origin: bottom right;
+}
+
+[data-theme="halloween"] #theme-decorations::after {
+  top: -26px;
+  left: max(-36px, calc((100vw - 480px) / 2 - 28px));
+  width: 175px;
+  height: 175px;
+  opacity: 0.42;
+  background:
+    repeating-conic-gradient(from 12deg at 0 0, transparent 0 13deg, rgba(216, 170, 103, 0.72) 14deg 14.8deg, transparent 16deg 30deg),
+    repeating-radial-gradient(circle at 0 0, transparent 0 28px, rgba(216, 170, 103, 0.46) 29px 30px, transparent 31px 48px);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+[data-theme="halloween"][data-animations="on"] #theme-decorations::before {
+  animation: halloween-breathe 5.8s ease-in-out infinite;
+}
+
+@keyframes halloween-breathe {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.48)); }
+  50% { transform: translate3d(0, -3px, 0) scale(1.012); filter: drop-shadow(0 12px 28px rgba(232, 117, 24, 0.2)); }
+}
+
+@media (min-width: 700px) {
+  .theme-choice-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  [data-theme="halloween"] #theme-decorations::before {
+    top: auto;
+    right: 1.5vw;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: clamp(170px, 20vw, 220px);
+    opacity: 0.92;
+  }
+  [data-theme="halloween"] #theme-decorations::after {
+    left: 1.2vw;
+    width: 240px;
+    height: 240px;
+  }
+  [data-theme="halloween"] main { padding-inline: clamp(18px, 4vw, 64px); }
+  [data-theme="halloween"] main::before { height: 38px; }
+  [data-theme="halloween"] .fab { right: auto; left: 3vw; }
+  [data-theme="halloween"] .tabs { max-width: min(92vw, 900px); }
+}
+
+@media (min-width: 900px) and (orientation: landscape) {
+  [data-theme="halloween"] #theme-decorations::before {
+    top: auto;
+    right: 0.5vw;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: min(19vw, 220px);
+  }
+  [data-theme="halloween"] main::before { height: 38px; }
+  [data-theme="halloween"] main { padding-inline: clamp(56px, 8vw, 120px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="halloween"] #theme-decorations::before { animation: none !important; }
+}
+
+/* ----------------------------------------------------------------------
+   Scènes premium individuelles. Les règles communes ci-dessous habillent
+   les vrais composants ; chaque thème fournit ensuite ses propres matières,
+   lumières, cartes et motifs. Halloween conserve sa composition dédiée. */
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) body {
+  background: var(--premium-body);
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .phone,
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .login-shell {
+  background: var(--premium-shell);
+  border-color: var(--premium-edge, var(--line));
+  box-shadow: 0 22px 60px var(--premium-shadow, rgba(0, 0, 0, 0.2)), inset 0 1px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) main::before {
+  content: var(--premium-label);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: max-content;
+  height: 34px;
+  margin: 0 auto 10px;
+  color: var(--app-accent);
+  font-family: var(--app-font-display);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 16px var(--app-glow);
+  pointer-events: none;
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .top {
+  background: var(--premium-nav);
+  border-color: var(--premium-edge, var(--line));
+  box-shadow: 0 10px 28px var(--premium-shadow, rgba(0, 0, 0, 0.15));
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .card,
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .panel {
+  background: var(--premium-card);
+  border-color: var(--premium-edge, var(--line));
+  box-shadow: 0 14px 30px var(--premium-shadow, rgba(0, 0, 0, 0.15)), inset 0 1px rgba(255, 255, 255, 0.12);
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .page-header-card {
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--premium-hero);
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .page-header-card .chips {
+  border: 1px solid var(--premium-edge, var(--line));
+  background: var(--premium-track);
+  box-shadow: inset 0 2px 10px var(--premium-shadow, rgba(0, 0, 0, 0.12));
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .grid-event {
+  border: 1px solid var(--premium-edge, var(--line));
+  border-left: 4px solid var(--collab-color, var(--app-accent));
+  border-radius: 13px;
+  background: var(--premium-event-1);
+  box-shadow: 0 9px 20px var(--premium-shadow, rgba(0, 0, 0, 0.15)), inset 0 1px rgba(255, 255, 255, 0.16);
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .grid-event:nth-child(3n+2) { background: var(--premium-event-2); }
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .grid-event:nth-child(3n) { background: var(--premium-event-3); }
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .tabs {
+  border: 1px solid var(--premium-edge, var(--line));
+  border-bottom: 0;
+  border-radius: 25px 25px 0 0;
+  background: var(--premium-nav);
+  box-shadow: 0 -10px 30px var(--premium-shadow, rgba(0, 0, 0, 0.18));
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .tab.active {
+  color: var(--premium-active-text, #fff);
+  background: var(--premium-active);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.18);
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .fab {
+  right: auto;
+  left: max(14px, calc((100vw - 480px) / 2 + 14px));
+  color: var(--premium-active-text, #fff);
+  border: 1px solid var(--premium-edge, var(--app-accent));
+  border-radius: 50%;
+  background: var(--premium-active);
+  box-shadow: 0 12px 28px var(--premium-shadow, rgba(0, 0, 0, 0.24)), 0 0 22px var(--app-glow);
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]):not([data-theme="noel"]) #theme-decorations::before,
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]):not([data-theme="noel"]) #theme-decorations::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]):not([data-theme="noel"]) #theme-decorations::before {
+  top: auto;
+  right: max(-20px, calc((100vw - 480px) / 2 - 16px));
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  width: clamp(118px, 34vw, 160px);
+  aspect-ratio: 4 / 3;
+  background: var(--premium-scene-image) right bottom / contain no-repeat;
+  opacity: 0.88;
+  filter: drop-shadow(0 12px 24px var(--premium-shadow, rgba(0, 0, 0, 0.28)));
+  transform-origin: bottom right;
+}
+
+[data-theme]:not([data-theme="default"]):not([data-theme="halloween"]):not([data-theme="noel"]) #theme-decorations::after {
+  inset: 0;
+  background: var(--premium-overlay);
+  opacity: var(--premium-overlay-opacity, 0.35);
+}
+
+[data-animations="on"]:not([data-theme="default"]):not([data-theme="halloween"]):not([data-theme="noel"]) #theme-decorations::before {
+  animation: premium-signature-float 6s ease-in-out infinite;
+}
+
+@keyframes premium-signature-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.84; }
+  50% { transform: translate3d(0, -4px, 0) scale(1.012); opacity: 0.96; }
+}
+
+/* Noël : vert sapin, velours bordeaux, ivoire et lumière champagne. */
+[data-theme="noel"] {
+  --premium-label: "✦  NOËL AU SALON  ✦";
+  --premium-body: radial-gradient(circle at 76% 8%, rgba(217,185,110,.18), transparent 28rem), #03120e;
+  --premium-shell: radial-gradient(circle at 82% 4%, rgba(159,47,54,.24), transparent 25rem), linear-gradient(180deg,#071a14,#0c231b 52%,#06150f);
+  --premium-nav: linear-gradient(180deg,rgba(7,25,19,.98),rgba(3,15,11,.98));
+  --premium-card: linear-gradient(135deg,rgba(21,58,44,.96),rgba(8,29,22,.97));
+  --premium-hero: radial-gradient(circle at 85% 0,rgba(217,185,110,.25),transparent 38%),linear-gradient(145deg,#173b2e,#081d16 72%);
+  --premium-track: rgba(3,15,11,.74);
+  --premium-active: linear-gradient(145deg,#a5373d,#651d24);
+  --premium-active-text: #fff5df;
+  --premium-event-1: linear-gradient(110deg,#194b39,#0f3025);
+  --premium-event-2: linear-gradient(110deg,#852c33,#b64045);
+  --premium-event-3: linear-gradient(110deg,#8c6a2c,#c2a052);
+  --premium-edge: rgba(217,185,110,.34);
+  --premium-shadow: rgba(0,0,0,.4);
+}
+
+[data-theme="noel"] #theme-decorations::before,
+[data-theme="noel"] #theme-decorations::after { content:""; position:absolute; pointer-events:none; }
+[data-theme="noel"] #theme-decorations::before {
+  top: auto;
+  right: max(-20px, calc((100vw - 480px) / 2 - 16px));
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  width: clamp(118px,34vw,160px);
+  aspect-ratio: 4/3;
+  background: url("../../assets/img/themes/christmas/fir-luxury.png") right bottom/contain no-repeat;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.48));
+}
+[data-theme="noel"] #theme-decorations::after {
+  inset: 0;
+  background: radial-gradient(circle at 12% 18%,rgba(255,244,196,.9) 0 1px,transparent 2px),radial-gradient(circle at 85% 42%,rgba(217,185,110,.8) 0 1px,transparent 2px);
+  background-size: 74px 74px,93px 93px;
+  opacity:.42;
+}
+[data-theme="noel"][data-animations="on"] #theme-decorations::before { animation: christmas-warm-glow 4.8s ease-in-out infinite; }
+@keyframes christmas-warm-glow { 0%,100%{transform:translateY(0);filter:drop-shadow(0 12px 22px rgba(0,0,0,.5))} 50%{transform:translateY(-3px);filter:drop-shadow(0 12px 28px rgba(217,185,110,.28))} }
+
+/* Identités permanentes et saisonnières : aucune paire ne partage la même
+   matière de fond ni les mêmes cartes. */
+[data-theme="tropical"] {
+  --premium-scene-image:url("../../assets/img/themes/tropical/foliage.png");
+  --premium-label:"✦  ÉVASION TROPICALE  ✦"; --premium-body:linear-gradient(145deg,#c7f4e9,#f7e7bd); --premium-shell:radial-gradient(ellipse at 0 100%,rgba(18,121,93,.32),transparent 35%),linear-gradient(180deg,#d9faf3,#fff3cf); --premium-nav:linear-gradient(180deg,rgba(239,255,249,.96),rgba(205,242,233,.97)); --premium-card:linear-gradient(145deg,rgba(255,255,255,.93),rgba(217,247,235,.94)); --premium-hero:radial-gradient(circle at 88% 10%,rgba(255,133,82,.26),transparent 35%),linear-gradient(145deg,#effff9,#c8f0e6); --premium-track:rgba(18,121,93,.12); --premium-active:linear-gradient(145deg,#1fb8a3,#117b72); --premium-event-1:linear-gradient(110deg,#d5f4e9,#9fddcf); --premium-event-2:linear-gradient(110deg,#ffe0bd,#ffb77f); --premium-event-3:linear-gradient(110deg,#d9f2ef,#79cdd0); --premium-edge:rgba(15,105,91,.25); --premium-shadow:rgba(15,90,80,.16); --premium-overlay:radial-gradient(ellipse at 0 92%,rgba(31,184,163,.18),transparent 30%),radial-gradient(ellipse at 100% 15%,rgba(255,133,82,.16),transparent 25%);
+}
+[data-theme="plage"] {
+  --premium-scene-image:url("../../assets/img/themes/beach/vacation.png");
+  --premium-label:"☀  PLAGE & VACANCES  ☀"; --premium-body:linear-gradient(#bceaf6,#f4deb0); --premium-shell:linear-gradient(180deg,#dff7ff 0 56%,#bdece9 72%,#f2d9a7); --premium-nav:linear-gradient(180deg,rgba(247,255,255,.97),rgba(215,242,244,.97)); --premium-card:linear-gradient(145deg,rgba(255,255,255,.93),rgba(226,246,247,.93)); --premium-hero:radial-gradient(circle at 86% 8%,rgba(246,196,83,.34),transparent 36%),linear-gradient(145deg,#eefcff,#bfe7f2); --premium-track:rgba(48,153,178,.13); --premium-active:linear-gradient(145deg,#34bdd0,#168ba4); --premium-event-1:linear-gradient(110deg,#dff6f8,#a9e0e9); --premium-event-2:linear-gradient(110deg,#ffe2a7,#f7bc59); --premium-event-3:linear-gradient(110deg,#ccecf7,#82c8e3); --premium-edge:rgba(38,134,160,.25); --premium-shadow:rgba(20,85,110,.15); --premium-overlay:repeating-radial-gradient(ellipse at 50% 110%,transparent 0 38px,rgba(255,255,255,.24) 40px 42px,transparent 44px 68px);
+}
+[data-theme="cocooning"] {
+  --premium-scene-image:url("../../assets/img/themes/cocooning/cozy.png");
+  --premium-label:"☕  INSTANT COCOONING  ✦"; --premium-body:linear-gradient(145deg,#efe0cd,#b68a63); --premium-shell:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 2px,transparent 2px 7px),linear-gradient(180deg,#f5eadc,#e8d1b5); --premium-nav:linear-gradient(180deg,rgba(255,250,241,.97),rgba(227,205,179,.98)); --premium-card:linear-gradient(145deg,rgba(255,250,242,.96),rgba(233,216,194,.96)); --premium-hero:radial-gradient(circle at 85% 12%,rgba(224,169,92,.38),transparent 36%),linear-gradient(145deg,#fff9ed,#ddc3a1); --premium-track:rgba(111,73,43,.12); --premium-active:linear-gradient(145deg,#b87845,#7c4d2e); --premium-event-1:linear-gradient(110deg,#f7ead5,#e4c69e); --premium-event-2:linear-gradient(110deg,#d8b58b,#b78458); --premium-event-3:linear-gradient(110deg,#eee0c8,#cba979); --premium-edge:rgba(105,69,41,.25); --premium-shadow:rgba(85,52,24,.18); --premium-overlay:radial-gradient(circle at 90% 78%,rgba(255,193,91,.24),transparent 22%);
+}
+[data-theme="disco"] {
+  --premium-scene-image:url("../../assets/img/themes/disco/nightlife.png");
+  --premium-label:"✦  DISCO NIGHTS  ✦"; --premium-body:radial-gradient(circle at 30% 10%,#5b167b,#090510 62%); --premium-shell:linear-gradient(160deg,rgba(55,10,77,.98),rgba(10,4,22,.99)); --premium-nav:linear-gradient(180deg,rgba(25,7,38,.98),rgba(8,3,15,.99)); --premium-card:linear-gradient(145deg,rgba(59,16,78,.94),rgba(21,8,38,.96)); --premium-hero:radial-gradient(circle at 84% 8%,rgba(255,60,196,.38),transparent 34%),linear-gradient(145deg,#42115c,#100722); --premium-track:rgba(5,2,12,.7); --premium-active:linear-gradient(145deg,#f028ac,#7b25e2); --premium-event-1:linear-gradient(110deg,#65206d,#321050); --premium-event-2:linear-gradient(110deg,#c51b83,#ee3da9); --premium-event-3:linear-gradient(110deg,#4520a2,#672ee1); --premium-edge:rgba(255,86,207,.34); --premium-shadow:rgba(0,0,0,.5); --premium-overlay:linear-gradient(115deg,transparent 0 43%,rgba(255,47,194,.12) 48%,transparent 53%),repeating-linear-gradient(90deg,transparent 0 78px,rgba(79,209,255,.09) 80px);
+}
+[data-theme="galaxy"] {
+  --premium-scene-image:url("../../assets/img/themes/galaxy/cosmos.png");
+  --premium-label:"✧  VOYAGE GALACTIQUE  ✧"; --premium-body:radial-gradient(circle at 70% 15%,#31206e,#040617 62%); --premium-shell:radial-gradient(circle at 80% 0,rgba(99,70,220,.35),transparent 32%),linear-gradient(180deg,#0b113a,#07091e); --premium-nav:linear-gradient(180deg,rgba(11,17,58,.97),rgba(5,7,23,.99)); --premium-card:linear-gradient(145deg,rgba(27,34,83,.95),rgba(12,17,50,.96)); --premium-hero:radial-gradient(circle at 84% 5%,rgba(79,209,255,.3),transparent 35%),linear-gradient(145deg,#20265f,#0b1034); --premium-track:rgba(3,5,18,.7); --premium-active:linear-gradient(145deg,#6268ee,#7145be); --premium-event-1:linear-gradient(110deg,#233b8e,#20205e); --premium-event-2:linear-gradient(110deg,#58309d,#311c73); --premium-event-3:linear-gradient(110deg,#164e8f,#1e2c6e); --premium-edge:rgba(115,132,255,.34); --premium-shadow:rgba(0,0,0,.5); --premium-overlay:radial-gradient(circle at 13% 18%,#fff 0 1px,transparent 2px),radial-gradient(circle at 79% 37%,#77cfff 0 1px,transparent 2px),radial-gradient(circle at 48% 82%,#bd9bff 0 1px,transparent 2px); --premium-overlay-opacity:.65;
+}
+[data-theme="floral"] {
+  --premium-scene-image:url("../../assets/img/themes/floral/flowers.png");
+  --premium-label:"❀  ÉLÉGANCE FLORALE  ❀"; --premium-body:linear-gradient(145deg,#fff6f1,#ead9d7); --premium-shell:radial-gradient(circle at 0 0,rgba(221,144,166,.22),transparent 28%),linear-gradient(180deg,#fff9f5,#f6e9e8); --premium-nav:linear-gradient(180deg,rgba(255,251,248,.97),rgba(244,229,230,.98)); --premium-card:linear-gradient(145deg,rgba(255,252,249,.97),rgba(246,232,232,.96)); --premium-hero:radial-gradient(circle at 87% 8%,rgba(145,174,130,.25),transparent 36%),linear-gradient(145deg,#fffaf7,#f2dfdf); --premium-track:rgba(190,104,131,.1); --premium-active:linear-gradient(145deg,#dc8fa7,#bd607e); --premium-event-1:linear-gradient(110deg,#f8dce3,#eab4c3); --premium-event-2:linear-gradient(110deg,#e7eddf,#c1d2b5); --premium-event-3:linear-gradient(110deg,#f7e7dd,#e7c1ad); --premium-edge:rgba(174,99,122,.22); --premium-shadow:rgba(105,52,70,.14); --premium-overlay:radial-gradient(ellipse at 0 100%,rgba(151,183,137,.17),transparent 26%),radial-gradient(ellipse at 100% 12%,rgba(221,144,166,.17),transparent 26%);
+}
+[data-theme="nouvel-an"] {
+  --premium-scene-image:url("../../assets/img/themes/new-year/champagne.png");
+  --premium-label:"✦  NOUVEL AN  ✦"; --premium-body:radial-gradient(circle at 50% 0,#3d3017,#050506 52%); --premium-shell:radial-gradient(circle at 82% 4%,rgba(232,200,116,.25),transparent 30%),linear-gradient(180deg,#0b0b0d,#060607); --premium-nav:linear-gradient(180deg,rgba(20,18,14,.98),rgba(5,5,6,.99)); --premium-card:linear-gradient(145deg,rgba(34,30,20,.95),rgba(13,12,12,.97)); --premium-hero:radial-gradient(circle at 84% 7%,rgba(232,200,116,.32),transparent 36%),linear-gradient(145deg,#2b2517,#0b0a09); --premium-track:rgba(0,0,0,.68); --premium-active:linear-gradient(145deg,#e0bd62,#846421); --premium-active-text:#17120a; --premium-event-1:linear-gradient(110deg,#4a3a19,#b78e38); --premium-event-2:linear-gradient(110deg,#181719,#3a3426); --premium-event-3:linear-gradient(110deg,#826426,#d4ad55); --premium-edge:rgba(232,200,116,.36); --premium-shadow:rgba(0,0,0,.55); --premium-overlay:repeating-conic-gradient(from 0deg at 10% 12%,transparent 0 8deg,rgba(232,200,116,.08) 9deg 10deg,transparent 11deg 18deg);
+}
+[data-theme="printemps"] {
+  --premium-scene-image:url("../../assets/img/themes/spring/flowers.png");
+  --premium-label:"❀  DOUCEUR DU PRINTEMPS  ❀"; --premium-body:linear-gradient(145deg,#eff9e9,#fcecf3); --premium-shell:radial-gradient(circle at 86% 6%,rgba(227,154,183,.23),transparent 30%),linear-gradient(180deg,#f7fff2,#fff6fa); --premium-nav:linear-gradient(180deg,rgba(249,255,246,.98),rgba(238,247,230,.98)); --premium-card:linear-gradient(145deg,rgba(255,255,252,.97),rgba(238,247,232,.96)); --premium-hero:radial-gradient(circle at 85% 7%,rgba(212,123,160,.22),transparent 35%),linear-gradient(145deg,#fbfff8,#e5f2df); --premium-track:rgba(79,154,92,.1); --premium-active:linear-gradient(145deg,#83bd7f,#d47ba0); --premium-event-1:linear-gradient(110deg,#e6f2de,#badbb2); --premium-event-2:linear-gradient(110deg,#f9dfe8,#e9a9c1); --premium-event-3:linear-gradient(110deg,#ede7f6,#cdbce5); --premium-edge:rgba(91,145,87,.22); --premium-shadow:rgba(60,90,45,.13); --premium-overlay:radial-gradient(ellipse at 0 100%,rgba(99,164,92,.14),transparent 28%),radial-gradient(ellipse at 100% 12%,rgba(212,123,160,.14),transparent 26%);
+}
+[data-theme="automne"] {
+  --premium-scene-image:url("../../assets/img/themes/autumn/copper.png");
+  --premium-label:"❧  LUEURS D’AUTOMNE  ❧"; --premium-body:linear-gradient(145deg,#f1c592,#74321f); --premium-shell:radial-gradient(circle at 83% 5%,rgba(196,91,38,.27),transparent 30%),linear-gradient(180deg,#f4dfc3,#e2b482); --premium-nav:linear-gradient(180deg,rgba(255,244,228,.97),rgba(224,183,137,.98)); --premium-card:linear-gradient(145deg,rgba(255,246,232,.96),rgba(229,196,154,.96)); --premium-hero:radial-gradient(circle at 84% 7%,rgba(151,56,31,.24),transparent 34%),linear-gradient(145deg,#f9e8d0,#dca26d); --premium-track:rgba(118,55,31,.12); --premium-active:linear-gradient(145deg,#c45b26,#7f3527); --premium-event-1:linear-gradient(110deg,#f0c795,#d58d51); --premium-event-2:linear-gradient(110deg,#b84e28,#da7a37); --premium-event-3:linear-gradient(110deg,#d8ad78,#9d6037); --premium-edge:rgba(115,55,33,.28); --premium-shadow:rgba(91,45,21,.2); --premium-overlay:radial-gradient(ellipse at 0 100%,rgba(126,54,34,.17),transparent 28%),radial-gradient(ellipse at 100% 8%,rgba(202,111,45,.2),transparent 25%);
+}
+[data-theme="hiver"] {
+  --premium-scene-image:url("../../assets/img/themes/winter/frost.png");
+  --premium-label:"❄  SILENCE D’HIVER  ❄"; --premium-body:linear-gradient(145deg,#dbeaf3,#779db5); --premium-shell:radial-gradient(circle at 80% 2%,rgba(255,255,255,.66),transparent 28%),linear-gradient(180deg,#edf7fc,#dcebf3); --premium-nav:linear-gradient(180deg,rgba(249,253,255,.98),rgba(218,234,243,.98)); --premium-card:linear-gradient(145deg,rgba(255,255,255,.94),rgba(220,235,244,.95)); --premium-hero:radial-gradient(circle at 85% 5%,rgba(255,255,255,.75),transparent 35%),linear-gradient(145deg,#f8fdff,#c9e0ec); --premium-track:rgba(63,128,162,.1); --premium-active:linear-gradient(145deg,#69a5c7,#397a9e); --premium-event-1:linear-gradient(110deg,#e2f0f7,#b8d7e7); --premium-event-2:linear-gradient(110deg,#c8e1ed,#85b8d1); --premium-event-3:linear-gradient(110deg,#eef6fa,#c7d9e4); --premium-edge:rgba(67,126,157,.24); --premium-shadow:rgba(37,79,104,.14); --premium-overlay:repeating-radial-gradient(circle at 12% 8%,transparent 0 34px,rgba(255,255,255,.18) 35px 36px,transparent 37px 63px);
+}
+[data-theme="chic-noir"] {
+  --premium-scene-image:url("../../assets/img/themes/chic-black-gold/luxury.png");
+  --premium-label:"◆  CHIC NOIR & OR  ◆"; --premium-body:radial-gradient(circle at 70% 5%,#352810,#050505 56%); --premium-shell:repeating-linear-gradient(135deg,transparent 0 44px,rgba(201,162,74,.07) 45px 46px,transparent 47px 88px),linear-gradient(180deg,#111,#060606); --premium-nav:linear-gradient(180deg,rgba(21,20,17,.99),rgba(5,5,5,.99)); --premium-card:linear-gradient(145deg,rgba(29,28,24,.97),rgba(10,10,10,.98)); --premium-hero:linear-gradient(135deg,transparent 47%,rgba(201,162,74,.15) 48% 50%,transparent 51%),linear-gradient(145deg,#211e16,#080808); --premium-track:rgba(0,0,0,.72); --premium-active:linear-gradient(145deg,#e6c979,#a17b27); --premium-active-text:#151109; --premium-event-1:linear-gradient(110deg,#1b1a17,#0b0b0b); --premium-event-2:linear-gradient(110deg,#3c321c,#17130b); --premium-event-3:linear-gradient(110deg,#171717,#29251a); --premium-edge:rgba(232,200,116,.38); --premium-shadow:rgba(0,0,0,.58); --premium-overlay:repeating-linear-gradient(45deg,transparent 0 70px,rgba(232,200,116,.055) 71px 72px,transparent 73px 140px);
+}
+[data-theme="rose-gold"] {
+  --premium-scene-image:url("../../assets/img/themes/rose-gold/marble.png");
+  --premium-label:"✦  ÉCLAT ROSE GOLD  ✦"; --premium-body:linear-gradient(145deg,#fff4ef,#c88b78); --premium-shell:radial-gradient(circle at 83% 5%,rgba(255,255,255,.75),transparent 30%),linear-gradient(180deg,#fff7f2,#f2d8ce); --premium-nav:linear-gradient(180deg,rgba(255,250,247,.98),rgba(240,216,207,.98)); --premium-card:linear-gradient(145deg,rgba(255,250,247,.97),rgba(241,220,212,.96)); --premium-hero:linear-gradient(125deg,transparent 0 45%,rgba(201,138,110,.18) 47%,transparent 50%),linear-gradient(145deg,#fffaf7,#ecd0c4); --premium-track:rgba(160,91,70,.1); --premium-active:linear-gradient(145deg,#dfa88f,#b96f5b); --premium-event-1:linear-gradient(110deg,#f5dcd3,#e7b9a8); --premium-event-2:linear-gradient(110deg,#e2a58e,#c77f69); --premium-event-3:linear-gradient(110deg,#fff0e8,#e8c1b2); --premium-edge:rgba(174,108,84,.25); --premium-shadow:rgba(97,51,36,.14); --premium-overlay:linear-gradient(115deg,transparent 0 42%,rgba(255,255,255,.3) 45%,transparent 48% 100%);
+}
+
+@media (min-width:700px) {
+  [data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) main::before { height:38px; }
+  [data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .fab { right:auto;left:3vw; }
+  [data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) .tabs { max-width:min(92vw,900px); }
+  [data-theme="noel"] #theme-decorations::before,
+  [data-theme]:not([data-theme="default"]):not([data-theme="halloween"]):not([data-theme="noel"]) #theme-decorations::before {
+    top:auto;
+    right:1.5vw;
+    bottom:calc(76px + env(safe-area-inset-bottom, 0px));
+    width:clamp(170px,20vw,220px);
+  }
+}
+
+@media (min-width:900px) and (orientation:landscape) {
+  [data-theme]:not([data-theme="default"]):not([data-theme="halloween"]):not([data-theme="noel"]) #theme-decorations::before {
+    top:auto;
+    right:.5vw;
+    bottom:calc(76px + env(safe-area-inset-bottom, 0px));
+    width:min(19vw,220px);
+  }
+
+  [data-theme="noel"] #theme-decorations::before {
+    right:.5vw;
+    width:min(19vw,220px);
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  [data-theme="noel"] #theme-decorations::before,
+  [data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) #theme-decorations::before { animation:none!important; }
+}
+
+/* Placement final demandé : sur tous les thèmes illustrés, la scène est
+   réellement ancrée au coin inférieur droit du viewport et le bouton + au
+   coin inférieur gauche. Ces règles terminales évitent qu'une ancienne
+   règle responsive de .fab ou d'un décor saisonnier reprenne le dessus. */
+[data-theme]:not([data-theme="default"]) #theme-decorations::before {
+  position: fixed !important;
+  inset: auto max(0px, env(safe-area-inset-right, 0px)) calc(78px + env(safe-area-inset-bottom, 0px)) auto !important;
+  width: clamp(128px, 38vw, 172px) !important;
+  height: auto !important;
+  aspect-ratio: 4 / 3;
+  background-position: right bottom !important;
+  background-size: contain !important;
+  pointer-events: none !important;
+}
+
+[data-theme]:not([data-theme="default"]) .fab {
+  position: fixed !important;
+  inset: auto auto calc(88px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)) !important;
+  z-index: 9;
+}
+
+@media (min-width:700px) {
+  [data-theme]:not([data-theme="default"]) #theme-decorations::before {
+    right: max(18px, env(safe-area-inset-right, 0px)) !important;
+    bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+    width: clamp(180px, 22vw, 230px) !important;
+  }
+
+  [data-theme]:not([data-theme="default"]) .fab {
+    left: max(18px, env(safe-area-inset-left, 0px)) !important;
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
