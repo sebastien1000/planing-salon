@@ -49,25 +49,25 @@
     },
     "valentine": {
       decor: [
-        { type: "petal", count: 9 },
-        { type: "ember", count: 8 }
+        { type: "petal", count: 12 },
+        { type: "ember", count: 10 }
       ],
       fab: "valentine",
       click: "heart"
     },
     "easter": {
       decor: [
-        { type: "petal", count: 8 },
-        { type: "flower", count: 5 }
+        { type: "petal", count: 10 },
+        { type: "flower", count: 8 }
       ],
       fab: "easter",
       click: "pastel"
     },
     "spring": {
       decor: [
-        { type: "petal", count: 7 },
-        { type: "leaf", count: 6 },
-        { type: "butterfly", count: 2 }
+        { type: "petal", count: 10 },
+        { type: "leaf", count: 8 },
+        { type: "butterfly", count: 3 }
       ],
       fab: "spring",
       click: "petal"
@@ -75,15 +75,15 @@
     "summer": {
       decor: [
         { type: "shimmer", count: 1 },
-        { type: "ember", count: 10 }
+        { type: "ember", count: 14 }
       ],
       fab: "summer",
       click: "sun"
     },
     "autumn": {
       decor: [
-        { type: "leaf", count: 12 },
-        { type: "ember", count: 8 }
+        { type: "leaf", count: 16 },
+        { type: "ember", count: 10 }
       ],
       fab: "autumn",
       click: "leaf"

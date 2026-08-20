@@ -23,6 +23,23 @@
     100% 65%, 78% 70%, 82% 92%, 61% 82%, 50% 100%, 39% 82%, 18% 92%, 22% 70%,
     0% 65%, 16% 50%, 0% 35%, 22% 30%, 18% 8%, 39% 18%);
   --shape-diamond: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+
+  /* Icones SVG (inline, en data URI - aucun fichier image) utilisees comme
+     masque CSS (mask-image) : contrairement aux formes ci-dessus (CSS pur),
+     un vrai contour vectoriel avec courbes/details, colore via
+     background-color (voir --theme-icon assigne par theme dans
+     css/themes/theme-vars.css). Une icone = citrouille, sapin, coeur,
+     oeuf, fleur, soleil, feuille, etincelle - reutilisee pour l'avatar de
+     chaque carte RDV, le motif d'en-tete et l'icone de coin, pour une
+     identite visuelle coherente par theme. */
+  --icon-pumpkin: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M46%2014h8v14h-8z%20M54%2018c6-6%2014-6%2018-2-6%200-12%202-16%208z%20M12%2060c0-20%2017-34%2038-34s38%2014%2038%2034-17%2032-38%2032-38-12-38-32z%20M48%2032l3%2056h2l3-56z%22/%3E%3C/svg%3E");
+  --icon-tree: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%206%2024%2038h14L16%2062h16L8%2090h84L68%2062h16L62%2038h14z%22/%3E%3C/svg%3E");
+  --icon-heart: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%2090C10%2062%2010%2030%2033%2017c12-7%2017%204%2017%2013%200-9%205-20%2017-13%2023%2013%2023%2045-17%2073z%22/%3E%3C/svg%3E");
+  --icon-egg: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M50%208C26%208%2012%2042%2012%2064c0%2020%2017%2030%2038%2030s38-10%2038-30C88%2042%2074%208%2050%208z%20M14%2048h72v10H14z%20M20%2074h60v9H20z%22/%3E%3C/svg%3E");
+  --icon-flower: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2228%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2274%22%20cy%3D%2243%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2265%22%20cy%3D%2271%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2235%22%20cy%3D%2271%22%20r%3D%2217%22/%3E%3Ccircle%20cx%3D%2226%22%20cy%3D%2243%22%20r%3D%2217%22/%3E%3C/g%3E%3C/svg%3E");
+  --icon-sun: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23000%22%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2221%22/%3E%3Cg%20stroke%3D%22%23000%22%20stroke-width%3D%229%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%203v15M50%2082v15M3%2050h15M82%2050h15M17%2017l11%2011M72%2072l11%2011M17%2083l11-11M72%2028l11-11%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --icon-leaf: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M50%208C85%2014%2092%2054%2066%2080c-9%209-23%209-32%201C14%2062%2015%2028%2050%208z%20M49%2022l1%2062h3l-1-62z%22/%3E%3C/svg%3E");
+  --icon-sparkle: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M50%202l9%2039%2039%209-39%209-9%2039-9-39-39-9%2039-9z%22/%3E%3C/svg%3E");
 }
 
 /* ---- Halloween : brume, chauve-souris, araignée ---- */
@@ -231,18 +248,19 @@
   border-radius: var(--shape-leaf);
 }
 
-.theme-click-effect[data-click="heart"] {
-  width: 16px;
-  height: 16px;
-  background: var(--app-accent);
-  clip-path: var(--shape-heart);
-}
-
+.theme-click-effect[data-click="heart"],
 .theme-click-effect[data-click="sun"] {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   background: var(--app-accent);
-  clip-path: var(--shape-sun);
+  mask-image: var(--theme-icon);
+  -webkit-mask-image: var(--theme-icon);
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
 }
 
 /* ---- Motif de coin dans l'en-tete du planning (carte "Vue planning
@@ -271,57 +289,30 @@
   z-index: -1;
 }
 
+/* Icone signature du theme (--theme-icon, assignee par theme dans
+   css/themes/theme-vars.css) : citrouille/sapin/coeur/oeuf/fleur/soleil/
+   feuille/etincelle, en grand format dans l'en-tete - la meme icone que
+   sur les cartes RDV et le coin ci-dessous, pour une identite visuelle
+   coherente et reconnaissable au premier coup d'oeil. */
 [data-theme]:not([data-theme="default"]) .page-header-card::after {
   content: "";
   position: absolute;
-  top: 10px;
-  right: 14px;
-  width: 30px;
-  height: 30px;
-  opacity: 0.4;
+  top: 4px;
+  right: 10px;
+  width: 46px;
+  height: 46px;
+  background: var(--app-accent);
+  mask-image: var(--theme-icon);
+  -webkit-mask-image: var(--theme-icon);
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  opacity: 0.65;
   pointer-events: none;
   z-index: -1;
-}
-
-[data-theme="halloween"] .page-header-card::after {
-  background: var(--app-accent-2);
-  clip-path: var(--shape-bat);
-}
-
-[data-theme="christmas"] .page-header-card::after {
-  background: var(--app-accent-2);
-  clip-path: var(--shape-star);
-}
-
-[data-theme="valentine"] .page-header-card::after {
-  background: var(--app-accent);
-  clip-path: var(--shape-heart);
-}
-
-[data-theme="easter"] .page-header-card::after {
-  background: var(--app-accent-2);
-  border-radius: var(--shape-egg);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--app-accent) 45%, transparent);
-}
-
-[data-theme="spring"] .page-header-card::after {
-  background: var(--app-accent);
-  border-radius: var(--shape-petal);
-}
-
-[data-theme="summer"] .page-header-card::after {
-  background: var(--app-accent);
-  clip-path: var(--shape-sun);
-}
-
-[data-theme="autumn"] .page-header-card::after {
-  background: var(--app-accent);
-  border-radius: var(--shape-leaf);
-}
-
-[data-theme="new-year"] .page-header-card::after {
-  background: var(--app-accent);
-  clip-path: var(--shape-diamond);
 }
 
 /* ---- Meme principe, en plus discret, sur chaque carte RDV de la grille
@@ -333,15 +324,17 @@
   padding-left: 32px;
 }
 
+/* Avatar (icone du theme sur fond rond) a gauche de chaque carte RDV,
+   inspire des icones d'avatar de la maquette de reference. */
 [data-theme]:not([data-theme="default"]) .grid-event::before {
   content: "";
   position: absolute;
-  left: 6px;
+  left: 5px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  min-height: 20px;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
   border-radius: 50%;
   background: color-mix(in srgb, var(--pink) 70%, var(--app-accent) 30%);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--card) 60%, transparent);
@@ -351,51 +344,20 @@
 [data-theme]:not([data-theme="default"]) .grid-event::after {
   content: "";
   position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 22px;
-  height: 22px;
-  opacity: 0.55;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  background: #fff;
+  mask-image: var(--theme-icon);
+  -webkit-mask-image: var(--theme-icon);
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  opacity: 0.95;
   pointer-events: none;
-}
-
-[data-theme="halloween"] .grid-event::after {
-  background: var(--pink);
-  clip-path: var(--shape-bat);
-}
-
-[data-theme="christmas"] .grid-event::after {
-  background: var(--pink);
-  clip-path: var(--shape-star);
-}
-
-[data-theme="valentine"] .grid-event::after {
-  background: var(--pink);
-  clip-path: var(--shape-heart);
-}
-
-[data-theme="easter"] .grid-event::after {
-  background: var(--pink);
-  border-radius: var(--shape-egg);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 40%, transparent);
-}
-
-[data-theme="spring"] .grid-event::after {
-  background: var(--pink);
-  border-radius: var(--shape-petal);
-}
-
-[data-theme="summer"] .grid-event::after {
-  background: var(--pink);
-  clip-path: var(--shape-sun);
-}
-
-[data-theme="autumn"] .grid-event::after {
-  background: var(--pink);
-  border-radius: var(--shape-leaf);
-}
-
-[data-theme="new-year"] .grid-event::after {
-  background: var(--pink);
-  clip-path: var(--shape-diamond);
 }

@@ -44,6 +44,7 @@
   --app-accent-2: #e87518;
   --app-glow: rgba(232, 117, 24, 0.5);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-pumpkin);
 }
 
 [data-theme="christmas"] {
@@ -63,6 +64,7 @@
   --app-accent-2: #eaeaea;
   --app-glow: rgba(212, 175, 106, 0.5);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-tree);
 }
 
 [data-theme="valentine"] {
@@ -82,6 +84,7 @@
   --app-accent-2: #e3a6ae;
   --app-glow: rgba(213, 100, 126, 0.45);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-heart);
 }
 
 [data-theme="easter"] {
@@ -101,6 +104,7 @@
   --app-accent-2: #c9a8d6;
   --app-glow: rgba(156, 136, 189, 0.4);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-egg);
 }
 
 [data-theme="spring"] {
@@ -120,6 +124,7 @@
   --app-accent-2: #8fc48a;
   --app-glow: rgba(143, 196, 138, 0.4);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-flower);
 }
 
 [data-theme="summer"] {
@@ -139,6 +144,7 @@
   --app-accent-2: #f2c14e;
   --app-glow: rgba(62, 199, 217, 0.4);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-sun);
 }
 
 [data-theme="autumn"] {
@@ -158,6 +164,7 @@
   --app-accent-2: #8a3b2e;
   --app-glow: rgba(201, 138, 75, 0.4);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-leaf);
 }
 
 [data-theme="new-year"] {
@@ -177,6 +184,7 @@
   --app-accent-2: #d7d7d7;
   --app-glow: rgba(228, 198, 116, 0.5);
   --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-sparkle);
 }
 
 /* Fond d'ecran (login/shell) et bouton primaire/FAB : remplace les
