@@ -20,3 +20,4 @@ tmp/
 # Android / Capacitor
 node_modules/
 www/
+.vercel
