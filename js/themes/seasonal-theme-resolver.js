@@ -3,14 +3,45 @@
 // automatique ne puisse avoir lieu qu'une seule fois par collaborateur.
 (function () {
   var PERIODS = [
-    { theme: "nouvel-an", activationSlug: "new-year", start: "12-28", end: "01-03", crossesYear: true },
+    {
+      theme: "nouvel-an",
+      activationSlug: "new-year",
+      start: "12-26",
+      end: "01-03",
+      crossesYear: true,
+    },
     { theme: "hiver", activationSlug: "winter", start: "01-04", end: "03-19" },
-    { theme: "printemps", activationSlug: "spring", start: "03-20", end: "05-31" },
+    {
+      theme: "printemps",
+      activationSlug: "spring",
+      start: "03-20",
+      end: "05-31",
+    },
     { theme: "plage", activationSlug: "beach", start: "06-01", end: "08-31" },
-    { theme: "automne", activationSlug: "autumn", start: "09-01", end: "10-19" },
-    { theme: "halloween", activationSlug: "halloween", start: "10-20", end: "11-01" },
-    { theme: "automne", activationSlug: "autumn", start: "11-02", end: "11-24" },
-    { theme: "noel", activationSlug: "christmas", start: "11-25", end: "12-27" }
+    {
+      theme: "automne",
+      activationSlug: "autumn",
+      start: "09-01",
+      end: "10-19",
+    },
+    {
+      theme: "halloween",
+      activationSlug: "halloween",
+      start: "10-20",
+      end: "11-01",
+    },
+    {
+      theme: "automne",
+      activationSlug: "autumn",
+      start: "11-02",
+      end: "11-30",
+    },
+    {
+      theme: "noel",
+      activationSlug: "christmas",
+      start: "12-01",
+      end: "12-25",
+    },
   ];
 
   function monthDay(date) {
@@ -25,7 +56,9 @@
   function contains(period, value) {
     var start = bound(period.start);
     var end = bound(period.end);
-    return start <= end ? value >= start && value <= end : value >= start || value <= end;
+    return start <= end
+      ? value >= start && value <= end
+      : value >= start || value <= end;
   }
 
   function activationYear(period, date) {
@@ -46,9 +79,10 @@
       if (contains(period, value)) {
         return {
           theme: period.theme,
-          activationId: period.activationSlug + "-" + activationYear(period, reference),
+          activationId:
+            period.activationSlug + "-" + activationYear(period, reference),
           start: period.start,
-          end: period.end
+          end: period.end,
         };
       }
     }
@@ -58,6 +92,6 @@
 
   window.SalonSeasonalTheme = {
     PERIODS: PERIODS,
-    getSeasonalActivation: getSeasonalActivation
+    getSeasonalActivation: getSeasonalActivation,
   };
-}());
+})();
