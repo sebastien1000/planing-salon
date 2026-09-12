@@ -256,6 +256,8 @@
       '    <button class="secondary" type="button" data-edit-profile="' + account.id + '">Modifier</button>',
       '    <button class="secondary" type="button" data-account-menu="' + account.id + '">Plus d actions</button>',
       "  </div>",
+      '  <button class="secondary" style="width:100%;margin-top:10px" type="button" data-fiche-caisse="' +
+        utils.escapeHtml(account.name) + '">Fiche de caisse</button>',
       "</div>"
     ].join("");
   }
@@ -300,6 +302,7 @@
       renderStatButton(user.name, "month"),
       "  </div>",
       '  <button id="editOwnProfile" class="primary" type="button">Modifier mon profil / mot de passe</button>',
+      '  <button id="ownFicheCaisseButton" class="secondary" style="width:100%;margin-top:10px" type="button">Fiche de caisse</button>',
       "</div>",
       '<div class="card">',
       '  <div class="row">',
@@ -336,6 +339,13 @@
       });
     }
 
+    var ownFicheCaisseButton = ui.byId("ownFicheCaisseButton");
+    if (ownFicheCaisseButton) {
+      ownFicheCaisseButton.addEventListener("click", function () {
+        openFicheCaisse(user.name);
+      });
+    }
+
     var addHolidayButton = ui.byId("addHolidayButton");
     if (addHolidayButton) {
       addHolidayButton.addEventListener("click", function () {
@@ -368,6 +378,20 @@
         }
       });
     });
+
+    document.querySelectorAll("[data-fiche-caisse]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        openFicheCaisse(button.dataset.ficheCaisse);
+      });
+    });
+  }
+
+  // "statsMonth" (mois du selecteur en haut de page) sert deja de reference
+  // pour les recettes/l'historique de cette page : la fiche de caisse
+  // s'ouvre sur ce meme mois plutot que de redemander une periode.
+  function openFicheCaisse(collabName) {
+    window.location.href = "fiche-caisse.html?collab=" + encodeURIComponent(collabName) +
+      "&month=" + encodeURIComponent(statsMonth);
   }
 
   function showLoadError(error) {
