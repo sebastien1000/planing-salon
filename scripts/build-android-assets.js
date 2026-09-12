@@ -18,7 +18,8 @@ const HTML_FILES = [
   "recherche.html",
   "comptes.html",
   "plus.html",
-  "reset-password.html"
+  "reset-password.html",
+  "fiche-caisse.html"
 ];
 
 const DIRECTORIES = ["css", "js", "assets"];
