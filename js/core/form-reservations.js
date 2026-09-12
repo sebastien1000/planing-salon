@@ -557,7 +557,7 @@
       });
   }
 
-  function setReservationStatus(reservationId, status, supplement, price) {
+  function setReservationStatus(reservationId, status, supplement, price, paymentMethod, listPrice) {
     var state = formState.state;
     var reservation = utils.findById(state.reservations, reservationId);
 
@@ -580,6 +580,10 @@
       patch.supplement = Number(supplement) || 0;
       if (price != null) {
         patch.price = price;
+        // Offert (price 0) : aucun moyen de paiement encaisse, pour ne pas
+        // fausser les totaux par moyen de paiement de la fiche de caisse.
+        patch.paymentMethod = price > 0 ? (paymentMethod || null) : null;
+        patch.listPrice = listPrice != null ? listPrice : price;
       }
     }
 
@@ -611,6 +615,7 @@
     // Photo figee sur le rendez-vous si deja enregistree (reservation.price) ;
     // meme repli que buildReservationForm pour un ancien RDV sans photo figee.
     var originalPrice = reservation.price != null ? reservation.price : findPrestationPrice(reservation.prestation);
+    var selectedPaymentMethod = reservation.paymentMethod || null;
 
     ui.showSheet([
       '<div class="modal-head">',
@@ -624,6 +629,15 @@
       '  <button id="loyaltyFreeButton" class="secondary grow" type="button">Offert</button>',
       "</div>",
       '<p class="tiny">Carte de fidelite : 10% de reduction ou une prestation offerte tous les 10 passages.</p>',
+      '<div id="paymentMethodSection">',
+      '  <label>Moyen de paiement</label>',
+      '  <div class="chips" id="paymentMethodChips">',
+      '    <button class="chip" type="button" data-payment-method="cash">Especes</button>',
+      '    <button class="chip" type="button" data-payment-method="card">CB</button>',
+      '    <button class="chip" type="button" data-payment-method="transfer">Virement</button>',
+      '    <button class="chip" type="button" data-payment-method="check">Cheque</button>',
+      "  </div>",
+      "</div>",
       '<p class="tiny">Ajoute un supplement si besoin, il sera compte dans la recette.</p>',
       '<label for="fSupplement">Supplement (EUR)</label>',
       '<input id="fSupplement" class="field" type="number" min="0" step="0.5" placeholder="0" value="' +
@@ -633,12 +647,41 @@
       "</div>"
     ].join(""));
 
+    var paymentChips = Array.prototype.slice.call(document.querySelectorAll("#paymentMethodChips [data-payment-method]"));
+
+    function refreshPaymentChipsActive() {
+      paymentChips.forEach(function (chip) {
+        chip.classList.toggle("active", chip.dataset.paymentMethod === selectedPaymentMethod);
+      });
+    }
+
+    // Une prestation offerte n'a pas de moyen de paiement : le selecteur ne
+    // sert a rien et serait trompeur (voir demande "si c'est offert, ne
+    // compte pas de moyen de paiement").
+    function refreshPaymentSectionVisibility() {
+      var price = Number(ui.byId("fDonePrice").value) || 0;
+      ui.byId("paymentMethodSection").style.display = price > 0 ? "" : "none";
+    }
+
+    refreshPaymentChipsActive();
+    refreshPaymentSectionVisibility();
+
+    paymentChips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        selectedPaymentMethod = chip.dataset.paymentMethod;
+        refreshPaymentChipsActive();
+      });
+    });
+
     ui.byId("closeSupplementButton").addEventListener("click", ui.closeSheet);
+    ui.byId("fDonePrice").addEventListener("input", refreshPaymentSectionVisibility);
     ui.byId("loyaltyDiscountButton").addEventListener("click", function () {
       ui.byId("fDonePrice").value = Math.round(originalPrice * 0.9 * 100) / 100;
+      refreshPaymentSectionVisibility();
     });
     ui.byId("loyaltyFreeButton").addEventListener("click", function () {
       ui.byId("fDonePrice").value = 0;
+      refreshPaymentSectionVisibility();
     });
     ui.byId("validateSupplementButton").addEventListener("click", function () {
       var supplement = Number(ui.byId("fSupplement").value) || 0;
@@ -649,8 +692,13 @@
         return;
       }
 
+      if (price > 0 && !selectedPaymentMethod) {
+        window.alert("Choisissez un moyen de paiement.");
+        return;
+      }
+
       ui.closeSheet();
-      setReservationStatus(reservationId, "done", supplement, price);
+      setReservationStatus(reservationId, "done", supplement, price, selectedPaymentMethod, originalPrice);
     });
   }
 

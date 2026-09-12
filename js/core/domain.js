@@ -489,6 +489,92 @@
     }, 0);
   }
 
+  var PAYMENT_METHODS = ["cash", "card", "transfer", "check"];
+
+  // Une prestation est "offerte" quand son prix final est 0 alors que le
+  // prix catalogue (liste_price, figé a la cloture du RDV) etait superieur :
+  // sinon une prestation dont le tarif catalogue est deja 0 EUR serait
+  // comptee comme un cadeau alors que ce n'en est pas un.
+  function isFreeReservation(reservation) {
+    var basePrice = reservation.price != null ? reservation.price : 0;
+    return basePrice === 0 && (reservation.listPrice || 0) > 0;
+  }
+
+  // Fiche de caisse d'une collaboratrice sur une periode : liste des RDV
+  // termines avec moyen de paiement/remise, + totaux par moyen de paiement,
+  // remises accordees et prestations offertes. Une prestation offerte ne
+  // compte dans AUCUN total de moyen de paiement (aucun encaissement reel).
+  function caisseReportFor(db, collab, range, selectedDate) {
+    var dates = datesForRange(selectedDate, range);
+
+    var rows = db.reservations
+      .filter(function (reservation) {
+        return reservation.collab === collab &&
+          reservation.status === "done" &&
+          dates.includes(reservation.date);
+      })
+      .map(function (reservation) {
+        var basePrice = reservation.price != null ? reservation.price : 0;
+        var free = isFreeReservation(reservation);
+        var listPrice = reservation.listPrice != null ? reservation.listPrice : basePrice;
+        var discount = !free && listPrice > basePrice ? listPrice - basePrice : 0;
+
+        return {
+          id: reservation.id,
+          client: reservation.client,
+          prestation: reservation.prestation,
+          date: reservation.date,
+          time: reservation.time,
+          free: free,
+          discount: discount,
+          listPrice: listPrice,
+          paymentMethod: free ? null : reservation.paymentMethod,
+          amount: free ? 0 : basePrice + (reservation.supplement || 0)
+        };
+      })
+      .sort(function (a, b) {
+        return a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date);
+      });
+
+    var totals = {};
+    PAYMENT_METHODS.forEach(function (method) { totals[method] = 0; });
+    var discountTotal = 0;
+    var discountCount = 0;
+    var freeTotal = 0;
+    var freeCount = 0;
+
+    rows.forEach(function (row) {
+      if (row.free) {
+        freeTotal += row.listPrice;
+        freeCount += 1;
+        return;
+      }
+
+      if (row.paymentMethod && totals.hasOwnProperty(row.paymentMethod)) {
+        totals[row.paymentMethod] += row.amount;
+      }
+
+      if (row.discount > 0) {
+        discountTotal += row.discount;
+        discountCount += 1;
+      }
+    });
+
+    var grandTotal = PAYMENT_METHODS.reduce(function (sum, method) {
+      return sum + totals[method];
+    }, 0);
+
+    return {
+      rows: rows,
+      totals: totals,
+      discountTotal: discountTotal,
+      discountCount: discountCount,
+      freeTotal: freeTotal,
+      freeCount: freeCount,
+      grandTotal: grandTotal
+    };
+  }
+
   function countFor(db, collab, status, range, selectedDate) {
     var dates = datesForRange(selectedDate, range);
 
@@ -502,10 +588,13 @@
 
   window.SalonDomain = {
     assignmentError: assignmentError,
+    caisseReportFor: caisseReportFor,
     conflict: conflict,
     conflictDetails: conflictDetails,
     countFor: countFor,
     datesForRange: datesForRange,
+    isFreeReservation: isFreeReservation,
+    PAYMENT_METHODS: PAYMENT_METHODS,
     dayGridRange: dayGridRange,
     dayGridSlots: dayGridSlots,
     layoutDayGridEvents: layoutDayGridEvents,

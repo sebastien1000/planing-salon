@@ -343,6 +343,15 @@
       // catalogue courant, sinon un changement de tarif changerait aussi
       // le prix des rendez-vous deja passes.
       price: row.price,
+      // Moyen de paiement encaisse a la cloture du RDV (espece/carte/
+      // virement/cheque) ; null si le RDV n'est pas encore termine ou si la
+      // prestation est offerte (voir isFreeReservation dans domain.js).
+      paymentMethod: row.payment_method,
+      // Prix catalogue au moment ou le RDV a ete marque "termine", avant
+      // toute remise/prestation offerte ; permet de retrouver le montant de
+      // la remise apres coup meme si price a ete ecrase (voir commentaire
+      // plus haut sur "price").
+      listPrice: row.list_price,
       date: row.date,
       time: String(row.time || "").slice(0, 5),
       duration: row.duration,
@@ -361,6 +370,8 @@
       prestation: reservation.prestation,
       service_id: reservation.serviceId || null,
       price: reservation.price != null ? reservation.price : null,
+      payment_method: reservation.paymentMethod || null,
+      list_price: reservation.listPrice != null ? reservation.listPrice : null,
       date: reservation.date,
       time: reservation.time,
       duration: reservation.duration,
