@@ -163,6 +163,7 @@
         "</button>",
       "  </div>",
       "</div>",
+      reservationId ? "" : buildMultiCollabSectionHtml(state),
       '<label for="fQuantity">Quantite (meme prestation plusieurs fois)</label>',
       '<input id="fQuantity" class="field" type="number" min="1" step="1" value="1">',
       '<div class="grid2">',
@@ -201,6 +202,30 @@
       var selected = room === selectedRoom ? " selected" : "";
       return '<option value="' + utils.escapeHtml(room) + '"' + selected + ">" + utils.escapeHtml(room) + "</option>";
     }).join("");
+  }
+
+  // "Exterieur" n'est pas une salle physique du salon (prestation a
+  // domicile, evenement...) : plusieurs collaboratrices peuvent y etre en
+  // meme temps, contrairement aux autres salles qui restent limitees a une
+  // seule collaboratrice a la fois. Visible uniquement a la creation (pas en
+  // modification, pour ne pas avoir a gerer l'edition d'un groupe de RDV
+  // deja crees) et seulement quand la salle choisie est "Exterieur" (voir
+  // refreshMultiCollabVisibility).
+  function buildMultiCollabSectionHtml(state) {
+    var chips = state.db.users
+      .filter(function (user) { return user.role === "collab" && user.active !== false; })
+      .map(function (user) {
+        return '<button class="chip" type="button" data-multi-collab="' +
+          utils.escapeHtml(user.name) + '">' + utils.escapeHtml(user.name) + "</button>";
+      }).join("");
+
+    return [
+      '<div id="fMultiCollabSection" class="hidden">',
+      "  <label>Autres collaboratrices presentes (RDV exterieur)</label>",
+      '  <div class="chips" id="fMultiCollabChips">' + chips + "</div>",
+      '  <p class="tiny">Un rendez-vous sera cree pour chaque collaboratrice supplementaire cochee, en plus de celle choisie ci-dessus.</p>',
+      "</div>"
+    ].join("");
   }
 
   // Applique la prestation choisie dans le menu par categorie (voir
@@ -306,9 +331,37 @@
     ui.byId("fTime").addEventListener("change", updateEndTimePreview);
     ui.byId("fDuration").addEventListener("input", updateEndTimePreview);
     ui.byId("fQuantity").addEventListener("input", applyQuantityToFields);
+    ui.byId("fRoom").addEventListener("change", refreshMultiCollabVisibility);
+
+    document.querySelectorAll("#fMultiCollabChips [data-multi-collab]").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        chip.classList.toggle("active");
+      });
+    });
 
     updateReservationRoom();
     updateEndTimePreview();
+    refreshMultiCollabVisibility();
+  }
+
+  function refreshMultiCollabVisibility() {
+    var section = ui.byId("fMultiCollabSection");
+    if (!section) {
+      return;
+    }
+    section.classList.toggle("hidden", ui.byId("fRoom").value !== "Exterieur");
+  }
+
+  function selectedExtraCollabNames(primaryCollab) {
+    var section = ui.byId("fMultiCollabSection");
+    if (!section || section.classList.contains("hidden")) {
+      return [];
+    }
+
+    return Array.prototype.slice
+      .call(document.querySelectorAll("#fMultiCollabChips [data-multi-collab].active"))
+      .map(function (chip) { return chip.dataset.multiCollab; })
+      .filter(function (name) { return name !== primaryCollab; });
   }
 
   // Chaque collaboratrice a son propre catalogue de prestations actives :
@@ -453,12 +506,10 @@
       return;
     }
 
-    var draft = {
+    var baseDraft = {
       id: reservationId || "",
       client: ui.byId("fClientName").value.trim() || "Cliente",
       clientId: selectedClientId,
-      collab: chosenCollab,
-      collabId: supabaseData.resolveCollabId(state.profiles, chosenCollab),
       prestation: prestationName,
       serviceId: prestationButton.dataset.serviceId || null,
       price: price,
@@ -470,26 +521,50 @@
       notes: ui.byId("fNotes").value
     };
 
-    var assignmentError = domain.assignmentError(buildVirtualDb(state), draft);
-    if (assignmentError) {
-      showSaveError("reservationMsg", assignmentError);
-      return;
+    var draft = Object.assign({}, baseDraft, {
+      collab: chosenCollab,
+      collabId: supabaseData.resolveCollabId(state.profiles, chosenCollab)
+    });
+
+    // RDV "Exterieur" : chaque collaboratrice supplementaire cochee obtient
+    // son propre rendez-vous (meme cliente/prestation/horaire), en plus de
+    // celui de la collaboratrice principale. Non propose en modification
+    // (voir buildMultiCollabSectionHtml) : editer un RDV existant ne touche
+    // donc qu'a lui, jamais aux autres du groupe.
+    var extraDrafts = reservationId ? [] : selectedExtraCollabNames(chosenCollab).map(function (name) {
+      return Object.assign({}, baseDraft, {
+        collab: name,
+        collabId: supabaseData.resolveCollabId(state.profiles, name)
+      });
+    });
+
+    var allDrafts = [draft].concat(extraDrafts);
+
+    for (var checkIndex = 0; checkIndex < allDrafts.length; checkIndex++) {
+      var assignmentError = domain.assignmentError(buildVirtualDb(state), allDrafts[checkIndex]);
+      if (assignmentError) {
+        showSaveError("reservationMsg", assignmentError);
+        return;
+      }
     }
 
     var saveButton = ui.byId("saveReservationButton");
     saveButton.disabled = true;
 
     freshVirtualDbForDate(state, draft.date).then(function (virtualDb) {
-      var conflict = domain.conflictDetails(virtualDb, draft, reservationId || null);
-      if (conflict) {
-        saveButton.disabled = false;
-        ui.byId("reservationMsg").innerHTML = ENABLE_CONFLICT_ASSISTANT
-          ? '<div class="alert reservation-alert-box">Créneau déjà pris. Choisissez un autre horaire.</div>'
-          : '<div class="alert">' + utils.escapeHtml(conflict.message) + "</div>";
-        if (ENABLE_CONFLICT_ASSISTANT) {
-          showConflictPopup(draft, conflict, reservationId || null);
+      for (var conflictIndex = 0; conflictIndex < allDrafts.length; conflictIndex++) {
+        var candidate = allDrafts[conflictIndex];
+        var conflict = domain.conflictDetails(virtualDb, candidate, reservationId || null);
+        if (conflict) {
+          saveButton.disabled = false;
+          ui.byId("reservationMsg").innerHTML = ENABLE_CONFLICT_ASSISTANT
+            ? '<div class="alert reservation-alert-box">Créneau déjà pris. Choisissez un autre horaire.</div>'
+            : '<div class="alert">' + utils.escapeHtml(conflict.message) + "</div>";
+          if (ENABLE_CONFLICT_ASSISTANT) {
+            showConflictPopup(candidate, conflict, reservationId || null);
+          }
+          return null;
         }
-        return null;
       }
 
       var clientPromise = selectedClientId
@@ -502,16 +577,24 @@
             duration: draft.duration,
             frequency: 21,
             notes: draft.notes,
-            collabIds: draft.collabId ? [draft.collabId] : []
+            collabIds: allDrafts.map(function (item) { return item.collabId; }).filter(Boolean)
           });
 
       return clientPromise.then(function (client) {
-        draft.clientId = client.id;
-        draft.client = client.name;
+        allDrafts.forEach(function (item) {
+          item.clientId = client.id;
+          item.client = client.name;
+        });
 
-        return reservationId
+        var primarySave = reservationId
           ? supabaseData.updateReservation(reservationId, draft)
           : supabaseData.createReservation(draft);
+
+        return primarySave.then(function () {
+          return extraDrafts.reduce(function (chain, item) {
+            return chain.then(function () { return supabaseData.createReservation(item); });
+          }, Promise.resolve());
+        });
       }).then(function () {
         state.selectedDate = draft.date;
         ui.closeModal();
