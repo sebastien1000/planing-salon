@@ -68,6 +68,21 @@
   border-bottom: none;
 }
 
+/* Sans ca, Chrome peut couper une ligne du tableau pile entre deux pages a
+   l'impression/PDF et affiche un rectangle blanc fantome a l'endroit de la
+   coupure (ligne dupliquee/decalee) : on force chaque ligne et l'en-tete a
+   rester entiers sur une seule page. */
+.fc-table tr,
+.fc-tile,
+.fc-grandtotal {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.fc-table thead {
+  display: table-header-group;
+}
+
 .fc-client {
   font-weight: 700;
 }
