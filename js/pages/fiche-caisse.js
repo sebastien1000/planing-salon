@@ -33,6 +33,22 @@
 
   var PAYMENT_LABELS = { cash: "Especes", card: "CB", transfer: "Virement", check: "Cheque" };
 
+  // Couleurs dupliquees de css/fiche-caisse.css : jsPDF dessine directement
+  // sur un canvas PDF, il ne peut pas lire les variables CSS de la page.
+  var PDF_COLORS = {
+    ink: [65, 40, 50],
+    muted: [139, 101, 112],
+    line: [240, 213, 220],
+    pinkTint: [251, 234, 238],
+    pink2: [247, 219, 226],
+    cash: [63, 143, 92],
+    card: [58, 114, 196],
+    transfer: [122, 92, 192],
+    check: [184, 128, 47],
+    discount: [193, 80, 47],
+    free: [47, 143, 130]
+  };
+
   function fmt(amount) {
     return (amount || 0).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " EUR";
   }
@@ -88,7 +104,291 @@
     }).join("");
   }
 
+  // Construit un vrai fichier PDF (pas une impression navigateur) : sur
+  // telephone/tablette (dont l'appli Android), il n'y a pas toujours
+  // d'imprimante ni de boite d'impression native, alors qu'un fichier .pdf
+  // telecharge peut etre ouvert/partage/imprime plus tard depuis n'importe
+  // quelle appli. On dessine chaque ligne nous-memes (hauteur fixe calculee
+  // a l'avance) plutot que de laisser un navigateur paginer un tableau HTML :
+  // c'est justement une pagination automatique qui provoquait l'artefact de
+  // rectangle blanc rencontre avec window.print().
+  function buildFichePdf(report, collabNameForPdf, monthForPdf) {
+    var doc = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+    var pageWidth = doc.internal.pageSize.getWidth();
+    var pageHeight = doc.internal.pageSize.getHeight();
+    var margin = 14;
+    var usableWidth = pageWidth - margin * 2;
+    var y = margin;
+
+    var columns = [
+      { key: "date", label: "Date", width: 22 },
+      { key: "client", label: "Cliente", width: 36 },
+      { key: "prestation", label: "Prestation", width: 42 },
+      { key: "remise", label: "Remise", width: 24 },
+      { key: "paiement", label: "Paiement", width: 24 },
+      { key: "montant", label: "Montant", width: usableWidth - (22 + 36 + 42 + 24 + 24) }
+    ];
+
+    function setColor(method, target) {
+      var color = PDF_COLORS[target] || PDF_COLORS.ink;
+      if (method === "fill") {
+        doc.setFillColor(color[0], color[1], color[2]);
+      } else if (method === "draw") {
+        doc.setDrawColor(color[0], color[1], color[2]);
+      } else {
+        doc.setTextColor(color[0], color[1], color[2]);
+      }
+    }
+
+    function ensureSpace(neededHeight) {
+      if (y + neededHeight > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
+        return true;
+      }
+      return false;
+    }
+
+    function fitText(text, maxWidth) {
+      var value = String(text || "");
+      if (doc.getTextWidth(value) <= maxWidth) {
+        return value;
+      }
+      while (value.length > 1 && doc.getTextWidth(value + "...") > maxWidth) {
+        value = value.slice(0, -1);
+      }
+      return value + "...";
+    }
+
+    function drawHeader() {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(16);
+      setColor("text", "ink");
+      doc.text("Fiche de caisse", margin, y + 6);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(11);
+      doc.text(collabNameForPdf, margin, y + 13);
+
+      doc.setFontSize(9);
+      setColor("text", "muted");
+      doc.text(monthLabel(monthForPdf), pageWidth - margin, y + 6, { align: "right" });
+      doc.text("Genere le " + new Date().toLocaleDateString("fr-FR"), pageWidth - margin, y + 11, { align: "right" });
+
+      y += 19;
+      setColor("draw", "line");
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
+    }
+
+    function drawTableHead() {
+      setColor("fill", "pinkTint");
+      doc.rect(margin, y, usableWidth, 7, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      setColor("text", "ink");
+
+      var x = margin;
+      columns.forEach(function (col) {
+        var align = col.key === "montant" ? "right" : "left";
+        var textX = align === "right" ? x + col.width - 2 : x + 2;
+        doc.text(col.label.toUpperCase(), textX, y + 4.7, { align: align });
+        x += col.width;
+      });
+
+      y += 7;
+    }
+
+    function drawAmountCell(x, width, row) {
+      var rightX = x + width - 2;
+
+      if (row.free || row.discount > 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7);
+        setColor("text", "muted");
+        var origText = fmt(row.listPrice);
+        var origWidth = doc.getTextWidth(origText);
+        doc.text(origText, rightX, y + 3.3, { align: "right" });
+        setColor("draw", "muted");
+        doc.line(rightX - origWidth, y + 2.1, rightX, y + 2.1);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        setColor("text", "ink");
+        doc.text(fmt(row.free ? 0 : row.amount), rightX, y + 7.6, { align: "right" });
+      } else {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        setColor("text", "ink");
+        doc.text(fmt(row.amount), rightX, y + 5.5, { align: "right" });
+      }
+    }
+
+    function drawRow(row) {
+      var rowHeight = row.free || row.discount > 0 ? 11 : 8;
+
+      if (ensureSpace(rowHeight)) {
+        drawTableHead();
+      }
+
+      var x = margin;
+      var textY = y + (rowHeight === 11 ? 4.3 : 5.5);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      setColor("text", "ink");
+      doc.text(shortDate(row.date) + " " + (row.time || ""), x + 2, textY);
+      x += columns[0].width;
+
+      doc.setFont("helvetica", "bold");
+      doc.text(fitText(row.client || "Client", columns[1].width - 4), x + 2, textY);
+      x += columns[1].width;
+
+      doc.setFont("helvetica", "normal");
+      setColor("text", "muted");
+      doc.text(fitText(row.prestation || "", columns[2].width - 4), x + 2, textY);
+      x += columns[2].width;
+
+      if (row.free) {
+        setColor("text", "free");
+        doc.setFont("helvetica", "bold");
+        doc.text("Offert", x + 2, textY);
+      } else if (row.discount > 0) {
+        setColor("text", "discount");
+        doc.setFont("helvetica", "bold");
+        doc.text("-" + fmt(row.discount), x + 2, textY);
+      } else {
+        setColor("text", "muted");
+        doc.setFont("helvetica", "normal");
+        doc.text("-", x + 2, textY);
+      }
+      x += columns[3].width;
+
+      if (row.free) {
+        setColor("text", "free");
+        doc.setFont("helvetica", "bold");
+        doc.text("Offert", x + 2, textY);
+      } else if (row.paymentMethod) {
+        setColor("text", row.paymentMethod);
+        doc.setFont("helvetica", "bold");
+        doc.text(PAYMENT_LABELS[row.paymentMethod] || row.paymentMethod, x + 2, textY);
+      } else {
+        setColor("text", "muted");
+        doc.setFont("helvetica", "normal");
+        doc.text("-", x + 2, textY);
+      }
+      x += columns[4].width;
+
+      drawAmountCell(x, columns[5].width, row);
+
+      y += rowHeight;
+      setColor("draw", "line");
+      doc.line(margin, y, margin + usableWidth, y);
+    }
+
+    function drawSectionLabel(text) {
+      ensureSpace(10);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      setColor("text", "muted");
+      doc.text(text.toUpperCase(), margin, y + 4);
+      y += 8;
+    }
+
+    function drawTiles(tiles) {
+      var gap = 4;
+      var tileWidth = (usableWidth - gap * (tiles.length - 1)) / tiles.length;
+      var tileHeight = 18;
+
+      ensureSpace(tileHeight + 4);
+
+      tiles.forEach(function (tile, index) {
+        var x = margin + index * (tileWidth + gap);
+        setColor("draw", "line");
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(x, y, tileWidth, tileHeight, 2, 2, "FD");
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(6.3);
+        setColor("text", tile.color);
+        doc.text(tile.label.toUpperCase(), x + 3, y + 5);
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        setColor("text", "ink");
+        doc.text(tile.value, x + 3, y + 11.5);
+
+        if (tile.sub) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(6.3);
+          setColor("text", "muted");
+          doc.text(tile.sub, x + 3, y + 15.5);
+        }
+      });
+
+      y += tileHeight + 6;
+    }
+
+    function drawGrandTotal(total) {
+      ensureSpace(16);
+      setColor("fill", "pink2");
+      doc.roundedRect(margin, y, usableWidth, 14, 3, 3, "F");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      setColor("text", "ink");
+      doc.text("Total encaisse", margin + 4, y + 9);
+
+      doc.setFontSize(13);
+      doc.text(fmt(total), margin + usableWidth - 4, y + 9, { align: "right" });
+
+      y += 14;
+    }
+
+    drawHeader();
+    drawTableHead();
+
+    if (!report.rows.length) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      setColor("text", "muted");
+      doc.text("Aucun rendez-vous termine sur cette periode.", margin + 2, y + 6);
+      y += 12;
+    } else {
+      report.rows.forEach(drawRow);
+      y += 6;
+    }
+
+    drawSectionLabel("Encaissements par moyen de paiement");
+    drawTiles(domain.PAYMENT_METHODS.map(function (method) {
+      return { label: PAYMENT_LABELS[method], value: fmt(report.totals[method]), color: method };
+    }));
+
+    drawSectionLabel("Remises & prestations offertes");
+    drawTiles([
+      {
+        label: "Remises accordees",
+        value: fmt(report.discountTotal),
+        sub: report.discountCount + " rdv avec remise",
+        color: "discount"
+      },
+      {
+        label: "Prestations offertes",
+        value: fmt(report.freeTotal),
+        sub: report.freeCount + " rdv offert" + (report.freeCount > 1 ? "s" : ""),
+        color: "free"
+      }
+    ]);
+
+    drawGrandTotal(report.grandTotal);
+
+    return doc;
+  }
+
+  var currentReport = null;
+
   function render(report) {
+    currentReport = report;
     var rowsHtml = report.rows.length
       ? report.rows.map(renderRow).join("")
       : '<tr><td colspan="6"><p class="tiny" style="margin:10px 0">Aucun rendez-vous termine sur cette periode.</p></td></tr>';
@@ -97,7 +397,10 @@
       '<div class="card fc-controls">',
       '  <label for="fcMonth">Periode</label>',
       '  <input id="fcMonth" class="field" type="month" value="' + month + '" max="' + utils.today().slice(0, 7) + '">',
-      '  <button id="fcPrintButton" class="primary" style="width:100%" type="button">Imprimer / PDF</button>',
+      '  <div class="row">',
+      '    <button id="fcDownloadButton" class="primary grow" type="button">Telecharger le PDF</button>',
+      '    <button id="fcPrintButton" class="secondary grow" type="button">Imprimer</button>',
+      "  </div>",
       "</div>",
 
       '<div class="card fc-sheet" id="fcSheet">',
@@ -150,6 +453,11 @@
 
     ui.byId("fcPrintButton").addEventListener("click", function () {
       window.print();
+    });
+
+    ui.byId("fcDownloadButton").addEventListener("click", function () {
+      var pdf = buildFichePdf(currentReport, collabName, month);
+      pdf.save("fiche-caisse-" + collabName.toLowerCase() + "-" + month + ".pdf");
     });
 
     ui.byId("fcMonth").addEventListener("change", function () {
