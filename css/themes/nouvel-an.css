@@ -1,0 +1,42 @@
+/* Thème nouvel-an : couleurs, aperçu et décor. */
+[data-theme="nouvel-an"] {
+  --bg: #0b0b0d;
+  --card: #17151a;
+  --ink: #f5efe0;
+  --muted: #b6ac96;
+  --line: #2c2a24;
+  --pink: #8a6a2e;
+  --pink-2: #231f16;
+  --danger: #ff7a7a;
+  --ok: #7fd28c;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #c9a24a;
+  --brand-2: #8a6a2e;
+  --app-accent: #e8c874;
+  --app-accent-2: #d7d7d7;
+  --app-glow: rgba(232, 200, 116, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-sparkle);
+}
+
+[data-preview-theme="nouvel-an"] .theme-choice-preview { background: radial-gradient(circle at 30% 32%, #f6dc91 0 4%, transparent 6%), linear-gradient(145deg, #08090a, #94702e); }
+
+[data-theme="nouvel-an"] {
+  --premium-scene-image:url("../../assets/img/themes/new-year/champagne.png");
+  --premium-label:"✦  NOUVEL AN  ✦";
+  --premium-body:radial-gradient(circle at 50% 0,#3d3017,#050506 52%);
+  --premium-shell:radial-gradient(circle at 82% 4%,rgba(232,200,116,.25),transparent 30%),linear-gradient(180deg,#0b0b0d,#060607);
+  --premium-nav:linear-gradient(180deg,rgba(20,18,14,.98),rgba(5,5,6,.99));
+  --premium-card:linear-gradient(145deg,rgba(34,30,20,.95),rgba(13,12,12,.97));
+  --premium-hero:radial-gradient(circle at 84% 7%,rgba(232,200,116,.32),transparent 36%),linear-gradient(145deg,#2b2517,#0b0a09);
+  --premium-track:rgba(0,0,0,.68);
+  --premium-active:linear-gradient(145deg,#e0bd62,#846421);
+  --premium-active-text:#17120a;
+  --premium-event-1:linear-gradient(110deg,#4a3a19,#b78e38);
+  --premium-event-2:linear-gradient(110deg,#181719,#3a3426);
+  --premium-event-3:linear-gradient(110deg,#826426,#d4ad55);
+  --premium-edge:rgba(232,200,116,.36);
+  --premium-shadow:rgba(0,0,0,.55);
+  --premium-overlay:repeating-conic-gradient(from 0deg at 10% 12%,transparent 0 8deg,rgba(232,200,116,.08) 9deg 10deg,transparent 11deg 18deg);
+}
+

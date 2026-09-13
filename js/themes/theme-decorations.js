@@ -25,14 +25,16 @@
     return min + Math.random() * (max - min);
   }
 
-  function buildParticle(type, index) {
+  function buildParticle(type, index, staggerAnimation) {
     var particle = document.createElement("span");
     particle.className = "theme-particle";
     particle.dataset.decor = type;
     particle.style.setProperty("--i", String(index));
     particle.style.setProperty("--x", randomBetween(2, 96).toFixed(1) + "%");
     particle.style.setProperty("--drift", randomBetween(-40, 40).toFixed(0) + "px");
-    particle.style.setProperty("--delay", randomBetween(0, 6).toFixed(2) + "s");
+    // Décalages négatifs : les événements sont déjà répartis dans leur chute
+    // au premier rendu, sans attendre une première vague synchronisée.
+    particle.style.setProperty("--delay", (staggerAnimation ? -randomBetween(0, 16) : randomBetween(0, 6)).toFixed(2) + "s");
     particle.style.setProperty("--dur", randomBetween(7, 16).toFixed(2) + "s");
     particle.style.setProperty("--scale", randomBetween(0.7, 1.3).toFixed(2));
     return particle;
@@ -48,9 +50,10 @@
 
     var theme = config.THEME_EFFECTS[themeId] || config.THEME_EFFECTS.default;
 
+    var staggerAnimation = !!config.specialThemeById(themeId);
     theme.decor.forEach(function (item) {
       for (var i = 0; i < item.count; i++) {
-        overlay.appendChild(buildParticle(item.type, i));
+        overlay.appendChild(buildParticle(item.type, i, staggerAnimation));
       }
     });
   }

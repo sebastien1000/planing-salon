@@ -1,3 +1,5 @@
+@import url("../pages.css");
+
 /* Fiche de caisse par collaboratrice (js/pages/fiche-caisse.js) : recap
    imprimable des RDV termines sur une periode (client, prestation, remise,
    moyen de paiement) + totaux par moyen de paiement / remises / offerts. */
@@ -215,29 +217,4 @@
   .fc-remises { grid-template-columns: repeat(2, 1fr); }
   .fc-table th:first-child,
   .fc-table td:first-child { display: none; }
-}
-
-@media print {
-  .app-header,
-  .tabs,
-  .app-actions,
-  .fc-controls,
-  #modal,
-  #sheet {
-    display: none !important;
-  }
-  body,
-  .phone {
-    max-width: none;
-    margin: 0;
-    box-shadow: none;
-  }
-  .fc-sheet {
-    box-shadow: none;
-    border: none;
-  }
-  @page {
-    size: A4;
-    margin: 12mm;
-  }
 }

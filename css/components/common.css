@@ -1,0 +1,401 @@
+.tiny {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.panel,
+.card {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.panel {
+  padding: 18px;
+  border-radius: 28px;
+}
+
+.card {
+  padding: 14px;
+}
+
+.cards,
+.stack {
+  display: grid;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.row > * {
+  min-width: 0;
+}
+
+.row:has(> button + button) {
+  flex-wrap: wrap;
+}
+
+.row:has(> button + button) > button {
+  flex: 1 1 calc(50% - 5px);
+}
+
+.grow {
+  flex: 1;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.primary,
+.secondary,
+.ghost,
+.home,
+.pill,
+.chip,
+.tab,
+.fab,
+.x {
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.primary,
+.secondary,
+.ghost,
+.tab {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.pill,
+.chip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.primary {
+  background: linear-gradient(135deg, #e999ac, #d97b93);
+  color: #fff;
+  padding: 13px 16px;
+  font-weight: 800;
+  box-shadow: 0 10px 22px rgba(217, 123, 147, 0.28);
+}
+
+.secondary {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  padding: 12px 14px;
+  font-weight: 750;
+}
+
+.danger {
+  background: #fff1f3;
+  color: var(--danger);
+  border: 1px solid #f1bdc7;
+}
+
+.ok {
+  background: #eef8f0;
+  color: var(--ok);
+  border: 1px solid #cfe9d5;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.panel.stack.login-card,
+.panel.stack {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #efd3db;
+  border-radius: 30px;
+  padding: 26px 20px 28px;
+  box-shadow: 0 18px 35px rgba(80, 40, 55, 0.07);
+}
+
+.ghost-link {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #9a7680;
+  font-size: 15px;
+  margin-top: 18px;
+  padding: 0;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+.rsv-actions {
+    flex-wrap: wrap;
+  }
+
+.rsv-actions > button {
+    flex: 1 1 calc(50% - 5px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+}
+
+.title-copy {
+  min-width: 0;
+  flex: 0 1 auto;
+  text-align: center;
+}
+
+.home {
+  width: 42px;
+  height: 42px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 9px 11px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tab {
+  padding: 9px 3px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.tab.active {
+  background: var(--pink-2);
+  color: var(--ink);
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow: auto;
+  max-width: 100%;
+  padding: 8px 0;
+}
+
+.chip {
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.chip.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 850;
+  border-radius: 999px;
+  padding: 6px 8px;
+  background: #f8eef1;
+  color: var(--muted);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 8px 0;
+}
+
+.status-pre {
+  background: #eef4ff;
+  color: #526b94;
+}
+
+.status-run {
+  background: #fff6d9;
+  color: #7d5a29;
+}
+
+.status-done {
+  background: #eef8f0;
+  color: var(--ok);
+}
+
+.status-cancel,
+.status-absent,
+.status-move {
+  background: #f7e7ea;
+  color: var(--danger);
+}
+
+.alert,
+.success {
+  padding: 10px 12px;
+  border-radius: 15px;
+  font-size: 13px;
+}
+
+.alert {
+  background: #fff0f3;
+  color: var(--danger);
+  border: 1px solid #f0bdc7;
+}
+
+.success {
+  background: #edf8f0;
+  color: var(--ok);
+  border: 1px solid #cbe8d2;
+}
+
+.empty {
+  padding: 22px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.x {
+  width: 44px;
+  height: 44px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.fab {
+  position: fixed;
+  right: calc(50% - 199px);
+  /* La barre d'onglets grandit avec la safe-area Android (voir .tabs) :
+     le bouton doit rester au-dessus, pas juste a 82px fixes. */
+  bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #e999ac, #d97b93);
+  color: #fff;
+  font-size: 28px;
+  box-shadow: 0 12px 28px rgba(217, 123, 147, 0.36);
+  z-index: 7;
+}
+
+.statgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.statgrid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.stat {
+  background: #fff7fa;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  padding: 10px;
+  text-align: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.stat b {
+  display: block;
+  font-size: 18px;
+  overflow-wrap: break-word;
+}
+
+.stat span,
+.section-title {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.stat span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-title {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.mini-action {
+  padding: 7px 9px;
+  font-size: 11px;
+  border-radius: 12px;
+}
+
+.rsv {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  border-left: 7px solid var(--pink);
+}
+
+.rsv-own-collab,
+.rsv-other-collab {
+  isolation: isolate;
+}
+
+.room {
+  font-weight: 850;
+}
+
+.card,
+.month-cell,
+.week-day-head,
+.meta,
+.tiny,
+.badge,
+.rsv,
+.rsv *,
+.month-cell *,
+.card * {
+  min-width: 0;
+}
+
+@media (min-width: 700px) {
+.fab {
+    right: 18px;
+  }
+
+}

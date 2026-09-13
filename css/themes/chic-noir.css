@@ -1,0 +1,42 @@
+/* Thème chic-noir : couleurs, aperçu et décor. */
+[data-theme="chic-noir"] {
+  --bg: #0c0c0c;
+  --card: #171717;
+  --ink: #f2e6c8;
+  --muted: #a99b74;
+  --line: #2a2a2a;
+  --pink: #b8912e;
+  --pink-2: #211f18;
+  --danger: #ff7a7a;
+  --ok: #7fd28c;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.6);
+  --brand-1: #b8912e;
+  --brand-2: #8a6a2e;
+  --app-accent: #e8c874;
+  --app-accent-2: #c9c9c9;
+  --app-glow: rgba(232, 200, 116, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-diamond);
+}
+
+[data-preview-theme="chic-noir"] .theme-choice-preview { background: linear-gradient(135deg, transparent 46%, #c5a04a 48% 51%, transparent 53%), #0b0b0b; }
+
+[data-theme="chic-noir"] {
+  --premium-scene-image:url("../../assets/img/themes/chic-black-gold/luxury.png");
+  --premium-label:"◆  CHIC NOIR & OR  ◆";
+  --premium-body:radial-gradient(circle at 70% 5%,#352810,#050505 56%);
+  --premium-shell:repeating-linear-gradient(135deg,transparent 0 44px,rgba(201,162,74,.07) 45px 46px,transparent 47px 88px),linear-gradient(180deg,#111,#060606);
+  --premium-nav:linear-gradient(180deg,rgba(21,20,17,.99),rgba(5,5,5,.99));
+  --premium-card:linear-gradient(145deg,rgba(29,28,24,.97),rgba(10,10,10,.98));
+  --premium-hero:linear-gradient(135deg,transparent 47%,rgba(201,162,74,.15) 48% 50%,transparent 51%),linear-gradient(145deg,#211e16,#080808);
+  --premium-track:rgba(0,0,0,.72);
+  --premium-active:linear-gradient(145deg,#e6c979,#a17b27);
+  --premium-active-text:#151109;
+  --premium-event-1:linear-gradient(110deg,#1b1a17,#0b0b0b);
+  --premium-event-2:linear-gradient(110deg,#3c321c,#17130b);
+  --premium-event-3:linear-gradient(110deg,#171717,#29251a);
+  --premium-edge:rgba(232,200,116,.38);
+  --premium-shadow:rgba(0,0,0,.58);
+  --premium-overlay:repeating-linear-gradient(45deg,transparent 0 70px,rgba(232,200,116,.055) 71px 72px,transparent 73px 140px);
+}
+

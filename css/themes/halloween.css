@@ -1,0 +1,242 @@
+/* Thème halloween : couleurs, aperçu et décor. */
+[data-theme="halloween"] {
+  --bg: #0d0d0f;
+  --card: #1c1420;
+  --ink: #f3e6cf;
+  --muted: #b79a86;
+  --line: #3a2a44;
+  --pink: #c9581f;
+  --pink-2: #3c2a4a;
+  --danger: #ff6b6b;
+  --ok: #6fbf7b;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #e87518;
+  --brand-2: #6a3c83;
+  --app-accent: #d8aa67;
+  --app-accent-2: #e87518;
+  --app-glow: rgba(232, 117, 24, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-pumpkin);
+}
+
+[data-preview-theme="halloween"] .theme-choice-preview { background: radial-gradient(circle at 72% 28%, #e87518 0 10%, transparent 11%), linear-gradient(145deg, #4a2754, #09090b 72%); }
+
+[data-theme="halloween"] body {
+  background:
+    radial-gradient(circle at 78% 6%, rgba(232, 117, 24, 0.12), transparent 24rem),
+    radial-gradient(circle at 12% 42%, rgba(106, 60, 131, 0.16), transparent 30rem),
+    #050607;
+}
+
+[data-theme="halloween"] .phone,
+[data-theme="halloween"] .login-shell {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+    radial-gradient(circle at 84% 4%, rgba(232, 117, 24, 0.12), transparent 22rem),
+    linear-gradient(180deg, #08090a 0%, #0d0b10 48%, #070809 100%);
+  background-size: 4px 4px, auto, auto;
+  border-color: rgba(216, 170, 103, 0.32);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.72), inset 0 0 70px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="halloween"] .top {
+  background: linear-gradient(180deg, rgba(6, 7, 8, 0.96), rgba(12, 10, 14, 0.88));
+  border-color: rgba(216, 170, 103, 0.28);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+}
+
+[data-theme="halloween"] main::before {
+  content: "✦  THÈME HALLOWEEN  ✦";
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: max-content;
+  height: 34px;
+  margin: 0 auto 10px;
+  color: #e3ae70;
+  font-family: var(--app-font-display);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 16px rgba(232, 117, 24, 0.45);
+  pointer-events: none;
+}
+
+[data-theme="halloween"] .title {
+  color: #edc99e;
+  font-weight: 600;
+  letter-spacing: 0.035em;
+  text-shadow: 0 0 18px rgba(232, 117, 24, 0.18);
+}
+
+[data-theme="halloween"] .card,
+[data-theme="halloween"] .panel {
+  border-color: rgba(216, 170, 103, 0.26);
+  background:
+    linear-gradient(135deg, rgba(62, 38, 70, 0.9), rgba(18, 15, 22, 0.94) 58%),
+    var(--card);
+  box-shadow: 0 15px 32px rgba(0, 0, 0, 0.42), inset 0 1px rgba(255, 226, 180, 0.05);
+}
+
+[data-theme="halloween"] .page-header-card {
+  overflow: hidden;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 86% 2%, rgba(232, 117, 24, 0.25), transparent 36%),
+    linear-gradient(145deg, rgba(55, 31, 65, 0.96), rgba(10, 10, 12, 0.97) 72%);
+}
+
+[data-theme="halloween"] .page-header-card h3 {
+  font-family: var(--app-font-display);
+  color: #f0d2ad;
+  font-weight: 500;
+}
+
+[data-theme="halloween"] .page-header-card .chips {
+  border: 1px solid rgba(216, 170, 103, 0.32);
+  background: rgba(5, 6, 7, 0.72);
+  box-shadow: inset 0 1px 12px rgba(0, 0, 0, 0.55);
+}
+
+[data-theme="halloween"] .page-header-card .chip.active {
+  color: #fff1dc;
+  background: linear-gradient(135deg, #53305f, #2b1c35);
+  box-shadow: inset 0 1px rgba(255, 225, 190, 0.16), 0 8px 18px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="halloween"] .secondary,
+[data-theme="halloween"] .field,
+[data-theme="halloween"] .stat {
+  border-color: rgba(216, 170, 103, 0.28);
+  background: rgba(9, 9, 11, 0.72);
+}
+
+[data-theme="halloween"] .time-grid-body {
+  border-color: rgba(216, 170, 103, 0.38);
+  background-image: repeating-linear-gradient(to bottom, rgba(216, 170, 103, 0.22) 0 1px, transparent 1px 44px);
+}
+
+[data-theme="halloween"] .grid-event {
+  border: 1px solid rgba(216, 170, 103, 0.4);
+  border-left: 4px solid var(--collab-color, #d48235);
+  border-radius: 13px;
+  color: #fff2df;
+  background: linear-gradient(112deg, #4a2b55, #25182d 72%);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="halloween"] .grid-event:nth-child(3n/**/+2) {
+  background: linear-gradient(112deg, #a74709, #db741f);
+}
+
+[data-theme="halloween"] .grid-event:nth-child(3n) {
+  background: linear-gradient(112deg, #765023, #b27a35);
+}
+
+[data-theme="halloween"] .grid-event-time,
+[data-theme="halloween"] .grid-event-sub { color: #ead4bd; }
+
+[data-theme="halloween"] .fab {
+  color: #f4d3ac;
+  border: 1px solid #d59a55;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #5b3567, #28172f);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55), 0 0 24px rgba(232, 117, 24, 0.2);
+  right: auto;
+  left: max(14px, calc((100vw - 480px) / 2 + 14px));
+}
+
+[data-theme="halloween"] .tabs {
+  border: 1px solid rgba(216, 170, 103, 0.3);
+  border-bottom: 0;
+  border-radius: 25px 25px 0 0;
+  background: linear-gradient(180deg, rgba(15, 14, 17, 0.98), rgba(5, 6, 7, 0.99));
+  box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="halloween"] .tab { color: #bca087; }
+
+[data-theme="halloween"] .tab.active {
+  color: #f0c892;
+  background: linear-gradient(180deg, rgba(82, 45, 92, 0.82), rgba(42, 25, 50, 0.88));
+  box-shadow: inset 0 1px rgba(255, 220, 175, 0.12);
+}
+
+[data-theme="halloween"] #theme-decorations::before,
+[data-theme="halloween"] #theme-decorations::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+[data-theme="halloween"] #theme-decorations::before {
+  top: auto;
+  right: max(-20px, calc((100vw - 480px) / 2 - 16px));
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  width: clamp(118px, 34vw, 160px);
+  aspect-ratio: 4 / 3;
+  background: url("../../assets/img/themes/halloween/pumpkin-botanical.png") right bottom / contain no-repeat;
+  opacity: 0.78;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.48));
+  transform-origin: bottom right;
+}
+
+[data-theme="halloween"] #theme-decorations::after {
+  top: -26px;
+  left: max(-36px, calc((100vw - 480px) / 2 - 28px));
+  width: 175px;
+  height: 175px;
+  opacity: 0.42;
+  background:
+    repeating-conic-gradient(from 12deg at 0 0, transparent 0 13deg, rgba(216, 170, 103, 0.72) 14deg 14.8deg, transparent 16deg 30deg),
+    repeating-radial-gradient(circle at 0 0, transparent 0 28px, rgba(216, 170, 103, 0.46) 29px 30px, transparent 31px 48px);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+[data-theme="halloween"][data-animations="on"] #theme-decorations::before {
+  animation: halloween-breathe 5.8s ease-in-out infinite;
+}
+
+@media (min-width: 700px) {
+[data-theme="halloween"] #theme-decorations::before {
+    top: auto;
+    right: 1.5vw;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: clamp(170px, 20vw, 220px);
+    opacity: 0.92;
+  }
+
+[data-theme="halloween"] #theme-decorations::after {
+    left: 1.2vw;
+    width: 240px;
+    height: 240px;
+  }
+
+[data-theme="halloween"] main { padding-inline: clamp(18px, 4vw, 64px); }
+
+[data-theme="halloween"] main::before { height: 38px; }
+
+[data-theme="halloween"] .fab { right: auto; left: 3vw; }
+
+[data-theme="halloween"] .tabs { max-width: min(92vw, 900px); }
+
+}
+
+@media (min-width: 900px) and (orientation: landscape) {
+[data-theme="halloween"] #theme-decorations::before {
+    top: auto;
+    right: 0.5vw;
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    width: min(19vw, 220px);
+  }
+
+[data-theme="halloween"] main::before { height: 38px; }
+
+[data-theme="halloween"] main { padding-inline: clamp(56px, 8vw, 120px); }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+[data-theme="halloween"] #theme-decorations::before { animation: none !important; }
+
+}
+

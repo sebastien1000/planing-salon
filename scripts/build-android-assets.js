@@ -8,23 +8,8 @@
 const fs = require("fs");
 const path = require("path");
 
-const ROOT = path.resolve(__dirname, "..");
+const { ROOT, HTML_FILES, DIRECTORIES, EXTRA_FILES } = require("./app-files");
 const WWW = path.join(ROOT, "www");
-
-const HTML_FILES = [
-  "index.html",
-  "planning.html",
-  "clients.html",
-  "recherche.html",
-  "comptes.html",
-  "plus.html",
-  "reset-password.html",
-  "fiche-caisse.html"
-];
-
-const DIRECTORIES = ["css", "js", "assets"];
-
-const EXTRA_FILES = ["manifest.json"];
 
 function resetWww() {
   fs.rmSync(WWW, { recursive: true, force: true });

@@ -188,3 +188,23 @@ textarea {
   25% { transform: rotate(-4deg); }
   75% { transform: rotate(4deg); }
 }
+
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="heart"] { animation: seasonal-fall var(--dur) linear var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="egg"] { animation: seasonal-float var(--dur) ease-in-out var(--delay) infinite; }
+[data-animations="on"] #theme-decorations:not(.is-static) .theme-particle[data-decor="balloon"] { animation: seasonal-fall calc(var(--dur) * 1.7) linear var(--delay) infinite; }
+
+/* Même trajet complet pour chaque élément ; OFF conserve son placement statique. */
+[data-special-theme][data-animations="on"] #theme-decorations:not(.is-static) .theme-particle:is([data-decor="confetti"], [data-decor="heart"], [data-decor="balloon"], [data-decor="petal"]) {
+  top: -36px;
+}
+
+/* Aucun mouvement résiduel, y compris les apparitions de cartes et halos. */
+[data-animations="off"] #theme-decorations *,
+[data-animations="off"] #theme-decorations::before,
+[data-animations="off"] #theme-decorations::after { animation: none !important; will-change: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .card, .grid-event, .month-cell,
+  #theme-decorations *, #theme-decorations::before, #theme-decorations::after {
+    animation: none !important; transition: none !important; will-change: auto;
+  }
+}

@@ -1,0 +1,41 @@
+/* Thème disco : couleurs, aperçu et décor. */
+[data-theme="disco"] {
+  --bg: #150b1f;
+  --card: #221230;
+  --ink: #f6e9ff;
+  --muted: #b79ac9;
+  --line: #3c2350;
+  --pink: #e0219e;
+  --pink-2: #3c2350;
+  --danger: #ff6b9e;
+  --ok: #6fe0c0;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #e0219e;
+  --brand-2: #8b3ff0;
+  --app-accent: #8b3ff0;
+  --app-accent-2: #20e3d2;
+  --app-glow: rgba(224, 33, 158, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-discoball);
+}
+
+[data-preview-theme="disco"] .theme-choice-preview { background: radial-gradient(circle at 65% 25%, #fb65d1 0 10%, transparent 30%), linear-gradient(145deg, #2b0d43, #8b3ff0); }
+
+[data-theme="disco"] {
+  --premium-scene-image:url("../../assets/img/themes/disco/nightlife.png");
+  --premium-label:"✦  DISCO NIGHTS  ✦";
+  --premium-body:radial-gradient(circle at 30% 10%,#5b167b,#090510 62%);
+  --premium-shell:linear-gradient(160deg,rgba(55,10,77,.98),rgba(10,4,22,.99));
+  --premium-nav:linear-gradient(180deg,rgba(25,7,38,.98),rgba(8,3,15,.99));
+  --premium-card:linear-gradient(145deg,rgba(59,16,78,.94),rgba(21,8,38,.96));
+  --premium-hero:radial-gradient(circle at 84% 8%,rgba(255,60,196,.38),transparent 34%),linear-gradient(145deg,#42115c,#100722);
+  --premium-track:rgba(5,2,12,.7);
+  --premium-active:linear-gradient(145deg,#f028ac,#7b25e2);
+  --premium-event-1:linear-gradient(110deg,#65206d,#321050);
+  --premium-event-2:linear-gradient(110deg,#c51b83,#ee3da9);
+  --premium-event-3:linear-gradient(110deg,#4520a2,#672ee1);
+  --premium-edge:rgba(255,86,207,.34);
+  --premium-shadow:rgba(0,0,0,.5);
+  --premium-overlay:linear-gradient(115deg,transparent 0 43%,rgba(255,47,194,.12) 48%,transparent 53%),repeating-linear-gradient(90deg,transparent 0 78px,rgba(79,209,255,.09) 80px);
+}
+

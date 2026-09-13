@@ -1,0 +1,42 @@
+/* Thème galaxy : couleurs, aperçu et décor. */
+[data-theme="galaxy"] {
+  --bg: #0a0e2a;
+  --card: #131a3d;
+  --ink: #eef0ff;
+  --muted: #8f97c9;
+  --line: #262f5c;
+  --pink: #5b5fe0;
+  --pink-2: #1c2450;
+  --danger: #ff6b6b;
+  --ok: #6fd0a8;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.55);
+  --brand-1: #5b5fe0;
+  --brand-2: #8f6fff;
+  --app-accent: #8f6fff;
+  --app-accent-2: #4fd1ff;
+  --app-glow: rgba(143, 111, 255, 0.5);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-planet);
+}
+
+[data-preview-theme="galaxy"] .theme-choice-preview { background: radial-gradient(circle at 75% 24%, #fff 0 2%, transparent 4%), radial-gradient(circle at 28% 62%, #4fd1ff 0 3%, transparent 5%), linear-gradient(145deg, #091248, #5c2b83); }
+
+[data-theme="galaxy"] {
+  --premium-scene-image:url("../../assets/img/themes/galaxy/cosmos.png");
+  --premium-label:"✧  VOYAGE GALACTIQUE  ✧";
+  --premium-body:radial-gradient(circle at 70% 15%,#31206e,#040617 62%);
+  --premium-shell:radial-gradient(circle at 80% 0,rgba(99,70,220,.35),transparent 32%),linear-gradient(180deg,#0b113a,#07091e);
+  --premium-nav:linear-gradient(180deg,rgba(11,17,58,.97),rgba(5,7,23,.99));
+  --premium-card:linear-gradient(145deg,rgba(27,34,83,.95),rgba(12,17,50,.96));
+  --premium-hero:radial-gradient(circle at 84% 5%,rgba(79,209,255,.3),transparent 35%),linear-gradient(145deg,#20265f,#0b1034);
+  --premium-track:rgba(3,5,18,.7);
+  --premium-active:linear-gradient(145deg,#6268ee,#7145be);
+  --premium-event-1:linear-gradient(110deg,#233b8e,#20205e);
+  --premium-event-2:linear-gradient(110deg,#58309d,#311c73);
+  --premium-event-3:linear-gradient(110deg,#164e8f,#1e2c6e);
+  --premium-edge:rgba(115,132,255,.34);
+  --premium-shadow:rgba(0,0,0,.5);
+  --premium-overlay:radial-gradient(circle at 13% 18%,#fff 0 1px,transparent 2px),radial-gradient(circle at 79% 37%,#77cfff 0 1px,transparent 2px),radial-gradient(circle at 48% 82%,#bd9bff 0 1px,transparent 2px);
+  --premium-overlay-opacity:.65;
+}
+

@@ -1,0 +1,37 @@
+/* Thème anniversaire-marion : couleurs, aperçu et décor. */
+[data-theme="anniversaire-marion"] {
+  --bg: #20132f;
+  --card: #302044;
+  --ink: #f6efff;
+  --muted: #c6b2d9;
+  --line: #604578;
+  --pink: #9b73c4;
+  --pink-2: #44295b;
+  --danger: #ff9292;
+  --ok: #9dd9aa;
+  --brand-1: #7946a6;
+  --brand-2: #603489;
+  --app-accent: #cf9fff;
+  --app-accent-2: #e7dcf3;
+  --app-glow: rgba(181, 133, 232, .16);
+  --theme-icon: var(--icon-sparkle);
+}
+
+[data-theme="anniversaire-marion"],
+[data-preview-theme="anniversaire-marion"] {
+  --special-art: url("../../assets/img/themes/special/anniversaire-marion-violet.webp");
+}
+
+[data-special-theme][data-theme="anniversaire-marion"] {
+  --special-blend: screen;
+  --scene-breathe-glow: rgba(192, 145, 255, .3);
+  --premium-shell: repeating-linear-gradient(135deg, transparent 0 58px, #cfb1ed08 59px 60px), linear-gradient(180deg, #28183b, #180f24);
+  --premium-card: linear-gradient(145deg, #39254e, #281b39);
+  --premium-hero: radial-gradient(ellipse at 100% 0, #654080, transparent 65%), linear-gradient(145deg, #3b2751, #251832);
+  --premium-nav: linear-gradient(180deg, #39254e, #251832);
+  --premium-edge: #795696;
+  --premium-event-1: linear-gradient(120deg, #4c3166, #352348);
+  --premium-event-2: linear-gradient(120deg, #624075, #432b56);
+  --premium-event-3: linear-gradient(120deg, #3d3152, #2b223b);
+}
+

@@ -132,6 +132,17 @@
     return date >= period.startDate && date <= (period.endDate || period.startDate);
   }
 
+  // Filtre d'affichage uniquement : garder les périodes dans l'historique.
+  // Date locale, pour ne pas retirer une absence avant minuit en France.
+  function isCurrentOrUpcomingPeriod(period, now) {
+    var date = now || new Date();
+    var today = date.getFullYear() + "-" +
+      String(date.getMonth() + 1).padStart(2, "0") + "-" +
+      String(date.getDate()).padStart(2, "0");
+    var endDate = period.endDate || period.startDate;
+    return !endDate || endDate >= today;
+  }
+
   function findBlockingPeriod(list, collab, date, time, duration, ignoreId) {
     return list.find(function (item) {
       return item.id !== ignoreId &&
@@ -612,6 +623,7 @@
     isRoomAllowedForUser: isRoomAllowedForUser,
     normalizeStatus: normalizeStatus,
     periodCoversDate: periodCoversDate,
+    isCurrentOrUpcomingPeriod: isCurrentOrUpcomingPeriod,
     revenueFor: revenueFor,
     roomFor: roomFor,
     roomStatus: roomStatus,

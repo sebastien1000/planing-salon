@@ -1,0 +1,68 @@
+.service-category-menu {
+  display: grid;
+  gap: 8px;
+}
+
+.service-category-burger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  font-weight: 750;
+  /* Cible tactile confortable au doigt, meme sur un petit telephone. */
+  min-height: 48px;
+}
+
+.service-category-back {
+  display: inline-flex;
+  margin-bottom: 12px;
+  min-height: 44px;
+}
+
+.service-category-title {
+  margin: 0 0 10px;
+}
+
+.service-category-list {
+  display: grid;
+  gap: 8px;
+}
+
+.service-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  min-height: 48px;
+  width: 100%;
+}
+
+.service-option--selected {
+  border-color: var(--pink);
+  background: var(--pink-2);
+}
+
+.service-option-name {
+  font-weight: 700;
+}
+
+.service-option-meta {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.service-admin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.service-admin-row:last-child {
+  border-bottom: none;
+}

@@ -1,0 +1,41 @@
+/* Thème tropical : couleurs, aperçu et décor. */
+[data-theme="tropical"] {
+  --bg: #e8f7f2;
+  --card: #ffffff;
+  --ink: #0f3d38;
+  --muted: #4f8a80;
+  --line: #cdeee5;
+  --pink: #ff8552;
+  --pink-2: #d7f3ea;
+  --danger: #c2534a;
+  --ok: #1fb8a3;
+  --shadow: 0 16px 35px rgba(15, 90, 80, 0.14);
+  --brand-1: #ff8552;
+  --brand-2: #1fb8a3;
+  --app-accent: #1fb8a3;
+  --app-accent-2: #ffce54;
+  --app-glow: rgba(31, 184, 163, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-palm);
+}
+
+[data-preview-theme="tropical"] .theme-choice-preview { background: radial-gradient(ellipse at 10% 100%, #176f59 0 28%, transparent 30%), linear-gradient(145deg, #8ce1d1, #fff2ca); }
+
+[data-theme="tropical"] {
+  --premium-scene-image:url("../../assets/img/themes/tropical/foliage.png");
+  --premium-label:"✦  ÉVASION TROPICALE  ✦";
+  --premium-body:linear-gradient(145deg,#c7f4e9,#f7e7bd);
+  --premium-shell:radial-gradient(ellipse at 0 100%,rgba(18,121,93,.32),transparent 35%),linear-gradient(180deg,#d9faf3,#fff3cf);
+  --premium-nav:linear-gradient(180deg,rgba(239,255,249,.96),rgba(205,242,233,.97));
+  --premium-card:linear-gradient(145deg,rgba(255,255,255,.93),rgba(217,247,235,.94));
+  --premium-hero:radial-gradient(circle at 88% 10%,rgba(255,133,82,.26),transparent 35%),linear-gradient(145deg,#effff9,#c8f0e6);
+  --premium-track:rgba(18,121,93,.12);
+  --premium-active:linear-gradient(145deg,#1fb8a3,#117b72);
+  --premium-event-1:linear-gradient(110deg,#d5f4e9,#9fddcf);
+  --premium-event-2:linear-gradient(110deg,#ffe0bd,#ffb77f);
+  --premium-event-3:linear-gradient(110deg,#d9f2ef,#79cdd0);
+  --premium-edge:rgba(15,105,91,.25);
+  --premium-shadow:rgba(15,90,80,.16);
+  --premium-overlay:radial-gradient(ellipse at 0 92%,rgba(31,184,163,.18),transparent 30%),radial-gradient(ellipse at 100% 15%,rgba(255,133,82,.16),transparent 25%);
+}
+

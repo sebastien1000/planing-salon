@@ -27,7 +27,7 @@
     var config = window.SalonThemeConfig;
     var value = Object.assign(defaults(id), raw || {});
     value.userId = id || null;
-    value.selectedTheme = config && config.isValidThemeId(value.selectedTheme) ? value.selectedTheme : "default";
+    value.selectedTheme = config && config.isSelectableThemeId(value.selectedTheme) ? value.selectedTheme : "default";
     value.animationsEnabled = value.animationsEnabled !== false;
     value.lastSeasonalActivationId = value.lastSeasonalActivationId || null;
     return value;
