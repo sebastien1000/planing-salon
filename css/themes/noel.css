@@ -1,0 +1,87 @@
+/* Thème noel : couleurs, aperçu et décor. */
+[data-theme="noel"] {
+  --bg: #071c17;
+  --card: #102a22;
+  --ink: #fff5df;
+  --muted: #ccbda4;
+  --line: #385043;
+  --pink: #9f2f36;
+  --pink-2: #18392d;
+  --danger: #ef7378;
+  --ok: #7fbc8c;
+  --shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+  --brand-1: #9f2f36;
+  --brand-2: #c6a15b;
+  --app-accent: #d9b96e;
+  --app-accent-2: #fff0bd;
+  --app-glow: rgba(217, 185, 110, 0.48);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-tree);
+}
+
+[data-preview-theme="noel"] .theme-choice-preview { background: radial-gradient(circle at 72% 30%, #d9b96e 0 6%, transparent 8%), linear-gradient(145deg, #123b2d, #9f2f36); }
+
+[data-theme="noel"] {
+  --premium-label: "✦  NOËL AU SALON  ✦";
+  --premium-body: radial-gradient(circle at 76% 8%, rgba(217,185,110,.18), transparent 28rem), #03120e;
+  --premium-shell: radial-gradient(circle at 82% 4%, rgba(159,47,54,.24), transparent 25rem), linear-gradient(180deg,#071a14,#0c231b 52%,#06150f);
+  --premium-nav: linear-gradient(180deg,rgba(7,25,19,.98),rgba(3,15,11,.98));
+  --premium-card: linear-gradient(135deg,rgba(21,58,44,.96),rgba(8,29,22,.97));
+  --premium-hero: radial-gradient(circle at 85% 0,rgba(217,185,110,.25),transparent 38%),linear-gradient(145deg,#173b2e,#081d16 72%);
+  --premium-track: rgba(3,15,11,.74);
+  --premium-active: linear-gradient(145deg,#a5373d,#651d24);
+  --premium-active-text: #fff5df;
+  --premium-event-1: linear-gradient(110deg,#194b39,#0f3025);
+  --premium-event-2: linear-gradient(110deg,#852c33,#b64045);
+  --premium-event-3: linear-gradient(110deg,#8c6a2c,#c2a052);
+  --premium-edge: rgba(217,185,110,.34);
+  --premium-shadow: rgba(0,0,0,.4);
+}
+
+[data-theme="noel"] #theme-decorations::before,
+[data-theme="noel"] #theme-decorations::after { content:""; position:absolute; pointer-events:none; }
+
+[data-theme="noel"] #theme-decorations::before {
+  top: auto;
+  right: max(-20px, calc((100vw - 480px) / 2 - 16px));
+  bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+  width: clamp(118px,34vw,160px);
+  aspect-ratio: 4/3;
+  background: url("../../assets/img/themes/christmas/fir-luxury.png") right bottom/contain no-repeat;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.48));
+}
+
+[data-theme="noel"] #theme-decorations::after {
+  inset: 0;
+  background: radial-gradient(circle at 12% 18%,rgba(255,244,196,.9) 0 1px,transparent 2px),radial-gradient(circle at 85% 42%,rgba(217,185,110,.8) 0 1px,transparent 2px);
+  background-size: 74px 74px,93px 93px;
+  opacity:.42;
+}
+
+[data-theme="noel"][data-animations="on"] #theme-decorations::before { animation: christmas-warm-glow 4.8s ease-in-out infinite; }
+
+@media (min-width:700px) {
+[data-theme="noel"] #theme-decorations::before,
+  [data-theme]:not([data-theme="default"]):not([data-theme="halloween"]):not([data-theme="noel"]) #theme-decorations::before {
+    top:auto;
+    right:1.5vw;
+    bottom:calc(76px + env(safe-area-inset-bottom, 0px));
+    width:clamp(170px,20vw,220px);
+  }
+
+}
+
+@media (min-width:900px) and (orientation:landscape) {
+[data-theme="noel"] #theme-decorations::before {
+    right:.5vw;
+    width:min(19vw,220px);
+  }
+
+}
+
+@media (prefers-reduced-motion:reduce) {
+[data-theme="noel"] #theme-decorations::before,
+  [data-theme]:not([data-theme="default"]):not([data-theme="halloween"]) #theme-decorations::before { animation:none!important; }
+
+}
+

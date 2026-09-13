@@ -65,14 +65,24 @@ css/
   base.css
   layout.css
   components.css
+  components/        # formulaires, profils, prestations et éléments partagés
   pages.css
+  pages/             # une entrée CSS par page
+  themes/            # un CSS par thème et moteur visuel commun
 js/
   core/
   pages/
+  themes/
+  ui/                # cartes Apparence et Paramètres
+scripts/
+  app-files.js       # inventaire commun Android/PWA
 ```
 
 - `js/core/` contient la logique partagee
 - `js/pages/` contient la logique de chaque ecran
+
+Voir [l’architecture et les commandes de vérification](docs/architecture.md)
+pour modifier une page, un thème ou les fichiers embarqués.
 
 ## Gestion des collaborateurs
 

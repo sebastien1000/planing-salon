@@ -1,0 +1,32 @@
+/* Thème anniversaire-juliie : couleurs, aperçu et décor. */
+[data-theme="anniversaire-juliie"] {
+  --bg: #fff2ee;
+  --card: #fffaf7;
+  --ink: #59372f;
+  --muted: #805b50;
+  --line: #e9cdc0;
+  --pink: #a35f51;
+  --pink-2: #f3ded5;
+  --brand-1: #a35f51;
+  --brand-2: #874939;
+  --app-accent: #a35f51;
+  --app-accent-2: #c29d60;
+  --app-glow: rgba(201, 138, 110, .18);
+  --theme-icon: var(--icon-gem);
+}
+
+[data-theme="anniversaire-juliie"],
+[data-preview-theme="anniversaire-juliie"] {
+  --special-art: url("../../assets/img/themes/special/anniversaire-juliie-ballons.webp");
+}
+
+[data-special-theme][data-theme="anniversaire-juliie"] {
+  --premium-shell: radial-gradient(ellipse at 100% 0, #f0c8b7, transparent 48%), linear-gradient(180deg, #fff7f3, #f5e0d5);
+  --premium-card: linear-gradient(145deg, #fffaf7, #fbeae3);
+  --premium-hero: radial-gradient(ellipse at 100% 0, #efc8b8, transparent 65%), linear-gradient(145deg, #fffbf7, #f7e4da);
+  --premium-edge: #d3ac97;
+  --premium-event-1: linear-gradient(120deg, #f9e1d8, #edc2b4);
+  --premium-event-2: linear-gradient(120deg, #fff1dd, #ecd8b8);
+  --premium-event-3: linear-gradient(120deg, #f8e4e6, #edc6cc);
+}
+

@@ -1,0 +1,128 @@
+/* Impression uniquement : aucun calque ni effet du thème à l'écran.
+   Chargé après les thèmes, avec media="print" dans fiche-caisse.html. */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+html body,
+html body * {
+  background: transparent !important;
+  color: #111 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
+  mix-blend-mode: normal !important;
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+
+html body::before,
+html body::after,
+html body *::before,
+html body *::after {
+  content: none !important;
+  display: none !important;
+}
+
+#theme-decorations,
+.top,
+.app-header,
+.tabs,
+.app-actions,
+.fab,
+.fc-controls,
+.modal,
+.sheet,
+#modal,
+#sheet {
+  display: none !important;
+}
+
+html,
+html body,
+html body #app,
+html body .phone,
+html body main,
+html body .fc-sheet {
+  display: block !important;
+  position: static !important;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  background: #fff !important;
+}
+
+.fc-tablewrap {
+  overflow: visible !important;
+}
+
+.fc-table {
+  table-layout: fixed;
+}
+
+.fc-table th:nth-child(1) { width: 10%; }
+.fc-table th:nth-child(2) { width: 20%; }
+.fc-table th:nth-child(3) { width: 30%; }
+.fc-table th:nth-child(4) { width: 10%; }
+.fc-table th:nth-child(5) { width: 15%; }
+.fc-table th:nth-child(6) { width: 15%; }
+
+.fc-sheet .chip,
+.fc-sheet .fc-badge {
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0;
+  box-shadow: none !important;
+}
+
+.fc-table th,
+.fc-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  border-color: #bbb !important;
+}
+
+.fc-table th:first-child,
+.fc-table td:first-child {
+  display: table-cell;
+}
+
+.fc-head {
+  flex-direction: row;
+}
+
+.fc-meta {
+  text-align: right;
+}
+
+.fc-head,
+.fc-tile,
+.fc-grandtotal {
+  border-color: #bbb !important;
+  break-inside: avoid;
+}
+
+.fc-summary {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.fc-remises {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.fc-section-label {
+  break-after: avoid;
+}

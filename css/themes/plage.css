@@ -1,0 +1,41 @@
+/* Thème plage : couleurs, aperçu et décor. */
+[data-theme="plage"] {
+  --bg: #eaf4fb;
+  --card: #ffffff;
+  --ink: #1c3c52;
+  --muted: #6d93ab;
+  --line: #d3e8f5;
+  --pink: #f2994a;
+  --pink-2: #dceffa;
+  --danger: #c2534a;
+  --ok: #2f9a86;
+  --shadow: 0 16px 35px rgba(20, 70, 90, 0.12);
+  --brand-1: #f2994a;
+  --brand-2: #5ec8e0;
+  --app-accent: #5ec8e0;
+  --app-accent-2: #f6c453;
+  --app-glow: rgba(94, 200, 224, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-sun);
+}
+
+[data-preview-theme="plage"] .theme-choice-preview { background: linear-gradient(#9ee5ef 0 52%, #29aabd 53% 70%, #ecd099 71%); }
+
+[data-theme="plage"] {
+  --premium-scene-image:url("../../assets/img/themes/beach/vacation.png");
+  --premium-label:"☀  PLAGE & VACANCES  ☀";
+  --premium-body:linear-gradient(#bceaf6,#f4deb0);
+  --premium-shell:linear-gradient(180deg,#dff7ff 0 56%,#bdece9 72%,#f2d9a7);
+  --premium-nav:linear-gradient(180deg,rgba(247,255,255,.97),rgba(215,242,244,.97));
+  --premium-card:linear-gradient(145deg,rgba(255,255,255,.93),rgba(226,246,247,.93));
+  --premium-hero:radial-gradient(circle at 86% 8%,rgba(246,196,83,.34),transparent 36%),linear-gradient(145deg,#eefcff,#bfe7f2);
+  --premium-track:rgba(48,153,178,.13);
+  --premium-active:linear-gradient(145deg,#34bdd0,#168ba4);
+  --premium-event-1:linear-gradient(110deg,#dff6f8,#a9e0e9);
+  --premium-event-2:linear-gradient(110deg,#ffe2a7,#f7bc59);
+  --premium-event-3:linear-gradient(110deg,#ccecf7,#82c8e3);
+  --premium-edge:rgba(38,134,160,.25);
+  --premium-shadow:rgba(20,85,110,.15);
+  --premium-overlay:repeating-radial-gradient(ellipse at 50% 110%,transparent 0 38px,rgba(255,255,255,.24) 40px 42px,transparent 44px 68px);
+}
+

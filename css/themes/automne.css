@@ -1,0 +1,41 @@
+/* Thème automne : couleurs, aperçu et décor. */
+[data-theme="automne"] {
+  --bg: #f6e3cd;
+  --card: #fffaf5;
+  --ink: #3f2a1e;
+  --muted: #8a6a52;
+  --line: #eddac2;
+  --pink: #a8502c;
+  --pink-2: #f3e0c8;
+  --danger: #a13a3a;
+  --ok: #6a8a4f;
+  --shadow: 0 16px 35px rgba(90, 50, 20, 0.16);
+  --brand-1: #c3672f;
+  --brand-2: #7a3b2e;
+  --app-accent: #c98a4b;
+  --app-accent-2: #8a3b2e;
+  --app-glow: rgba(201, 138, 75, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-leaf);
+}
+
+[data-preview-theme="automne"] .theme-choice-preview { background: radial-gradient(ellipse at 24% 76%, #8a3b2e 0 18%, transparent 20%), linear-gradient(145deg, #f2c286, #b95e2f); }
+
+[data-theme="automne"] {
+  --premium-scene-image:url("../../assets/img/themes/autumn/copper.png");
+  --premium-label:"❧  LUEURS D’AUTOMNE  ❧";
+  --premium-body:linear-gradient(145deg,#f1c592,#74321f);
+  --premium-shell:radial-gradient(circle at 83% 5%,rgba(196,91,38,.27),transparent 30%),linear-gradient(180deg,#f4dfc3,#e2b482);
+  --premium-nav:linear-gradient(180deg,rgba(255,244,228,.97),rgba(224,183,137,.98));
+  --premium-card:linear-gradient(145deg,rgba(255,246,232,.96),rgba(229,196,154,.96));
+  --premium-hero:radial-gradient(circle at 84% 7%,rgba(151,56,31,.24),transparent 34%),linear-gradient(145deg,#f9e8d0,#dca26d);
+  --premium-track:rgba(118,55,31,.12);
+  --premium-active:linear-gradient(145deg,#c45b26,#7f3527);
+  --premium-event-1:linear-gradient(110deg,#f0c795,#d58d51);
+  --premium-event-2:linear-gradient(110deg,#b84e28,#da7a37);
+  --premium-event-3:linear-gradient(110deg,#d8ad78,#9d6037);
+  --premium-edge:rgba(115,55,33,.28);
+  --premium-shadow:rgba(91,45,21,.2);
+  --premium-overlay:radial-gradient(ellipse at 0 100%,rgba(126,54,34,.17),transparent 28%),radial-gradient(ellipse at 100% 8%,rgba(202,111,45,.2),transparent 25%);
+}
+

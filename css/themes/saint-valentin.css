@@ -1,0 +1,33 @@
+/* Thème saint-valentin : couleurs, aperçu et décor. */
+[data-theme="saint-valentin"] {
+  --bg: #fbf0f2;
+  --card: #fffafb;
+  --ink: #502330;
+  --muted: #805361;
+  --line: #ebcdd5;
+  --pink: #98334e;
+  --pink-2: #f3dce3;
+  --brand-1: #98334e;
+  --brand-2: #74283e;
+  --app-accent: #98334e;
+  --app-accent-2: #b49354;
+  --app-glow: rgba(175, 91, 117, .18);
+  --theme-icon: var(--icon-heart);
+}
+
+[data-theme="saint-valentin"],
+[data-preview-theme="saint-valentin"] {
+  --special-art: url("../../assets/img/themes/special/saint-valentin-scene.webp");
+}
+
+[data-special-theme][data-theme="saint-valentin"] {
+  --premium-label: "✦  SAINT-VALENTIN  ✦";
+  --premium-shell: radial-gradient(ellipse at 100% 0, #edc6d1, transparent 48%), linear-gradient(180deg, #fff5f6, #f5e0e5);
+  --premium-card: linear-gradient(145deg, #fffafb, #fdf0f3);
+  --premium-hero: radial-gradient(ellipse at 100% 0, #ebc0ca, transparent 65%), linear-gradient(145deg, #fffaf8, #f7e6e9);
+  --premium-edge: #d9afbd;
+  --premium-event-1: linear-gradient(120deg, #f8e3e9, #eecbd6);
+  --premium-event-2: linear-gradient(120deg, #fff4e9, #edddc6);
+  --premium-event-3: linear-gradient(120deg, #f3d9e1, #e4b9c9);
+}
+

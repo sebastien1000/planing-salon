@@ -1,0 +1,19 @@
+/* Un fichier par thème ; les règles communes restent dans le moteur CSS. */
+@import url("./halloween.css");
+@import url("./noel.css");
+@import url("./tropical.css");
+@import url("./plage.css");
+@import url("./cocooning.css");
+@import url("./disco.css");
+@import url("./galaxy.css");
+@import url("./floral.css");
+@import url("./nouvel-an.css");
+@import url("./printemps.css");
+@import url("./automne.css");
+@import url("./hiver.css");
+@import url("./chic-noir.css");
+@import url("./rose-gold.css");
+@import url("./saint-valentin.css");
+@import url("./paques.css");
+@import url("./anniversaire-marion.css");
+@import url("./anniversaire-juliie.css");

@@ -1,0 +1,41 @@
+/* Thème printemps : couleurs, aperçu et décor. */
+[data-theme="printemps"] {
+  --bg: #eef8e6;
+  --card: #ffffff;
+  --ink: #33472e;
+  --muted: #7c9a72;
+  --line: #d9edcc;
+  --pink: #d47ba0;
+  --pink-2: #e7f2df;
+  --danger: #b2555a;
+  --ok: #4f9a5c;
+  --shadow: 0 16px 35px rgba(60, 90, 40, 0.12);
+  --brand-1: #8fc48a;
+  --brand-2: #d47ba0;
+  --app-accent: #b9a6dd;
+  --app-accent-2: #f3b6cf;
+  --app-glow: rgba(212, 123, 160, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-blossom);
+}
+
+[data-preview-theme="printemps"] .theme-choice-preview { background: radial-gradient(circle at 28% 25%, #e7a2bd 0 14%, transparent 16%), linear-gradient(145deg, #f7fff0, #8fc48a); }
+
+[data-theme="printemps"] {
+  --premium-scene-image:url("../../assets/img/themes/spring/flowers.png");
+  --premium-label:"❀  DOUCEUR DU PRINTEMPS  ❀";
+  --premium-body:linear-gradient(145deg,#eff9e9,#fcecf3);
+  --premium-shell:radial-gradient(circle at 86% 6%,rgba(227,154,183,.23),transparent 30%),linear-gradient(180deg,#f7fff2,#fff6fa);
+  --premium-nav:linear-gradient(180deg,rgba(249,255,246,.98),rgba(238,247,230,.98));
+  --premium-card:linear-gradient(145deg,rgba(255,255,252,.97),rgba(238,247,232,.96));
+  --premium-hero:radial-gradient(circle at 85% 7%,rgba(212,123,160,.22),transparent 35%),linear-gradient(145deg,#fbfff8,#e5f2df);
+  --premium-track:rgba(79,154,92,.1);
+  --premium-active:linear-gradient(145deg,#83bd7f,#d47ba0);
+  --premium-event-1:linear-gradient(110deg,#e6f2de,#badbb2);
+  --premium-event-2:linear-gradient(110deg,#f9dfe8,#e9a9c1);
+  --premium-event-3:linear-gradient(110deg,#ede7f6,#cdbce5);
+  --premium-edge:rgba(91,145,87,.22);
+  --premium-shadow:rgba(60,90,45,.13);
+  --premium-overlay:radial-gradient(ellipse at 0 100%,rgba(99,164,92,.14),transparent 28%),radial-gradient(ellipse at 100% 12%,rgba(212,123,160,.14),transparent 26%);
+}
+

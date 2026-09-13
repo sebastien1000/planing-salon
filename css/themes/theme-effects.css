@@ -329,3 +329,25 @@
   opacity: 0.95;
   pointer-events: none;
 }
+
+:root {
+  --icon-heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 28 4 16C-5 5 9-3 16 7 23-3 37 5 28 16Z'/%3E%3C/svg%3E");
+  --icon-egg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 40'%3E%3Cpath d='M16 2C3 2-6 38 16 38S29 2 16 2Z'/%3E%3C/svg%3E");
+}
+.theme-particle[data-decor="heart"] {
+  width: 12px; height: 12px; background: var(--app-accent);
+  -webkit-mask: var(--icon-heart) center / contain no-repeat;
+  mask: var(--icon-heart) center / contain no-repeat;
+}
+.theme-particle[data-decor="egg"] {
+  width: 14px; height: 19px; border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
+  background: repeating-linear-gradient(35deg, #efc9d7 0 4px, #f5e4a9 4px 6px, #d3c0e4 6px 10px);
+}
+.theme-particle[data-decor="balloon"] {
+  width: 24px; height: 32px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, var(--card), var(--app-accent-2) 65%);
+}
+.theme-particle[data-decor="balloon"]::after {
+  content: ""; position: absolute; top: 100%; left: 50%;
+  width: 1px; height: 25px; background: var(--app-accent-2);
+}

@@ -22,7 +22,9 @@
 
   function holidaysForCollab(holidays, collabName) {
     return holidays
-      .filter(function (item) { return item.collab === collabName; })
+      .filter(function (item) {
+        return item.collab === collabName && domain.isCurrentOrUpcomingPeriod(item);
+      })
       .sort(function (a, b) { return a.startDate.localeCompare(b.startDate); });
   }
 

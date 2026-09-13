@@ -1,0 +1,41 @@
+/* Thème cocooning : couleurs, aperçu et décor. */
+[data-theme="cocooning"] {
+  --bg: #f7ede1;
+  --card: #fffaf3;
+  --ink: #4a2f1c;
+  --muted: #9a7a5c;
+  --line: #ecdbc4;
+  --pink: #c17a3f;
+  --pink-2: #f0e0c9;
+  --danger: #a13a3a;
+  --ok: #6a8a4f;
+  --shadow: 0 16px 35px rgba(90, 60, 20, 0.16);
+  --brand-1: #c17a3f;
+  --brand-2: #8a5a3a;
+  --app-accent: #e0a95c;
+  --app-accent-2: #8a5a3a;
+  --app-glow: rgba(224, 169, 92, 0.45);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-candle);
+}
+
+[data-preview-theme="cocooning"] .theme-choice-preview { background: radial-gradient(circle at 65% 65%, #f4c36a 0 10%, transparent 24%), linear-gradient(145deg, #f7ede1, #9b6542); }
+
+[data-theme="cocooning"] {
+  --premium-scene-image:url("../../assets/img/themes/cocooning/cozy.png");
+  --premium-label:"☕  INSTANT COCOONING  ✦";
+  --premium-body:linear-gradient(145deg,#efe0cd,#b68a63);
+  --premium-shell:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 2px,transparent 2px 7px),linear-gradient(180deg,#f5eadc,#e8d1b5);
+  --premium-nav:linear-gradient(180deg,rgba(255,250,241,.97),rgba(227,205,179,.98));
+  --premium-card:linear-gradient(145deg,rgba(255,250,242,.96),rgba(233,216,194,.96));
+  --premium-hero:radial-gradient(circle at 85% 12%,rgba(224,169,92,.38),transparent 36%),linear-gradient(145deg,#fff9ed,#ddc3a1);
+  --premium-track:rgba(111,73,43,.12);
+  --premium-active:linear-gradient(145deg,#b87845,#7c4d2e);
+  --premium-event-1:linear-gradient(110deg,#f7ead5,#e4c69e);
+  --premium-event-2:linear-gradient(110deg,#d8b58b,#b78458);
+  --premium-event-3:linear-gradient(110deg,#eee0c8,#cba979);
+  --premium-edge:rgba(105,69,41,.25);
+  --premium-shadow:rgba(85,52,24,.18);
+  --premium-overlay:radial-gradient(circle at 90% 78%,rgba(255,193,91,.24),transparent 22%);
+}
+

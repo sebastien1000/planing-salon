@@ -1,0 +1,41 @@
+/* Thème hiver : couleurs, aperçu et décor. */
+[data-theme="hiver"] {
+  --bg: #eaf2f7;
+  --card: #ffffff;
+  --ink: #1e3b4c;
+  --muted: #6f93a5;
+  --line: #d3e6ee;
+  --pink: #4a90b8;
+  --pink-2: #dcedf4;
+  --danger: #c2534a;
+  --ok: #4c8a7a;
+  --shadow: 0 16px 35px rgba(20, 60, 90, 0.12);
+  --brand-1: #4a90b8;
+  --brand-2: #a8d8e8;
+  --app-accent: #a8d8e8;
+  --app-accent-2: #eef7fb;
+  --app-glow: rgba(74, 144, 184, 0.4);
+  --app-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --theme-icon: var(--icon-snowflake);
+}
+
+[data-preview-theme="hiver"] .theme-choice-preview { background: radial-gradient(circle at 70% 25%, #fff 0 4%, transparent 6%), linear-gradient(145deg, #edf8ff, #76a9c6); }
+
+[data-theme="hiver"] {
+  --premium-scene-image:url("../../assets/img/themes/winter/frost.png");
+  --premium-label:"❄  SILENCE D’HIVER  ❄";
+  --premium-body:linear-gradient(145deg,#dbeaf3,#779db5);
+  --premium-shell:radial-gradient(circle at 80% 2%,rgba(255,255,255,.66),transparent 28%),linear-gradient(180deg,#edf7fc,#dcebf3);
+  --premium-nav:linear-gradient(180deg,rgba(249,253,255,.98),rgba(218,234,243,.98));
+  --premium-card:linear-gradient(145deg,rgba(255,255,255,.94),rgba(220,235,244,.95));
+  --premium-hero:radial-gradient(circle at 85% 5%,rgba(255,255,255,.75),transparent 35%),linear-gradient(145deg,#f8fdff,#c9e0ec);
+  --premium-track:rgba(63,128,162,.1);
+  --premium-active:linear-gradient(145deg,#69a5c7,#397a9e);
+  --premium-event-1:linear-gradient(110deg,#e2f0f7,#b8d7e7);
+  --premium-event-2:linear-gradient(110deg,#c8e1ed,#85b8d1);
+  --premium-event-3:linear-gradient(110deg,#eef6fa,#c7d9e4);
+  --premium-edge:rgba(67,126,157,.24);
+  --premium-shadow:rgba(37,79,104,.14);
+  --premium-overlay:repeating-radial-gradient(circle at 12% 8%,transparent 0 34px,rgba(255,255,255,.18) 35px 36px,transparent 37px 63px);
+}
+

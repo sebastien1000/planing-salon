@@ -1,0 +1,35 @@
+/* Thème paques : couleurs, aperçu et décor. */
+[data-theme="paques"] {
+  --bg: #f5f7ec;
+  --card: #fffefa;
+  --ink: #384336;
+  --muted: #606e59;
+  --line: #dce4ce;
+  --pink: #6d547e;
+  --pink-2: #ebe2f3;
+  --brand-1: #756087;
+  --brand-2: #526c4d;
+  --app-accent: #866395;
+  --app-accent-2: #a3ba88;
+  --app-glow: rgba(171, 159, 115, .18);
+  --theme-icon: var(--icon-egg);
+  --special-event-2: #f4ebc9;
+  --special-event-3: #e3eddc;
+}
+
+[data-theme="paques"],
+[data-preview-theme="paques"] {
+  --special-art: url("../../assets/img/themes/special/paques-scene.webp");
+}
+
+[data-special-theme][data-theme="paques"] {
+  --premium-label: "❀  DOUCEURS DE PÂQUES  ❀";
+  --premium-shell: radial-gradient(ellipse at 100% 0, #dfe7cf, transparent 48%), linear-gradient(180deg, #fafbef, #f1e9f4);
+  --premium-card: linear-gradient(145deg, #fffef8, #f2f5e9);
+  --premium-hero: radial-gradient(ellipse at 100% 0, #e1d8ea, transparent 65%), linear-gradient(145deg, #fffef6, #e8eedc);
+  --premium-edge: #bac7a3;
+  --premium-event-1: linear-gradient(120deg, #efe5f5, #dccbe8);
+  --premium-event-2: linear-gradient(120deg, #fcf3d8, #efdfa9);
+  --premium-event-3: linear-gradient(120deg, #eaf3df, #ccddbc);
+}
+
