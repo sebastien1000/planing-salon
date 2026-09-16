@@ -13,6 +13,11 @@ Règles :
 - ne fais jamais git push --force sans accord
 - ne supprime jamais les modifications existantes sans accord
 
+## Après chaque push sur main (déploiement)
+- Une fois une branche mergée dans main : déployer automatiquement sur Vercel en production (`vercel --prod`), en confirmant explicitement avant le déploiement prod.
+- Puis lancer le build Android (`npm run build:android`) et indiquer où se trouve l'APK généré (`android/app/build/outputs/apk/debug/app-debug.apk`).
+- Ces deux étapes sont désormais automatiques après un merge, sans qu'il soit nécessaire de le redemander à chaque fois.
+
 ## Sécurité Supabase
 - La clé `anon` est publique : la sécurité repose uniquement sur les droits SQL et la RLS.
 - Aucun droit pour le rôle `anon` sur les tables et les vues.
