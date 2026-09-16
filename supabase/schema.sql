@@ -689,3 +689,13 @@ grant insert, update, delete on blocked_periods to authenticated;
 -- proprietaire "postgres" -> bypass RLS -> lisible par "anon" par defaut
 -- sans ce revoke. Corrige le 2026-08-18.
 revoke all on blocked_periods_public from anon;
+
+-- =====================================================================
+-- IMPORTANT (2026-09-16) : ce fichier ne contient PAS les regles de
+-- securite actuelles. Apres ce schema, appliquer dans l'ordre les fichiers
+-- de supabase/migrations/, dont 2026-09-16_security_hardening.sql qui :
+--   - retire tout acces anonyme (tables, vues, objets futurs) ;
+--   - reserve l'acces aux profils actifs (is_active_staff()) ;
+--   - met en attente (active = false) toute nouvelle collaboratrice qui
+--     cree elle-meme son profil, jusqu'a validation par l'admin.
+-- =====================================================================

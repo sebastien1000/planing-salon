@@ -57,3 +57,9 @@ from reservations r
 join profiles p on p.id = r.collab_id;
 
 grant select on reservations_public to authenticated;
+
+-- Correctif 2026-09-16 : "drop view" + "create view" cree un NOUVEL objet,
+-- qui recoit automatiquement les droits par defaut de Supabase (dont anon).
+-- Sans ce revoke, la vue etait lisible par n'importe qui sans connexion.
+revoke all on reservations_public from anon;
+revoke insert, update, delete, truncate, references, trigger on reservations_public from authenticated;
