@@ -195,33 +195,48 @@
             return { status: "bad-role" };
           }
 
-          supabaseData.upsertProfile({
+          // On attend le vrai resultat de la creation cote Supabase avant
+          // de dire "connecte" : la ligne active/role renvoyee fait foi,
+          // jamais ce qu'on a demande localement (le trigger
+          // profiles_force_pending peut forcer active=false meme si on a
+          // envoye active=true - voir supabase/migrations). Avant ce
+          // correctif, une erreur reseau ou un profil mis en attente
+          // passaient inapercus : l'app annoncait "connecte" avec les
+          // donnees locales, sans jamais verifier ce qui avait vraiment
+          // ete enregistre.
+          return supabaseData.upsertProfile({
             id: authUser.id,
             email: localUser.email,
             name: localUser.name,
             role: localRole,
             active: localUser.active !== false
-          }).catch(function () {});
+          }).then(function (createdProfile) {
+            if (!createdProfile || createdProfile.active === false) {
+              return { status: "pending" };
+            }
 
-          // localUser.id est un identifiant local provisoire (uid genere
-          // par "Ajouter un collaborateur", avant toute vraie premiere
-          // connexion) : il ne correspond pas a l'uuid Supabase reel
-          // (authUser.id) que Postgres attend partout pour les ecritures
-          // "self-service" d'une collaboratrice (RLS collab_id =
-          // auth.uid() sur les conges/absences/prestations). On le corrige
-          // ici, au moment ou ce lien devient enfin connu - sinon ce
-          // mismatch persisterait a chaque connexion future et bloquerait
-          // indefiniment ces ecritures.
-          var reindexDb = getDb();
-          var reindexedUser = utils.findById(reindexDb.users, localUser.id);
-          if (reindexedUser) {
-            reindexedUser.id = authUser.id;
-            data.saveDb(reindexDb);
-            localUser = reindexedUser;
-          }
+            // localUser.id est un identifiant local provisoire (uid genere
+            // par "Ajouter un collaborateur", avant toute vraie premiere
+            // connexion) : il ne correspond pas a l'uuid Supabase reel
+            // (authUser.id) que Postgres attend partout pour les ecritures
+            // "self-service" d'une collaboratrice (RLS collab_id =
+            // auth.uid() sur les conges/absences/prestations). On le corrige
+            // ici, au moment ou ce lien devient enfin connu - sinon ce
+            // mismatch persisterait a chaque connexion future et bloquerait
+            // indefiniment ces ecritures.
+            var reindexDb = getDb();
+            var reindexedUser = utils.findById(reindexDb.users, localUser.id);
+            if (reindexedUser) {
+              reindexedUser.id = authUser.id;
+              data.saveDb(reindexDb);
+              localUser = reindexedUser;
+            }
 
-          saveCurrentUserId(localUser.id);
-          return { status: "ok", user: localUser };
+            saveCurrentUserId(localUser.id);
+            return { status: "ok", user: localUser };
+          }).catch(function () {
+            return { status: "sync-failed" };
+          });
         }
 
         // Aucune ligne "profiles" et aucune fiche locale : Supabase Auth a
