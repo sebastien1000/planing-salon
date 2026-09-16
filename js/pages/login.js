@@ -36,6 +36,8 @@
     "bad-credentials": "Email ou mot de passe incorrect.",
     "profile-missing": "Connexion Supabase reussie, mais aucun profil trouve dans la table profiles. Contactez l administrateur.",
     "inactive": "Ce compte est desactive.",
+    "pending": "Compte cree, en attente de validation par un administrateur ou une collegue active.",
+    "sync-failed": "Connexion reussie, mais la creation du profil a echoue (reseau ?). Reessayez.",
     "bad-role": "Role inconnu ou non autorise pour ce compte.",
     "no-config": "Supabase n'est pas configure. Voir js/core/supabase-client.js.",
     "error": "Erreur technique, réessayez."
