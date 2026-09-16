@@ -1,5 +1,5 @@
 // Liste et version générées par npm run sync:pwa.
-const CACHE_NAME = "salon-mvp-c63e62e75bad5b92";
+const CACHE_NAME = "salon-mvp-b64f4bd5771c0dad";
 
 const APP_ASSETS = [
   "./",
@@ -191,14 +191,25 @@ self.addEventListener("fetch", function (event) {
   // Le reste (CSS, images, SDK Supabase en CDN) change rarement et profite
   // davantage du hors-ligne que d'etre systematiquement revalide : cache
   // d'abord, reseau en secours si rien en cache.
+  //
+  // Reponses "opaques" (type "opaque") : un script charge SANS crossorigin
+  // est mis en cache sous forme opaque. Depuis l'ajout de l'integrite SRI
+  // (integrity + crossorigin="anonymous") sur le SDK Supabase, le navigateur
+  // demande ce fichier en mode CORS : lui renvoyer une reponse opaque est
+  // interdit et bloque le script -> window.supabase absent -> "Supabase
+  // n'est pas configure". On ignore donc toute reponse opaque en cache et on
+  // n'en met plus jamais en cache.
   event.respondWith(
     caches.match(event.request).then(function (cached) {
-      if (cached) {
+      if (cached && cached.type !== "opaque") {
         return cached;
       }
 
       return fetch(event.request).then(function (response) {
-        return putInCache(event.request, response);
+        if (response.ok && response.type !== "opaque") {
+          return putInCache(event.request, response);
+        }
+        return response;
       });
     })
   );
