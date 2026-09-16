@@ -22,6 +22,7 @@ Règles :
 - Les vues `reservations_public` et `blocked_periods_public` contournent la RLS : elles doivent garder `where is_active_staff()`.
 - Personne ne modifie son propre rôle ni son statut `active`.
 - Une nouvelle collaboratrice est inactive jusqu'à validation par l'admin (page Comptes → Réactiver).
+- Un nouvel admin ajouté via "Ajouter un collaborateur" atterrit aussi inactif à sa première connexion (le rôle demandé est conservé, jamais forcé à collab) : seul un admin existant peut l'activer, jamais `validate_collaborator()` qui reste limitée à role='collab'.
 - Jamais la clé `service_role` dans le code du site.
 - Après chaque migration : vérifier Supabase Advisors (Security).
-- Détails : `supabase/migrations/2026-09-16_security_hardening.sql`.
+- Détails : `supabase/migrations/2026-09-16_security_hardening.sql`, `supabase/migrations/2026-09-16_profiles_pending_admin_role.sql`.
